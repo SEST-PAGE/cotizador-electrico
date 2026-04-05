@@ -209,8 +209,9 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
 .btn-guardar:hover{background:var(--acc2);transform:translateY(-1px);box-shadow:var(--acc-g)}
 .btn-guardar:disabled{opacity:.4;cursor:not-allowed;transform:none}
 .vp-toolbar{display:flex;gap:10px;justify-content:flex-end;margin-bottom:16px;flex-wrap:wrap}
-/* PDF template */
-#pdf-template{display:none;width:794px;background:#fff;color:#111;font-family:Arial,Helvetica,sans-serif;font-size:13px;padding:48px;line-height:1.5;}
+/* PDF template (off-DOM capture; never use opacity≈0 — html2canvas pinta en blanco) */
+#pdf-template{display:none;width:794px;max-width:794px;background:#fff;color:#111;font-family:Arial,Helvetica,sans-serif;font-size:13px;padding:48px;line-height:1.5;box-sizing:border-box;}
+#pdf-template[data-pdf-live]{display:block!important;}
 .pdf-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px}
 .pdf-logo{width:80px;height:80px;border-radius:8px;overflow:hidden}
 .pdf-logo img{width:100%;height:100%;object-fit:cover}
@@ -1025,79 +1026,79 @@ async function guardarCot(){
   toast(`Cotizaci\u00f3n ${r.numero} guardada \u2713`,'ok');
 }
 
-/* Exportar PDF desde vista previa */
-function exportarPDFNc(){
+function posicionarNodoParaPdfCapture(el){
+  el.dataset.pdfLive='1';
+  el.style.cssText='display:block!important;position:absolute;left:-12000px;top:0;width:794px;max-width:794px;opacity:1!important;visibility:visible!important;pointer-events:none;z-index:0;box-sizing:border-box;overflow:visible;background:#ffffff;color:#111;font-family:Arial,Helvetica,sans-serif;font-size:13px;padding:48px;line-height:1.5;';
+}
+function limpiarNodoPdfCapture(el){
+  delete el.dataset.pdfLive;
+  el.style.cssText='';
+  el.innerHTML='';
+}
+function esperarImagenesEn(root){
+  if(!root)return Promise.resolve();
+  const imgs=[...root.querySelectorAll('img')];
+  return Promise.all(imgs.map(img=>{
+    if(img.complete&&img.naturalHeight>0)return Promise.resolve();
+    return new Promise(res=>{
+      img.addEventListener('load',res,{once:true});
+      img.addEventListener('error',res,{once:true});
+    });
+  }));
+}
+function repintarAntesPdf(){
+  return new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+}
+const html2pdfOptsPdf={
+  margin:[10,10,10,10],
+  image:{type:'jpeg',quality:0.98},
+  html2canvas:{
+    scale:2,
+    useCORS:true,
+    allowTaint:true,
+    logging:false,
+    backgroundColor:'#ffffff',
+    scrollX:0,
+    scrollY:0
+  },
+  jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+};
+
+/* Exportar PDF desde vista previa: mismo HTML que ves en pantalla */
+async function exportarPDFNc(){
   const todos=[...cotItems,...cotAdic];
   if(!todos.length){toast('Sin materiales para generar PDF','err');return;}
-  const num=sGet('nc-numero')||genNum();
-  const fecha=sGet('nc-fecha')||new Date().toISOString().split('T')[0];
-  const validez=sGet('nc-validez')||'30';
-  const cliente=sGet('nc-cliente')||'Sin cliente';
-  const ruc=sGet('nc-ruc'),tel=sGet('nc-telefono'),eml=sGet('nc-email'),dir=sGet('nc-direccion');
-  const descPct=parseFloat(sGet('nc-descuento'))||0;
-  const notas=sGet('nc-notas'),forma=sGet('nc-forma-pago');
-  const sub=todos.reduce((s,i)=>s+i.cantidad*i.precio_unitario,0);
-  const dv=sub*(descPct/100);
-  const ivaBase=todos.reduce((s,i)=>s+(i.tiene_iva?i.cantidad*i.precio_unitario:0),0);
-  const ivaVal=(ivaBase-ivaBase*(descPct/100))*0.15;
-  const total=sub-dv+ivaVal;
-  const fechaFmt=new Date(fecha+'T00:00:00').toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'});
+  const num=(sGet('nc-numero')||genNum()).replace(/[^\w.-]+/g,'_');
+  generarVP();
+  const src=document.getElementById('nc-preview-content');
   const tpl=document.getElementById('pdf-template');
-  tpl.innerHTML=`
-    <div class="pdf-header">
-      <div class="pdf-logo"><img src="logo.jpg" alt="SEST" crossorigin="anonymous"/></div>
-      <div class="pdf-title"><h1>COTIZACI\u00d3N</h1><div class="num">${num}</div>
-        <div style="font-size:12px;color:#666;text-align:right">Fecha: ${fechaFmt}</div>
-        <div style="font-size:11px;color:#888;text-align:right">V\u00e1lida por ${validez} d\u00edas</div>
-      </div>
-    </div>
-    <hr class="pdf-divider"/>
-    <div class="pdf-parties">
-      <div><div class="pdf-section-title">ELABORADO POR</div>
-        <div class="pdf-val"><strong>SEST - Servicios El\u00e9ctricos y Seguridad Tapia</strong></div>
-        <div class="pdf-val">Elaborado por: ${usuario?.nombre||''}</div>
-      </div>
-      <div><div class="pdf-section-title">CLIENTE</div>
-        <div class="pdf-val"><strong>${cliente}</strong></div>
-        ${ruc?`<div class="pdf-val">RUC/C.I.: ${ruc}</div>`:''}
-        ${tel?`<div class="pdf-val">Tel: ${tel}</div>`:''}
-        ${eml?`<div class="pdf-val">${eml}</div>`:''}
-        ${dir?`<div class="pdf-val">${dir}</div>`:''}
-      </div>
-    </div>
-    <table class="pdf-table"><thead><tr>
-      <th>#</th><th>Descripci\u00f3n</th><th>Cant.</th><th>Unidad</th><th>P. Unit.</th><th>IVA</th><th style="text-align:right">Subtotal</th>
-    </tr></thead><tbody>
-      ${todos.map((it,i)=>`<tr><td>${i+1}</td><td>${it.descripcion||'\u2014'}</td>
-        <td style="text-align:center">${it.cantidad}</td><td>${it.unidad}</td>
-        <td>$${it.precio_unitario.toFixed(2)}</td><td style="text-align:center">${it.tiene_iva?'S\u00ed':'No'}</td>
-        <td style="text-align:right;font-weight:600">$${(it.cantidad*it.precio_unitario).toFixed(2)}</td></tr>`).join('')}
-    </tbody></table>
-    <div class="pdf-totals">
-      <div class="pdf-trow"><span>Subtotal sin IVA:</span><span>$${sub.toFixed(2)}</span></div>
-      ${dv>0?`<div class="pdf-trow"><span>Descuento (${descPct}%):</span><span>-$${dv.toFixed(2)}</span></div>`:''}
-      <div class="pdf-trow"><span>IVA 15%:</span><span>$${ivaVal.toFixed(2)}</span></div>
-      <div class="pdf-trow grand"><span>TOTAL:</span><span>$${total.toFixed(2)}</span></div>
-    </div>
-    ${forma?`<div style="margin-bottom:10px;font-size:12.5px;color:#444"><strong>Forma de pago:</strong> ${forma}</div>`:''}
-    ${notas?`<div style="margin-bottom:10px;padding:10px 12px;border:1px solid #e8e8e8;border-radius:6px;font-size:12px;color:#555"><strong>Notas:</strong> ${notas}</div>`:''}
-    <div class="pdf-footer">SEST &middot; Servicios El\u00e9ctricos y Seguridad Tapia &middot; Cotizaci\u00f3n generada el ${new Date().toLocaleDateString('es-EC')}</div>`;
-  tpl.style.cssText='display:block;position:fixed;top:0;left:0;z-index:-9999;opacity:0.01;pointer-events:none;width:794px;background:#fff;color:#111;font-family:Arial,Helvetica,sans-serif;font-size:13px;padding:48px;line-height:1.5;';
+  tpl.innerHTML=src.innerHTML;
+  if(!tpl.textContent.trim()){limpiarNodoPdfCapture(tpl);toast('Vista previa vac\u00eda; vuelve a generarla.','err');return;}
+  posicionarNodoParaPdfCapture(tpl);
   toast('Generando PDF\u2026','ok');
-  html2pdf().set({margin:[10,10,10,10],filename:`${num}.pdf`,image:{type:'jpeg',quality:.98},html2canvas:{scale:2,useCORS:true,logging:false,allowTaint:true},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}})
-  .from(tpl).save().then(()=>{tpl.style.cssText='';tpl.innerHTML='';toast('PDF descargado \u2713','ok');})
-  .catch(err=>{tpl.style.cssText='';tpl.innerHTML='';console.error(err);toast('Error al generar PDF','err');});
+  try{
+    await esperarImagenesEn(tpl);
+    await repintarAntesPdf();
+    await html2pdf().set({...html2pdfOptsPdf,filename:`${num}.pdf`}).from(tpl).save();
+    toast('PDF descargado \u2713','ok');
+  }catch(err){
+    console.error(err);
+    toast('Error al generar PDF','err');
+  }finally{
+    limpiarNodoPdfCapture(tpl);
+  }
 }
 
-/* Exportar PDF cotización guardada */
-function exportarPDF(){
+/* Exportar PDF cotización guardada (plantilla clara para impresión) */
+async function exportarPDF(){
   if(!cotActual)return;
   const c=cotActual,items=c.items||[];
   const fecha=new Date(c.creado_en).toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'});
+  const fname=(c.numero||'cotizacion').replace(/[^\w.-]+/g,'_');
   const tpl=document.getElementById('pdf-template');
   tpl.innerHTML=`
     <div class="pdf-header">
-      <div class="pdf-logo"><img src="logo.jpg" alt="SEST" crossorigin="anonymous"/></div>
+      <div class="pdf-logo"><img src="logo.jpg" alt="SEST"/></div>
       <div class="pdf-title"><h1>COTIZACI\u00d3N</h1><div class="num">${c.numero}</div><div style="font-size:12px;color:#666;text-align:right">Fecha: ${fecha}</div></div>
     </div>
     <hr class="pdf-divider"/>
@@ -1129,11 +1130,19 @@ function exportarPDF(){
     </div>
     ${c.notas?`<div style="padding:10px 12px;border:1px solid #e8e8e8;border-radius:6px;font-size:12px;color:#555;margin-bottom:12px"><strong>Notas:</strong> ${c.notas}</div>`:''}
     <div class="pdf-footer">SEST &middot; Servicios El\u00e9ctricos y Seguridad Tapia &middot; Generado el ${new Date().toLocaleDateString('es-EC')}</div>`;
-  tpl.style.cssText='display:block;position:fixed;top:0;left:0;z-index:-9999;opacity:0.01;pointer-events:none;width:794px;background:#fff;color:#111;font-family:Arial,Helvetica,sans-serif;font-size:13px;padding:48px;line-height:1.5;';
+  posicionarNodoParaPdfCapture(tpl);
   toast('Generando PDF\u2026','ok');
-  html2pdf().set({margin:[10,10,10,10],filename:`${c.numero}.pdf`,image:{type:'jpeg',quality:.98},html2canvas:{scale:2,useCORS:true,logging:false,allowTaint:true},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}})
-  .from(tpl).save().then(()=>{tpl.style.cssText='';tpl.innerHTML='';toast('PDF descargado \u2713','ok');})
-  .catch(err=>{tpl.style.cssText='';tpl.innerHTML='';toast('Error al generar PDF','err');});
+  try{
+    await esperarImagenesEn(tpl);
+    await repintarAntesPdf();
+    await html2pdf().set({...html2pdfOptsPdf,filename:`${fname}.pdf`}).from(tpl).save();
+    toast('PDF descargado \u2713','ok');
+  }catch(err){
+    console.error(err);
+    toast('Error al generar PDF','err');
+  }finally{
+    limpiarNodoPdfCapture(tpl);
+  }
 }
 
 /* Utilidades */
