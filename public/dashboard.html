@@ -24,7 +24,7 @@ html{scroll-behavior:smooth}
 body{background:var(--bg);color:var(--t1);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.5;min-height:100vh}
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-thumb{background:var(--s4);border-radius:9px}
-/* SIDEBAR JHAONATAN*/
+/* SIDEBAR */
 .sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sw);background:var(--s1);border-right:1px solid var(--bd);display:flex;flex-direction:column;z-index:200;transition:transform .25s ease;}
 .sb-brand{padding:16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px;}
 .sb-logo{width:42px;height:42px;border-radius:10px;overflow:hidden;flex-shrink:0;box-shadow:var(--acc-g);}
@@ -263,7 +263,7 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
   </div>
   <div class="nav">
     <div class="nav-lbl">Principal</div>
-    <div class="nav-item on" data-nav="inicio" onclick="ir('inicio')"><span class="nav-ico"><i data-lucide="layout-dashboard"></i></span> Inicio</div>
+    <div class="nav-item on" data-nav="inicio" onclick="ir('inicio')"><span class="nav-ico"><i data-lucide="layout-dashboard"></i></span> Dashboard</div>
     <div class="nav-item" data-nav="cotizaciones" onclick="ir('cotizaciones')"><span class="nav-ico"><i data-lucide="file-text"></i></span> Cotizaciones</div>
     <div class="nav-item" data-nav="nueva-cot" onclick="abrirNuevaCot()"><span class="nav-ico"><i data-lucide="zap"></i></span> Nueva Cotizaci&#243;n</div>
     <div class="nav-lbl">Gesti&#243;n</div>
@@ -279,7 +279,7 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
   </div>
 </nav>
 <div class="main">
-  <div class="topbar"><div class="page-title" id="page-title">Inicio</div><div id="topbar-actions"></div></div>
+  <div class="topbar"><div class="page-title" id="page-title">Dashboard</div><div id="topbar-actions"></div></div>
   <div class="content">
 
     <!-- INICIO -->
@@ -619,7 +619,7 @@ function ir(sec){
   document.querySelectorAll('.nav-item[data-nav]').forEach(n=>n.classList.toggle('on',n.dataset.nav===sec));
   const secEl=document.getElementById('sec-'+sec);
   if(secEl)secEl.classList.add('on');
-  const tit={inicio:'Inicio',cotizaciones:'Mis Cotizaciones','nueva-cot':'Nueva Cotizaci\u00f3n',materiales:'Cat\u00e1logo de Materiales',clientes:'Mis Clientes'};
+  const tit={inicio:'Dashboard',cotizaciones:'Mis Cotizaciones','nueva-cot':'Nueva Cotizaci\u00f3n',materiales:'Cat\u00e1logo de Materiales',clientes:'Mis Clientes'};
   document.getElementById('page-title').textContent=tit[sec]||sec;
   closeSidebar();
   if(sec==='materiales')renderMats(mats);
