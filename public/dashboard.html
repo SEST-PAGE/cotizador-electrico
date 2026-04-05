@@ -231,27 +231,7 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
 .pdf-trow{display:flex;gap:48px;font-size:12.5px;color:#555}
 .pdf-trow.grand{color:#111;font-weight:700;font-size:15px;padding-top:6px;border-top:2px solid #f5c800;margin-top:4px}
 .pdf-footer{margin-top:24px;padding-top:12px;border-top:1px solid #e8e8e8;font-size:11px;color:#999;text-align:center}
-/* IVA Toggle Switch */
-.iva-toggle-wrap{display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--s2);border:1px solid var(--bd2);border-radius:10px;cursor:pointer;transition:all .2s;user-select:none;}
-.iva-toggle-wrap:hover{border-color:rgba(245,200,0,.4);background:var(--s3)}
-.iva-toggle-wrap.iva-all-on{border-color:rgba(245,200,0,.5);background:rgba(245,200,0,.07)}
-.iva-toggle-switch{width:34px;height:18px;border-radius:9px;background:var(--s4);border:1px solid var(--bd2);position:relative;flex-shrink:0;transition:background .2s}
-.iva-toggle-switch.on{background:var(--acc);border-color:var(--acc)}
-.iva-toggle-knob{width:12px;height:12px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
-.iva-toggle-switch.on .iva-toggle-knob{left:18px}
-/* Client search dropdown */
-.cli-search-drop{position:absolute;top:100%;left:0;right:0;z-index:200;background:var(--s2);border:1px solid var(--bd2);border-radius:10px;margin-top:4px;max-height:200px;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,.55);display:none;}
-.cli-search-item{padding:9px 14px;cursor:pointer;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;transition:background .1s;}
-.cli-search-item:last-child{border-bottom:none}
-.cli-search-item:hover{background:var(--s3)}
-/* Material added badge */
-.mat-added-tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);border-radius:6px;font-size:10px;font-weight:700;color:var(--ok);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
-/* Admin price columns */
-.admin-col{color:var(--t2)}
-.margen-badge{display:inline-block;padding:2px 7px;border-radius:5px;font-size:11px;font-weight:700;font-family:'DM Mono',monospace;}
-.margen-ok{background:var(--ok-d);color:var(--ok)}
-.margen-warn{background:rgba(245,200,0,.12);color:var(--acc)}
-.margen-low{background:var(--err-d);color:var(--err)}
+/* RESPONSIVE */
 @media(max-width:1080px){.nc-layout{grid-template-columns:1fr}.nc-right{position:static}.g5{grid-template-columns:1fr 1fr 1fr}}
 @media(max-width:768px){
   .sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}
@@ -289,7 +269,6 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
     <div class="nav-lbl">Gesti&#243;n</div>
     <div class="nav-item" data-nav="materiales" onclick="ir('materiales')"><span class="nav-ico"><i data-lucide="package"></i></span> Materiales</div>
     <div class="nav-item" data-nav="clientes" onclick="ir('clientes')"><span class="nav-ico"><i data-lucide="users"></i></span> Clientes</div>
-    <div class="nav-item" data-nav="usuarios" id="nav-usuarios" onclick="ir('usuarios')" style="display:none"><span class="nav-ico"><i data-lucide="shield"></i></span> Usuarios</div>
   </div>
   <div class="sb-foot">
     <div class="user-card">
@@ -338,8 +317,8 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
     <div class="sec" id="sec-nueva-cot">
       <div class="nc-header">
         <div>
-          <div class="nc-eyebrow" id="nc-eyebrow">Crear cotizaci&#243;n</div>
-          <div class="nc-title" style="display:flex;align-items:center;gap:10px"><i data-lucide="banknote" style="width:26px;height:26px;stroke-width:2;color:var(--acc)"></i> <span id="nc-header-title">NUEVA COTIZACI&#211;N</span></div>
+          <div class="nc-eyebrow">Crear cotizaci&#243;n</div>
+          <div class="nc-title" style="display:flex;align-items:center;gap:10px"><i data-lucide="banknote" style="width:26px;height:26px;stroke-width:2;color:var(--acc)"></i> NUEVA COTIZACI&#211;N</div>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
           <button type="button" class="btn btn-ghost" onclick="limpiarCot(true)"><i data-lucide="eraser" style="width:16px;height:16px"></i> Limpiar</button>
@@ -378,15 +357,6 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
             <div class="nc-card">
               <div class="nc-card-head"><div class="nc-card-title" style="gap:8px"><i data-lucide="user-circle" style="width:15px;height:15px"></i> Informaci&#243;n del Cliente</div></div>
               <div class="nc-card-body">
-                <!-- Búsqueda de cliente registrado -->
-                <div style="position:relative;margin-bottom:14px">
-                  <div class="search-wrap" style="width:100%">
-                    <i data-lucide="search" style="position:absolute;left:10px;width:15px;height:15px;color:var(--t3);pointer-events:none"></i>
-                    <input class="inp-search" id="nc-cli-search" style="width:100%;max-width:100%;padding-left:34px;padding-right:80px" placeholder="Buscar cliente registrado para autocompletar&#8230;" oninput="buscarCliente()" autocomplete="off"/>
-                    <button type="button" onclick="limpiarClienteForm()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:var(--s3);border:1px solid var(--bd2);color:var(--t2);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">Limpiar</button>
-                  </div>
-                  <div class="cli-search-drop" id="nc-cli-drop"></div>
-                </div>
                 <div class="g5">
                   <div class="fld"><label>N&#176; Cotizaci&#243;n</label><input id="nc-numero" readonly style="background:var(--s3);color:var(--acc);font-family:'DM Mono',monospace;font-size:12px;font-weight:700"/></div>
                   <div class="fld"><label>Fecha</label><input type="date" id="nc-fecha"/></div>
@@ -406,14 +376,7 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
             <div class="nc-card nc-card-search-visible">
               <div class="nc-card-head">
                 <div class="nc-card-title" style="gap:8px"><i data-lucide="shopping-cart" style="width:15px;height:15px"></i> Materiales en la Cotizaci&#243;n</div>
-                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                  <!-- IVA GLOBAL TOGGLE -->
-                  <div class="iva-toggle-wrap" id="iva-toggle-wrap" onclick="toggleIvaGlobal()" title="Aplicar o quitar IVA a todos los materiales">
-                    <div class="iva-toggle-switch on" id="iva-toggle-sw"><div class="iva-toggle-knob"></div></div>
-                    <span style="font-size:12px;font-weight:600;color:var(--t1)" id="iva-toggle-lbl">IVA 15% a todos</span>
-                  </div>
-                  <button type="button" class="btn btn-ghost btn-sm" onclick="irSubTab('base-mat')"><i data-lucide="plus" style="width:14px;height:14px"></i> Agregar del cat&#225;logo</button>
-                </div>
+                <button type="button" class="btn btn-ghost btn-sm" onclick="irSubTab('base-mat')"><i data-lucide="plus" style="width:14px;height:14px"></i> Agregar del cat&#225;logo</button>
               </div>
               <div class="nc-card-body">
                 <div class="icols">
@@ -507,7 +470,6 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
             </div>
             <select class="inp-search" id="bm-cat" style="width:155px;padding-left:10px" onchange="filtrarMats()"><option value="">Todas las categor&#237;as</option></select>
             <button type="button" class="btn btn-acc" onclick="abrirModalMat()"><i data-lucide="plus" style="width:16px;height:16px"></i> Material</button>
-            <button type="button" class="btn btn-ghost" id="btn-nueva-cat" style="display:none" onclick="abrirModalCat()"><i data-lucide="tag" style="width:16px;height:16px"></i> Categoría</button>
           </div>
         </div>
         <div class="tbl-wrap" id="tbl-mats"><div class="loading"><div class="spin"></div><p>Cargando&#8230;</p></div></div>
@@ -528,26 +490,6 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
           </div>
         </div>
         <div class="tbl-wrap" id="tbl-clis"><div class="loading"><div class="spin"></div><p>Cargando&#8230;</p></div></div>
-      </div>
-    </div>
-
-    <!-- USUARIOS (solo admin) -->
-    <div class="sec" id="sec-usuarios">
-      <div class="card">
-        <div class="card-head">
-          <div class="card-title" style="display:flex;align-items:center;gap:8px"><i data-lucide="shield" style="width:18px;height:18px;stroke-width:2;color:var(--acc)"></i> Gestión de Usuarios</div>
-          <div class="card-tools">
-            <div class="search-wrap">
-              <i data-lucide="search" style="position:absolute;left:10px;width:15px;height:15px;color:var(--t3);pointer-events:none"></i>
-              <input class="inp-search" id="bu" placeholder="nombre, email&#8230;" oninput="filtrarUsers()" style="padding-left:34px"/>
-            </div>
-          </div>
-        </div>
-        <div style="padding:12px 16px;background:rgba(59,130,246,.06);border-bottom:1px solid var(--bd);font-size:12px;color:#7eb3f7;display:flex;align-items:center;gap:8px">
-          <i data-lucide="info" style="width:14px;height:14px;flex-shrink:0"></i>
-          Como administrador puedes darle permisos de administrador a cualquier vendedor, o quitarlos.
-        </div>
-        <div class="tbl-wrap" id="tbl-users"><div class="loading"><div class="spin"></div><p>Cargando&#8230;</p></div></div>
       </div>
     </div>
 
@@ -604,52 +546,21 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
       </div>
       <div id="ver-body"><div class="loading"><div class="spin"></div><p>Cargando&#8230;</p></div></div>
     </div>
-    <div class="modal-ft"><button type="button" class="btn btn-ghost" onclick="closeModal('m-ver')">Cerrar</button><button type="button" class="btn btn-ok" onclick="prepEditarCotDesdeModal()"><i data-lucide="pencil" style="width:16px;height:16px"></i> Editar</button><button type="button" class="btn btn-info" onclick="exportarPDF()"><i data-lucide="download" style="width:16px;height:16px"></i> Exportar PDF</button></div>
-  </div>
-</div>
-<!-- MODAL NUEVA CATEGORÍA -->
-<div class="modal-bg" id="m-cat">
-  <div class="modal" style="max-width:420px">
-    <div class="modal-hd"><div class="modal-title">Nueva Categoría</div><button type="button" class="modal-x" onclick="closeModal('m-cat')" aria-label="Cerrar"><i data-lucide="x"></i></button></div>
-    <div class="modal-body">
-      <div id="cat-err" class="alert err"></div>
-      <div class="fg" style="grid-template-columns:1fr">
-        <div class="fld"><label>Nombre de la categoría *</label><input id="cat-nombre" placeholder="Ej: Automatización"/></div>
-        <div class="fld"><label>Descripción</label><input id="cat-desc" placeholder="Descripción opcional"/></div>
-      </div>
-    </div>
-    <div class="modal-ft"><button type="button" class="btn btn-ghost" onclick="closeModal('m-cat')">Cancelar</button><button type="button" class="btn btn-acc" id="btn-save-cat" onclick="guardarCategoria()">Crear Categoría</button></div>
-  </div>
-</div>
-
-<!-- MODAL EDITAR COTIZACIÓN GUARDADA -->
-<div class="modal-bg" id="m-edit-cot">
-  <div class="modal" style="max-width:440px">
-    <div class="modal-hd"><div class="modal-title">Editar Cotización</div><button type="button" class="modal-x" onclick="closeModal('m-edit-cot')" aria-label="Cerrar"><i data-lucide="x"></i></button></div>
-    <div class="modal-body">
-      <div style="padding:12px 14px;background:rgba(245,200,0,.08);border:1px solid rgba(245,200,0,.2);border-radius:8px;font-size:12.5px;color:#e0c700;margin-bottom:16px;display:flex;gap:8px;align-items:flex-start">
-        <i data-lucide="zap" style="width:14px;height:14px;flex-shrink:0;margin-top:2px"></i>
-        Se cargará la cotización en el editor para modificarla. Al guardar se creará una <strong>nueva cotización</strong> con los cambios.
-      </div>
-      <div style="text-align:center;padding:8px 0">
-        <div style="font-size:15px;font-weight:700;color:var(--acc);font-family:'DM Mono',monospace" id="editcot-num">—</div>
-        <div style="font-size:13px;color:var(--t2);margin-top:4px" id="editcot-titulo">—</div>
-      </div>
-    </div>
     <div class="modal-ft">
-      <button type="button" class="btn btn-ghost" onclick="closeModal('m-edit-cot')">Cancelar</button>
-      <button type="button" class="btn btn-acc" id="btn-confirmar-edit" onclick="confirmarEditarCot()"><i data-lucide="pencil" style="width:15px;height:15px"></i> Cargar en editor</button>
+      <button type="button" class="btn btn-danger" onclick="cotActual&&eliminarCotDesdeModal()"><i data-lucide="trash-2" style="width:15px;height:15px"></i> Eliminar</button>
+      <button type="button" class="btn btn-ghost" onclick="closeModal('m-ver')">Cerrar</button>
+      <button type="button" class="btn btn-ok" onclick="prepEditarCotDesdeModal()"><i data-lucide="pencil" style="width:16px;height:16px"></i> Editar</button>
+      <button type="button" class="btn btn-info" onclick="exportarPDF()"><i data-lucide="download" style="width:16px;height:16px"></i> Exportar PDF</button>
     </div>
   </div>
 </div>
-
 <div id="pdf-template"></div>
 <div id="toast"></div>
 <script>
 const API=window.location.origin;
 let token=localStorage.getItem('token'),usuario=null,isAdmin=false;
 let mats=[],cats=[],clis=[],cots=[];
-let cotItems=[],cotAdic=[],cotActual=null,cotEditandoId=null;
+let cotItems=[],cotAdic=[],cotActual=null;
 const UNIDADES=['metro','rollo','unidad','tramo 3m','caja','hora','kg','ml','par','juego','gl'];
 const IVA_OPCIONES=[0,5,12,15];
 function normalizarIvaPct(i){
@@ -690,10 +601,6 @@ function textoResumenIva(todos,descPct,ivaVal,net){
   document.getElementById('user-nm').textContent=usuario.nombre;
   document.getElementById('user-av').textContent=usuario.nombre[0].toUpperCase();
   const rb=document.getElementById('role-badge');rb.textContent=usuario.rol;rb.className='role-badge '+(isAdmin?'r-admin':'r-vendedor');
-  if(isAdmin){
-    const nu=document.getElementById('nav-usuarios');if(nu)nu.style.display='flex';
-    const bc=document.getElementById('btn-nueva-cat');if(bc)bc.style.display='';
-  }
   cargarTodo();
   refreshIcons();
   const neo=document.getElementById('nc-elaborado');
@@ -712,13 +619,12 @@ function ir(sec){
   document.querySelectorAll('.nav-item[data-nav]').forEach(n=>n.classList.toggle('on',n.dataset.nav===sec));
   const secEl=document.getElementById('sec-'+sec);
   if(secEl)secEl.classList.add('on');
-  const tit={inicio:'Inicio',cotizaciones:'Mis Cotizaciones','nueva-cot':'Nueva Cotizaci\u00f3n',materiales:'Cat\u00e1logo de Materiales',clientes:'Mis Clientes',usuarios:'Gesti\u00f3n de Usuarios'};
+  const tit={inicio:'Inicio',cotizaciones:'Mis Cotizaciones','nueva-cot':'Nueva Cotizaci\u00f3n',materiales:'Cat\u00e1logo de Materiales',clientes:'Mis Clientes'};
   document.getElementById('page-title').textContent=tit[sec]||sec;
   closeSidebar();
   if(sec==='materiales')renderMats(mats);
   if(sec==='clientes')renderClis(clis);
   if(sec==='cotizaciones')renderCots(cots);
-  if(sec==='usuarios')cargarUsuarios();
   if(sec==='nueva-cot'){
     renderNcMats();
     const neo=document.getElementById('nc-elaborado');
@@ -799,12 +705,32 @@ function tablaCotsHTML(lista,acc){
     </select></td>
     <td style="font-family:'DM Mono',monospace;font-weight:700">$${parseFloat(c.total||0).toFixed(2)}</td>
     <td style="font-size:12px;color:var(--t3)">${new Date(c.creado_en).toLocaleDateString('es-EC')}</td>
-    ${acc?`<td><div style="display:flex;gap:5px;align-items:center"><button type="button" class="btn btn-ghost btn-sm" onclick="verCot(${c.id})"><i data-lucide="eye" style="width:14px;height:14px"></i> Ver / PDF</button><button type="button" class="btn btn-ok btn-sm" onclick="prepEditarCot(${c.id})" title="Editar cotización"><i data-lucide="pencil" style="width:14px;height:14px"></i> Editar</button></div></td>`:''}
+    ${acc?`<td><div style="display:flex;gap:5px;align-items:center">
+      <button type="button" class="btn btn-ghost btn-sm" onclick="verCot(${c.id})"><i data-lucide="eye" style="width:14px;height:14px"></i> Ver</button>
+      <button type="button" class="btn btn-ok btn-sm" onclick="prepEditarCot(${c.id})" title="Editar"><i data-lucide="pencil" style="width:14px;height:14px"></i></button>
+      <button type="button" class="btn btn-danger btn-sm" onclick="eliminarCot(${c.id},'${c.numero}')" title="Eliminar cotización"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button>
+    </div></td>`:''}
   </tr>`).join('')}</tbody></table>`;
 }
 async function cambiarEstado(id,estado){
   const r=await api(`quotes/index?id=${id}`,{method:'PUT',body:JSON.stringify({estado})});
   if(!isErr(r)){const i=cots.findIndex(c=>c.id===id);if(i>=0)cots[i].estado=estado;sTxt('s-apro',cots.filter(c=>c.estado==='aprobada').length);toast('Estado actualizado','ok');}else toast(r.msg,'err');
+}
+async function eliminarCot(id,numero){
+  if(!confirm(`¿Eliminar la cotización ${numero}?\nEsta acción no se puede deshacer.`))return;
+  const r=await api(`quotes/index?id=${id}`,{method:'DELETE'});
+  if(isErr(r)){toast(r.msg||'Error al eliminar','err');return;}
+  cots=cots.filter(c=>c.id!==id);
+  sTxt('s-cots',cots.length);
+  sTxt('s-apro',cots.filter(c=>c.estado==='aprobada').length);
+  renderCots(cots);renderRecientes();
+  toast(`Cotización ${numero} eliminada`,'ok');
+}
+async function eliminarCotDesdeModal(){
+  if(!cotActual)return;
+  const {id,numero}=cotActual;
+  closeModal('m-ver');
+  await eliminarCot(id,numero);
 }
 async function verCot(id){
   openModal('m-ver');
@@ -853,24 +779,18 @@ function filtrarMats(){const q=sGet('bm'),cat=sGet('bm-cat');let l=mats;if(cat)l
 function renderMats(lista){
   const el=document.getElementById('tbl-mats');
   if(!lista.length){el.innerHTML='<div class="empty"><div class="empty-ico" style="display:flex;justify-content:center;color:var(--t3)"><i data-lucide="package" style="width:36px;height:36px"></i></div><p>Sin materiales que coincidan</p></div>';refreshIcons();return;}
-  const adminCols=isAdmin?`<th style="color:var(--ok)">P. Costo</th><th style="color:var(--acc)">P. Venta</th><th>Margen</th>`:'';
-  el.innerHTML=`<table><thead><tr><th>C\u00f3digo</th><th>Nombre</th><th>Categor\u00eda</th><th>Unidad</th>${adminCols}<th></th></tr></thead>
-  <tbody>${lista.map(m=>{
-    const margen=parseFloat(m.margen_ganancia||0);
-    const mClass=margen>=30?'margen-ok':margen>=15?'margen-warn':'margen-low';
-    const adminTds=isAdmin?`<td class="admin-col" style="font-family:'DM Mono',monospace;font-size:12px;color:var(--t3)">$${parseFloat(m.precio_costo||0).toFixed(2)}</td><td style="font-family:'DM Mono',monospace;font-weight:700;color:var(--acc)">$${parseFloat(m.precio_venta||0).toFixed(2)}</td><td><span class="margen-badge ${mClass}">${margen.toFixed(1)}%</span></td>`:'';
-    return`<tr>
+  el.innerHTML=`<table><thead><tr><th>C\u00f3digo</th><th>Nombre</th><th>Categor\u00eda</th><th>Unidad</th><th></th></tr></thead>
+  <tbody>${lista.map(m=>`<tr>
     <td><span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--acc)">${m.codigo}</span></td>
     <td style="font-weight:500">${m.nombre}</td>
     <td><span style="font-size:12px;color:var(--t3)">${m.categoria_nombre||'\u2014'}</span></td>
     <td style="color:var(--t3);font-size:12px">${m.unidad}</td>
-    ${adminTds}
     <td><div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
       <button type="button" class="btn btn-ok btn-sm" onclick="addItem(${m.id});ir('nueva-cot');irSubTab('cotizacion');toast('Agregado \u2713','ok')"><i data-lucide="plus" style="width:14px;height:14px"></i> Cot.</button>
       <button type="button" class="btn btn-ghost btn-sm" onclick="editarMat(${m.id})" title="Editar"><i data-lucide="pencil" style="width:14px;height:14px"></i></button>
       ${isAdmin?`<button type="button" class="btn btn-danger btn-sm" onclick="eliminarMat(${m.id})" title="Eliminar"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button>`:''}
     </div></td>
-  </tr>`;}).join('')}</tbody></table>`;
+  </tr>`).join('')}</tbody></table>`;
   refreshIcons();
 }
 function abrirModalMat(mat=null){
@@ -901,168 +821,6 @@ async function eliminarMat(id){
   const r=await api(`materials/index?id=${id}`,{method:'DELETE'});
   if(isErr(r)){toast(r.msg,'err');return;}
   mats=mats.filter(m=>m.id!==id);sTxt('s-mats',mats.length);filtrarMats();toast('Material eliminado','ok');
-}
-
-/* ═══════════ NUEVA CATEGORÍA ═══════════ */
-function abrirModalCat(){
-  if(!isAdmin){toast('Solo administradores','err');return;}
-  sSet('cat-nombre','');sSet('cat-desc','');
-  document.getElementById('cat-err').className='alert err';
-  openModal('m-cat');
-}
-async function guardarCategoria(){
-  const nombre=sGet('cat-nombre').trim();
-  const desc=sGet('cat-desc').trim();
-  const errEl=document.getElementById('cat-err');
-  if(!nombre){errEl.textContent='El nombre es requerido';errEl.classList.add('show');return;}
-  errEl.classList.remove('show');setBL('btn-save-cat',true);
-  const r=await api('categories/index',{method:'POST',body:JSON.stringify({nombre,descripcion:desc})});
-  setBL('btn-save-cat',false,'Crear Categoría');
-  if(isErr(r)){errEl.textContent=r.msg||'Error al crear categoría';errEl.classList.add('show');return;}
-  cats.push(r);poblarCats();closeModal('m-cat');toast('Categoría creada ✓','ok');
-}
-
-/* ═══════════ GESTIÓN USUARIOS ═══════════ */
-let todosUsers=[];
-async function cargarUsuarios(){
-  if(!isAdmin)return;
-  const el=document.getElementById('tbl-users');
-  if(el)el.innerHTML='<div class="loading"><div class="spin"></div><p>Cargando\u2026</p></div>';
-  const r=await api('users/index');
-  if(isErr(r)){if(el)el.innerHTML=`<div class="empty"><p>${r.msg}</p></div>`;return;}
-  todosUsers=Array.isArray(r)?r:[];
-  renderUsuarios(todosUsers);
-}
-function filtrarUsers(){const q=sGet('bu');renderUsuarios(q?todosUsers.filter(u=>match(`${u.nombre} ${u.email}`,q)):todosUsers);}
-function renderUsuarios(lista){
-  const el=document.getElementById('tbl-users');if(!el)return;
-  if(!lista.length){el.innerHTML='<div class="empty"><p>Sin usuarios</p></div>';return;}
-  el.innerHTML=`<table><thead><tr><th>Nombre</th><th>Email</th><th>Rol actual</th><th>Estado</th><th>Permisos</th></tr></thead>
-  <tbody>${lista.map(u=>`<tr>
-    <td style="font-weight:500">${u.nombre}${u.id===usuario.id?` <span style="font-size:10px;color:var(--t3);font-weight:400">(tú)</span>`:''}</td>
-    <td style="color:var(--t2);font-size:12px">${u.email}</td>
-    <td><span class="role-badge ${u.rol==='admin'?'r-admin':'r-vendedor'}">${u.rol}</span></td>
-    <td><span style="font-size:12px;color:${u.activo?'var(--ok)':'var(--err)'}">${u.activo?'Activo':'Inactivo'}</span></td>
-    <td>${u.id===usuario.id?`<span style="font-size:11px;color:var(--t3)">No puedes editarte</span>`:
-      u.rol==='admin'
-        ?`<button type="button" class="btn btn-ghost btn-sm" onclick="cambiarRol(${u.id},'vendedor')"><i data-lucide="shield-off" style="width:13px;height:13px"></i> Quitar admin</button>`
-        :`<button type="button" class="btn btn-acc btn-sm" onclick="cambiarRol(${u.id},'admin')"><i data-lucide="shield-check" style="width:13px;height:13px"></i> Dar admin</button>`
-    }</td>
-  </tr>`).join('')}</tbody></table>`;
-  refreshIcons();
-}
-async function cambiarRol(id,rol){
-  const accion=rol==='admin'?'dar permisos de administrador':'quitar permisos de administrador';
-  if(!confirm(`¿Estás seguro de ${accion} a este usuario?`))return;
-  const r=await api(`users/index?id=${id}`,{method:'PUT',body:JSON.stringify({rol})});
-  if(isErr(r)){toast(r.msg||'Error al cambiar rol','err');return;}
-  const i=todosUsers.findIndex(u=>u.id===id);
-  if(i>=0)todosUsers[i].rol=rol;
-  renderUsuarios(todosUsers);toast(`Rol actualizado a ${rol} ✓`,'ok');
-}
-
-/* ═══════════ BUSCAR CLIENTE REGISTRADO ═══════════ */
-let cliSearchT;
-function buscarCliente(){
-  clearTimeout(cliSearchT);
-  const q=sGet('nc-cli-search').trim();
-  const drop=document.getElementById('nc-cli-drop');
-  if(!q){drop.style.display='none';return;}
-  cliSearchT=setTimeout(()=>{
-    const res=clis.filter(c=>match(`${c.nombre} ${c.empresa||''} ${c.ruc_cedula||''} ${c.email||''}`,q)).slice(0,8);
-    if(!res.length){drop.innerHTML=`<div style="padding:10px 14px;color:var(--t3);font-size:13px">Sin resultados para "${q}"</div>`;drop.style.display='block';return;}
-    drop.innerHTML=res.map(c=>`<div class="cli-search-item" onclick="seleccionarCliente(${c.id})">
-      <div>
-        <div style="font-weight:600;font-size:13px">${resaltar(c.nombre,q)}</div>
-        ${c.empresa?`<div style="font-size:11px;color:var(--t3)">${c.empresa}</div>`:''}
-      </div>
-      <div style="font-size:11px;color:var(--t3);text-align:right">${c.ruc_cedula||''}</div>
-    </div>`).join('');
-    drop.style.display='block';
-  },120);
-}
-function seleccionarCliente(id){
-  const c=clis.find(x=>x.id===id);if(!c)return;
-  sSet('nc-cliente',c.nombre);sSet('nc-ruc',c.ruc_cedula||'');
-  sSet('nc-telefono',c.telefono||'');sSet('nc-email',c.email||'');
-  sSet('nc-direccion',c.direccion||'');
-  sSet('nc-cli-search',c.nombre+(c.empresa?` — ${c.empresa}`:''));
-  const drop=document.getElementById('nc-cli-drop');if(drop)drop.style.display='none';
-  toast(`Cliente "${c.nombre}" cargado ✓`,'ok');
-}
-function limpiarClienteForm(){
-  sSet('nc-cliente','');sSet('nc-ruc','');sSet('nc-telefono','');
-  sSet('nc-email','');sSet('nc-direccion','');sSet('nc-cli-search','');
-  const drop=document.getElementById('nc-cli-drop');if(drop)drop.style.display='none';
-}
-document.addEventListener('click',e=>{
-  const drop=document.getElementById('nc-cli-drop');
-  if(drop&&!drop.contains(e.target)&&e.target.id!=='nc-cli-search')drop.style.display='none';
-},{capture:true});
-
-/* ═══════════ IVA GLOBAL TOGGLE ═══════════ */
-let ivaGlobalEstado=true;
-function actualizarIvaToggleUI(){
-  const sw=document.getElementById('iva-toggle-sw');
-  const lbl=document.getElementById('iva-toggle-lbl');
-  const wrap=document.getElementById('iva-toggle-wrap');
-  if(!sw)return;
-  if(ivaGlobalEstado){sw.classList.add('on');wrap.classList.add('iva-all-on');lbl.textContent='IVA 15% a todos';}
-  else{sw.classList.remove('on');wrap.classList.remove('iva-all-on');lbl.textContent='Sin IVA (Exento)';}
-}
-function toggleIvaGlobal(){
-  ivaGlobalEstado=!ivaGlobalEstado;
-  const ivaPct=ivaGlobalEstado?15:0;
-  cotItems.forEach(it=>{it.iva_pct=ivaPct;it.tiene_iva=ivaGlobalEstado;});
-  cotAdic.forEach(it=>{it.iva_pct=ivaPct;it.tiene_iva=ivaGlobalEstado;});
-  actualizarIvaToggleUI();renderItems();renderAdic();calcTotals();
-  toast(ivaGlobalEstado?'IVA 15% aplicado a todos los materiales ✓':'IVA removido — todos los materiales exentos','info');
-}
-
-/* ═══════════ EDITAR COTIZACIÓN GUARDADA ═══════════ */
-let cotParaEditar=null;
-function prepEditarCot(id){
-  cotParaEditar=cots.find(c=>c.id===id)||null;
-  if(!cotParaEditar){toast('Cotización no encontrada','err');return;}
-  document.getElementById('editcot-num').textContent=cotParaEditar.numero;
-  document.getElementById('editcot-titulo').textContent=cotParaEditar.titulo||'Sin título';
-  openModal('m-edit-cot');
-}
-function prepEditarCotDesdeModal(){
-  if(cotActual){prepEditarCot(cotActual.id);closeModal('m-ver');}
-}
-async function confirmarEditarCot(){
-  if(!cotParaEditar){closeModal('m-edit-cot');return;}
-  setBL('btn-confirmar-edit',true);
-  const r=await api(`quotes/index?id=${cotParaEditar.id}`);
-  setBL('btn-confirmar-edit',false,'Cargar en editor');
-  if(isErr(r)){toast(r.msg,'err');return;}
-  closeModal('m-edit-cot');
-  // Cargar en el builder
-  cotEditandoId=r.id;
-  cotItems=(r.items||[]).filter(it=>it.material_id).map(it=>({
-    material_id:it.material_id,descripcion:it.descripcion||it.material_nombre||'',
-    cantidad:parseFloat(it.cantidad)||1,unidad:it.unidad||it.material_unidad||'unidad',
-    precio_unitario:parseFloat(it.precio_unitario)||0,iva_pct:15,tiene_iva:true
-  }));
-  cotAdic=(r.items||[]).filter(it=>!it.material_id).map(it=>({
-    descripcion:it.descripcion||'',cantidad:parseFloat(it.cantidad)||1,
-    unidad:it.unidad||'unidad',precio_unitario:parseFloat(it.precio_unitario)||0,
-    iva_pct:15,tiene_iva:true
-  }));
-  // Datos del cliente y cabecera
-  sSet('nc-cliente',r.cliente_nombre||'');sSet('nc-ruc',r.cliente_ruc||'');
-  sSet('nc-telefono',r.cliente_telefono||'');sSet('nc-email',r.cliente_email||'');
-  sSet('nc-direccion',r.cliente_direccion||'');
-  sSet('nc-numero',r.numero);sSet('nc-validez',r.validez_dias||30);
-  sSet('nc-descuento',r.descuento_pct||0);sSet('nc-notas',r.notas||'');
-  sSet('nc-descripcion',r.descripcion||'');sSet('nc-elaborado',r.usuario_nombre||usuario?.nombre||'');
-  const eyebrow=document.getElementById('nc-eyebrow');if(eyebrow)eyebrow.textContent='Editando cotización guardada';
-  const htitle=document.getElementById('nc-header-title');if(htitle)htitle.textContent=`EDITANDO ${r.numero}`;
-  ivaGlobalEstado=true;actualizarIvaToggleUI();
-  ir('nueva-cot');irSubTab('cotizacion');
-  renderItems();renderAdic();calcTotals();
-  toast(`Cotización ${r.numero} cargada — modificá y guardá como nueva ✓`,'info');
 }
 
 /* CLIENTES */
@@ -1119,18 +877,13 @@ function abrirNuevaCot(matId=null){
 }
 
 function limpiarCot(mostrarAviso){
-  cotItems=[];cotAdic=[];cotEditandoId=null;
+  cotItems=[];cotAdic=[];
   sSet('nc-numero',genNum());sSet('nc-fecha',new Date().toISOString().split('T')[0]);
   sSet('nc-validez','30');sSet('nc-cliente','');sSet('nc-ruc','');sSet('nc-telefono','');
   sSet('nc-email','');sSet('nc-direccion','');sSet('nc-descripcion','');
   sSet('nc-descuento','0');sSet('nc-notas','');sSet('nc-bi','');
-  sSet('nc-elaborado',usuario?.nombre||'');sSet('nc-cli-search','');
+  sSet('nc-elaborado',usuario?.nombre||'');
   const d=document.getElementById('nc-results-drop');if(d)d.style.display='none';
-  const cd=document.getElementById('nc-cli-drop');if(cd)cd.style.display='none';
-  // Reset IVA toggle to ON
-  ivaGlobalEstado=true;actualizarIvaToggleUI();
-  const eyebrow=document.getElementById('nc-eyebrow');if(eyebrow)eyebrow.textContent='Crear cotización';
-  const htitle=document.getElementById('nc-header-title');if(htitle)htitle.textContent='NUEVA COTIZACIÓN';
   renderItems();renderAdic();calcTotals();
   if(mostrarAviso)toast('Cotizaci\u00f3n limpiada: se quitaron \u00edtems, datos del cliente y totales.','info');
 }
@@ -1146,20 +899,15 @@ function renderNcMats(lista){
   const el=document.getElementById('nc-tbl-mats');if(!el)return;
   if(!lista.length){el.innerHTML='<div class="empty"><div class="empty-ico" style="display:flex;justify-content:center;color:var(--t3)"><i data-lucide="package" style="width:36px;height:36px"></i></div><p>Sin resultados</p></div>';refreshIcons();return;}
   const q=sGet('nc-bm');
-  const agregadosIds=new Set(cotItems.map(i=>i.material_id));
   el.innerHTML=`<table><thead><tr><th>C\u00f3digo</th><th>Nombre</th><th>Categor\u00eda</th><th>Unidad</th><th>P. Venta</th><th></th></tr></thead>
-  <tbody>${lista.map(m=>{
-    const yaAgregado=agregadosIds.has(m.id);
-    return`<tr style="${yaAgregado?'background:rgba(34,197,94,.04)':''}">
+  <tbody>${lista.map(m=>`<tr>
     <td><span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--acc)">${m.codigo}</span></td>
-    <td style="font-weight:500">${q?resaltar(m.nombre,q):m.nombre}${yaAgregado?` <span class="mat-added-tag"><i data-lucide="check" style="width:10px;height:10px"></i> En cot.</span>`:''}</td>
+    <td style="font-weight:500">${q?resaltar(m.nombre,q):m.nombre}</td>
     <td><span style="font-size:12px;color:var(--t3)">${m.categoria_nombre||'\u2014'}</span></td>
     <td style="color:var(--t3);font-size:12px">${m.unidad}</td>
     <td style="font-family:'DM Mono',monospace;font-weight:700;color:var(--acc)">$${parseFloat(m.precio_venta).toFixed(2)}</td>
-    <td><button type="button" class="btn ${yaAgregado?'btn-ghost':'btn-ok'} btn-sm" onclick="addItem(${m.id});renderNcMats(null);toast('${yaAgregado?'+1 unidad':'Agregado'} \u2713','ok')">
-      <i data-lucide="${yaAgregado?'plus-circle':'plus'}" style="width:14px;height:14px"></i> ${yaAgregado?'+1 más':'Agregar'}
-    </button></td>
-  </tr>`;}).join('')}</tbody></table>`;
+    <td><button type="button" class="btn btn-ok btn-sm" onclick="addItem(${m.id});toast('Agregado \u2713','ok')"><i data-lucide="plus" style="width:14px;height:14px"></i> Agregar</button></td>
+  </tr>`).join('')}</tbody></table>`;
   refreshIcons();
 }
 
@@ -1358,11 +1106,7 @@ async function guardarCot(){
   setBL('btn-guardar-cot',false,'Guardar Cotizaci\u00f3n');
   if(isErr(r)){toast(r.msg,'err');return;}
   cots.unshift({...r,cliente_nombre:titulo});sTxt('s-cots',cots.length);
-  const fueEdicion=!!cotEditandoId;
-  cotEditandoId=null;
-  const eyebrow=document.getElementById('nc-eyebrow');if(eyebrow)eyebrow.textContent='Crear cotización';
-  const htitle=document.getElementById('nc-header-title');if(htitle)htitle.textContent='NUEVA COTIZACIÓN';
-  toast(`Cotizaci\u00f3n ${r.numero} ${fueEdicion?'guardada como nueva':'guardada'} \u2713`,'ok');
+  toast(`Cotizaci\u00f3n ${r.numero} guardada \u2713`,'ok');
 }
 
 function esperarImagenesEn(root){
