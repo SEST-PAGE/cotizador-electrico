@@ -6,6 +6,7 @@
 <title>SEST · Cotizador</title>
 <link rel="icon" type="image/jpeg" href="logo.jpg"/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -35,7 +36,9 @@ body{background:var(--bg);color:var(--t1);font-family:'DM Sans',sans-serif;font-
 .nav-item{display:flex;align-items:center;gap:9px;padding:9px 16px;cursor:pointer;color:var(--t2);font-size:13.5px;font-weight:500;border-left:2px solid transparent;transition:all .13s;}
 .nav-item:hover{color:var(--t1);background:rgba(255,255,255,.04)}
 .nav-item.on{color:var(--acc);border-left-color:var(--acc);background:var(--acc-d)}
-.nav-ico{width:18px;text-align:center;font-size:15px}
+.nav-ico{width:20px;height:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--t2)}
+.nav-item.on .nav-ico{color:var(--acc)}
+.nav-ico svg{width:18px;height:18px;stroke-width:2}
 .sb-foot{padding:14px 16px;border-top:1px solid var(--bd)}
 .user-card{background:var(--s2);border-radius:var(--r);padding:10px;display:flex;align-items:center;gap:9px;}
 .user-av{width:34px;height:34px;border-radius:50%;background:var(--acc);color:#000;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -46,7 +49,8 @@ body{background:var(--bg);color:var(--t1);font-family:'DM Sans',sans-serif;font-
 .btn-out{width:100%;margin-top:8px;background:transparent;border:1px solid var(--bd2);color:var(--t2);padding:8px;border-radius:var(--r);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;transition:all .15s;}
 .btn-out:hover{border-color:var(--err);color:var(--err)}
 /* HAMBURGER */
-.hamburger{display:none;position:fixed;top:12px;left:12px;z-index:300;background:var(--s1);border:1px solid var(--bd2);border-radius:8px;width:38px;height:38px;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:var(--t1);}
+.hamburger{display:none;position:fixed;top:12px;left:12px;z-index:300;background:var(--s1);border:1px solid var(--bd2);border-radius:8px;width:38px;height:38px;align-items:center;justify-content:center;cursor:pointer;color:var(--t1);padding:0}
+.hamburger svg{width:20px;height:20px}
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:150;}
 /* MAIN */
 .main{margin-left:var(--sw);min-height:100vh;display:flex;flex-direction:column}
@@ -70,8 +74,8 @@ body{background:var(--bg);color:var(--t1);font-family:'DM Sans',sans-serif;font-
 .card-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 /* SEARCH */
 .search-wrap{position:relative;display:flex;align-items:center}
-.search-wrap svg{position:absolute;left:10px;width:14px;height:14px;stroke:var(--t3);pointer-events:none}
-.search-wrap:focus-within svg{stroke:var(--acc)}
+.search-wrap svg,.search-wrap [data-lucide]{position:absolute;left:10px;width:15px;height:15px;stroke:var(--t3);color:var(--t3);pointer-events:none}
+.search-wrap:focus-within svg,.search-wrap:focus-within [data-lucide]{stroke:var(--acc);color:var(--acc)}
 .inp-search{background:var(--s2);border:1px solid var(--bd2);color:var(--t1);padding:8px 12px 8px 32px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;width:240px;transition:border-color .15s;}
 .inp-search:focus{border-color:var(--acc)}
 .inp-search::placeholder{color:var(--t3)}
@@ -110,8 +114,9 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
 .modal-xl{max-width:860px}
 .modal-hd{padding:20px 22px 0;display:flex;justify-content:space-between;align-items:center;}
 .modal-title{font-size:15px;font-weight:700}
-.modal-x{background:none;border:none;color:var(--t2);font-size:20px;cursor:pointer;padding:2px;transition:color .15s;line-height:1}
-.modal-x:hover{color:var(--t1)}
+.modal-x{background:none;border:none;color:var(--t2);cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;transition:color .15s;line-height:1;border-radius:6px}
+.modal-x:hover{color:var(--t1);background:rgba(255,255,255,.06)}
+.modal-x svg{width:20px;height:20px}
 .modal-body{padding:20px 22px}
 .modal-ft{padding:0 22px 20px;display:flex;gap:10px;justify-content:flex-end}
 /* FORM */
@@ -139,6 +144,7 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
 #toast.show{transform:translateY(0);opacity:1}
 #toast.ok{border-left:3px solid var(--ok)}
 #toast.err{border-left:3px solid var(--err)}
+#toast.info{border-left:3px solid var(--acc);background:linear-gradient(90deg,rgba(245,200,0,.08),var(--s2))}
 
 /* ═══════════ COTIZACION FULL PAGE ═══════════ */
 .nc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px;}
@@ -149,6 +155,8 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
 .cot-tab{display:flex;align-items:center;gap:7px;padding:9px 22px;border-radius:9px;border:none;background:transparent;color:var(--t2);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap;}
 .cot-tab:hover{color:var(--t1);background:var(--s2)}
 .cot-tab.on{background:var(--acc);color:#000;box-shadow:0 2px 10px rgba(245,200,0,.3)}
+.cot-tab svg{width:16px;height:16px;flex-shrink:0;stroke-width:2}
+.cot-tab.on svg{stroke:#000}
 /* Layout 2 cols */
 .nc-layout{display:grid;grid-template-columns:1fr 300px;gap:18px;align-items:start;}
 .nc-right{position:sticky;top:70px;}
@@ -171,9 +179,14 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
 .item-inp{background:transparent;border:1px solid transparent;color:var(--t1);padding:5px 6px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12.5px;outline:none;width:100%;transition:border-color .15s;}
 .item-inp:focus{border-color:var(--acc);background:var(--s3)}
 .item-inp::placeholder{color:var(--t3)}
+/* Números: sin spinners nativos, paso 1 */
+input[type="number"].num-plain{-moz-appearance:textfield;appearance:textfield}
+input[type="number"].num-plain::-webkit-outer-spin-button,
+input[type="number"].num-plain::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.fld input[type="number"].num-plain{min-height:38px}
 .item-total{text-align:right;font-weight:700;font-size:12.5px;font-family:'DM Mono',monospace;padding-right:2px}
-.del-item{background:none;border:none;color:var(--t3);cursor:pointer;font-size:15px;transition:color .15s;line-height:1;padding:2px 4px;}
-.del-item:hover{color:var(--err)}
+.del-item{background:none;border:none;color:var(--t3);cursor:pointer;transition:color .15s;line-height:1;padding:4px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;}
+.del-item:hover{color:var(--err);background:rgba(239,68,68,.08)}
 .iva-wrap{display:flex;align-items:center;justify-content:center;gap:3px;cursor:pointer}
 .iva-wrap input{width:13px;height:13px;accent-color:var(--acc);cursor:pointer}
 .iva-wrap span{font-size:11px;color:var(--t2);font-weight:600;user-select:none}
@@ -192,7 +205,7 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
 .res-total{display:flex;justify-content:space-between;align-items:center;padding:11px 0 4px;border-top:2px solid rgba(245,200,0,.25);margin-top:8px;font-size:19px;font-weight:800;color:var(--acc);}
 .res-total .v{font-family:'DM Mono',monospace}
 .res-note{margin-top:12px;padding:9px 12px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:8px;font-size:11.5px;color:#7eb3f7;line-height:1.5;}
-.btn-guardar{width:100%;margin-top:12px;padding:14px;background:var(--acc);color:#000;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:800;cursor:pointer;transition:all .2s;}
+.btn-guardar{width:100%;margin-top:12px;padding:14px;background:var(--acc);color:#000;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:800;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;justify-content:center;gap:8px;}
 .btn-guardar:hover{background:var(--acc2);transform:translateY(-1px);box-shadow:var(--acc-g)}
 .btn-guardar:disabled{opacity:.4;cursor:not-allowed;transform:none}
 .vp-toolbar{display:flex;gap:10px;justify-content:flex-end;margin-bottom:16px;flex-wrap:wrap}
@@ -238,7 +251,7 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
 </style>
 </head>
 <body>
-<button class="hamburger" id="hamburger" onclick="toggleSidebar()">&#9776;</button>
+<button type="button" class="hamburger" id="hamburger" onclick="toggleSidebar()" aria-label="Menú"><i data-lucide="menu"></i></button>
 <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 <nav class="sidebar" id="sidebar">
   <div class="sb-brand">
@@ -247,12 +260,12 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
   </div>
   <div class="nav">
     <div class="nav-lbl">Principal</div>
-    <div class="nav-item on" onclick="ir('inicio')"><span class="nav-ico">&#127968;</span> Dashboard</div>
-    <div class="nav-item" onclick="ir('cotizaciones')"><span class="nav-ico">&#128203;</span> Cotizaciones</div>
-    <div class="nav-item" onclick="abrirNuevaCot()"><span class="nav-ico">&#9889;</span> Nueva Cotizaci&#243;n</div>
+    <div class="nav-item on" data-nav="inicio" onclick="ir('inicio')"><span class="nav-ico"><i data-lucide="layout-dashboard"></i></span> Dashboard</div>
+    <div class="nav-item" data-nav="cotizaciones" onclick="ir('cotizaciones')"><span class="nav-ico"><i data-lucide="file-text"></i></span> Cotizaciones</div>
+    <div class="nav-item" data-nav="nueva-cot" onclick="abrirNuevaCot()"><span class="nav-ico"><i data-lucide="zap"></i></span> Nueva Cotizaci&#243;n</div>
     <div class="nav-lbl">Gesti&#243;n</div>
-    <div class="nav-item" onclick="ir('materiales')"><span class="nav-ico">&#128268;</span> Materiales</div>
-    <div class="nav-item" onclick="ir('clientes')"><span class="nav-ico">&#128101;</span> Clientes</div>
+    <div class="nav-item" data-nav="materiales" onclick="ir('materiales')"><span class="nav-ico"><i data-lucide="package"></i></span> Materiales</div>
+    <div class="nav-item" data-nav="clientes" onclick="ir('clientes')"><span class="nav-ico"><i data-lucide="users"></i></span> Clientes</div>
   </div>
   <div class="sb-foot">
     <div class="user-card">
@@ -275,7 +288,7 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
         <div class="stat"><div class="stat-lbl">Aprobadas</div><div class="stat-val" id="s-apro" style="color:var(--ok)">&#8212;</div><div class="stat-sub">Cotizaciones aprobadas</div></div>
       </div>
       <div class="card">
-        <div class="card-head"><div class="card-title">&#128203; &#218;ltimas cotizaciones</div><button class="btn btn-ghost btn-sm" onclick="ir('cotizaciones')">Ver todas &#8594;</button></div>
+        <div class="card-head"><div class="card-title" style="display:flex;align-items:center;gap:8px"><i data-lucide="file-text" style="width:18px;height:18px;stroke-width:2;color:var(--acc)"></i> &#218;ltimas cotizaciones</div><button type="button" class="btn btn-ghost btn-sm" onclick="ir('cotizaciones')">Ver todas <i data-lucide="arrow-right" style="width:14px;height:14px"></i></button></div>
         <div id="tbl-recientes"><div class="loading"><div class="spin"></div><p>Cargando&#8230;</p></div></div>
       </div>
     </div>
@@ -284,13 +297,13 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
     <div class="sec" id="sec-cotizaciones">
       <div class="card">
         <div class="card-head">
-          <div class="card-title">&#128203; Mis Cotizaciones</div>
+          <div class="card-title" style="display:flex;align-items:center;gap:8px"><i data-lucide="file-text" style="width:18px;height:18px;stroke-width:2;color:var(--acc)"></i> Mis Cotizaciones</div>
           <div class="card-tools">
             <div class="search-wrap">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-              <input class="inp-search" id="bq" placeholder="n&#250;mero, cliente, t&#237;tulo&#8230;" oninput="filtrarCots()"/>
+              <i data-lucide="search" style="position:absolute;left:10px;width:15px;height:15px;color:var(--t3);pointer-events:none"></i>
+              <input class="inp-search" id="bq" placeholder="n&#250;mero, cliente, t&#237;tulo&#8230;" oninput="filtrarCots()" style="padding-left:34px"/>
             </div>
-            <button class="btn btn-acc" onclick="abrirNuevaCot()">&#9889; Nueva cotizaci&#243;n</button>
+            <button type="button" class="btn btn-acc" onclick="abrirNuevaCot()"><i data-lucide="zap" style="width:16px;height:16px"></i> Nueva cotizaci&#243;n</button>
           </div>
         </div>
         <div class="tbl-wrap" id="tbl-cots"><div class="loading"><div class="spin"></div><p>Cargando&#8230;</p></div></div>
@@ -302,29 +315,29 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
       <div class="nc-header">
         <div>
           <div class="nc-eyebrow">Crear cotizaci&#243;n</div>
-          <div class="nc-title"><span style="color:var(--acc)">&#128178;</span> NUEVA COTIZACI&#211;N</div>
+          <div class="nc-title" style="display:flex;align-items:center;gap:10px"><i data-lucide="banknote" style="width:26px;height:26px;stroke-width:2;color:var(--acc)"></i> NUEVA COTIZACI&#211;N</div>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <button class="btn btn-ghost" onclick="limpiarCot()">&#128465; Limpiar</button>
-          <button class="btn btn-ghost" onclick="irSubTab('vista-previa');generarVP()">&#128065; Vista Previa</button>
-          <button class="btn btn-acc" id="btn-guardar-top" onclick="guardarCot()">&#128190; Guardar</button>
+          <button type="button" class="btn btn-ghost" onclick="limpiarCot(true)"><i data-lucide="eraser" style="width:16px;height:16px"></i> Limpiar</button>
+          <button type="button" class="btn btn-ghost" onclick="irSubTab('vista-previa');generarVP()"><i data-lucide="eye" style="width:16px;height:16px"></i> Vista Previa</button>
+          <button type="button" class="btn btn-acc" id="btn-guardar-top" onclick="guardarCot()"><i data-lucide="save" style="width:16px;height:16px"></i><span class="btn-lbl">Guardar</span></button>
         </div>
       </div>
-      <div class="cot-tabs">
-        <button class="cot-tab on" id="ctab-base-mat" onclick="irSubTab('base-mat')">&#128268; Base de Materiales</button>
-        <button class="cot-tab" id="ctab-cotizacion" onclick="irSubTab('cotizacion')">&#128203; Cotizaci&#243;n</button>
-        <button class="cot-tab" id="ctab-vista-previa" onclick="irSubTab('vista-previa');generarVP()">&#128065; Vista Previa &amp; PDF</button>
+      <div class="cot-tabs" role="tablist">
+        <button type="button" role="tab" class="cot-tab on" data-subtab="base-mat" id="ctab-base-mat" onclick="irSubTab('base-mat')" aria-selected="true"><i data-lucide="package"></i> Base de Materiales</button>
+        <button type="button" role="tab" class="cot-tab" data-subtab="cotizacion" id="ctab-cotizacion" onclick="irSubTab('cotizacion')" aria-selected="false"><i data-lucide="clipboard-list"></i> Cotizaci&#243;n</button>
+        <button type="button" role="tab" class="cot-tab" data-subtab="vista-previa" id="ctab-vista-previa" onclick="irSubTab('vista-previa');generarVP()" aria-selected="false"><i data-lucide="file-down"></i> Vista Previa &amp; PDF</button>
       </div>
 
       <!-- TAB 1 -->
-      <div id="ctab-content-base-mat">
+      <div id="ctab-content-base-mat" data-subpanel="base-mat" role="tabpanel">
         <div class="nc-card">
           <div class="nc-card-head">
-            <div class="nc-card-title">&#128268; Cat&#225;logo de Materiales</div>
+            <div class="nc-card-title" style="gap:8px"><i data-lucide="package" style="width:15px;height:15px"></i> Cat&#225;logo de Materiales</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
               <div class="search-wrap">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                <input class="inp-search" id="nc-bm" placeholder="cable 10, breaker, led 40w&#8230;" oninput="filtrarNcMats()" style="width:210px"/>
+                <i data-lucide="search" style="position:absolute;left:10px;width:15px;height:15px;color:var(--t3);pointer-events:none"></i>
+                <input class="inp-search" id="nc-bm" placeholder="cable 10, breaker, led 40w&#8230;" oninput="filtrarNcMats()" style="width:210px;padding-left:34px"/>
               </div>
               <select class="inp-search" id="nc-bm-cat" style="width:155px;padding-left:10px" onchange="filtrarNcMats()"><option value="">Todas las categor&#237;as</option></select>
             </div>
@@ -334,17 +347,17 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
       </div>
 
       <!-- TAB 2 -->
-      <div id="ctab-content-cotizacion" style="display:none">
+      <div id="ctab-content-cotizacion" data-subpanel="cotizacion" style="display:none" role="tabpanel">
         <div class="nc-layout">
           <div>
             <!-- Info cliente -->
             <div class="nc-card">
-              <div class="nc-card-head"><div class="nc-card-title">&#128100; Informaci&#243;n del Cliente</div></div>
+              <div class="nc-card-head"><div class="nc-card-title" style="gap:8px"><i data-lucide="user-circle" style="width:15px;height:15px"></i> Informaci&#243;n del Cliente</div></div>
               <div class="nc-card-body">
                 <div class="g5">
                   <div class="fld"><label>N&#176; Cotizaci&#243;n</label><input id="nc-numero" readonly style="background:var(--s3);color:var(--acc);font-family:'DM Mono',monospace;font-size:12px;font-weight:700"/></div>
                   <div class="fld"><label>Fecha</label><input type="date" id="nc-fecha"/></div>
-                  <div class="fld"><label>V&#225;lido (d&#237;as)</label><input type="number" id="nc-validez" value="30" min="1"/></div>
+                  <div class="fld"><label>V&#225;lido (d&#237;as)</label><input type="number" class="num-plain" id="nc-validez" value="30" min="1" step="1"/></div>
                   <div class="fld"><label>Cliente</label><input id="nc-cliente" placeholder="Nombre o empresa"/></div>
                   <div class="fld"><label>RUC / C&#233;dula</label><input id="nc-ruc" placeholder="0000000000001"/></div>
                 </div>
@@ -359,8 +372,8 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
             <!-- Materiales de la cotizacion -->
             <div class="nc-card">
               <div class="nc-card-head">
-                <div class="nc-card-title">&#128722; Materiales en la Cotizaci&#243;n</div>
-                <button class="btn btn-ghost btn-sm" onclick="irSubTab('base-mat')">+ Agregar del cat&#225;logo</button>
+                <div class="nc-card-title" style="gap:8px"><i data-lucide="shopping-cart" style="width:15px;height:15px"></i> Materiales en la Cotizaci&#243;n</div>
+                <button type="button" class="btn btn-ghost btn-sm" onclick="irSubTab('base-mat')"><i data-lucide="plus" style="width:14px;height:14px"></i> Agregar del cat&#225;logo</button>
               </div>
               <div class="nc-card-body">
                 <div class="icols">
@@ -370,8 +383,8 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
                 <div id="nc-items-list"></div>
                 <div style="margin-top:10px;position:relative">
                   <div class="search-wrap" style="width:100%">
-                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                    <input class="inp-search" id="nc-bi" style="width:100%;max-width:100%" placeholder="Buscar y agregar material r&#225;pido&#8230;" oninput="buscarNcItems()"/>
+                    <i data-lucide="search" style="position:absolute;left:10px;width:15px;height:15px;color:var(--t3);pointer-events:none"></i>
+                    <input class="inp-search" id="nc-bi" style="width:100%;max-width:100%;padding-left:34px" placeholder="Buscar y agregar material r&#225;pido&#8230;" oninput="buscarNcItems()"/>
                   </div>
                   <div class="results-drop" id="nc-results-drop"></div>
                 </div>
@@ -380,17 +393,17 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
             <!-- Adicionales -->
             <div class="nc-card">
               <div class="nc-card-head">
-                <div class="nc-card-title">&#10133; Materiales Adicionales</div>
+                <div class="nc-card-title" style="gap:8px"><i data-lucide="plus-circle" style="width:15px;height:15px"></i> Materiales Adicionales</div>
                 <span style="font-size:11px;color:var(--t3)">Materiales o servicios que no est&#225;n en la base de datos</span>
               </div>
               <div class="nc-card-body">
                 <div id="nc-adic-list"></div>
-                <button class="btn btn-ok btn-sm" onclick="agregarAdicional()" style="width:100%;justify-content:center;border-style:dashed;margin-top:4px">&#10010; Agregar Material Adicional</button>
+                <button type="button" class="btn btn-ok btn-sm" onclick="agregarAdicional()" style="width:100%;justify-content:center;border-style:dashed;margin-top:4px"><i data-lucide="plus-circle" style="width:15px;height:15px"></i> Agregar Material Adicional</button>
               </div>
             </div>
             <!-- Pago y notas -->
             <div class="nc-card">
-              <div class="nc-card-head"><div class="nc-card-title">&#9881; Opciones de Pago y Notas</div></div>
+              <div class="nc-card-head"><div class="nc-card-title" style="gap:8px"><i data-lucide="sliders-horizontal" style="width:15px;height:15px"></i> Opciones de Pago y Notas</div></div>
               <div class="nc-card-body">
                 <div style="display:grid;grid-template-columns:1fr 130px;gap:12px;margin-bottom:12px">
                   <div class="fld"><label>Forma de Pago</label>
@@ -402,7 +415,7 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
                       <option>Transferencia bancaria</option>
                     </select>
                   </div>
-                  <div class="fld"><label>Descuento General (%)</label><input type="number" id="nc-descuento" value="0" min="0" max="100" step="0.5" oninput="calcTotals()"/></div>
+                  <div class="fld"><label>Descuento General (%)</label><input type="number" class="num-plain" id="nc-descuento" value="0" min="0" max="100" step="1" oninput="calcTotals()"/></div>
                 </div>
                 <div class="fld"><label>Notas y Condiciones</label><textarea id="nc-notas" rows="3" placeholder="Garant&#237;as, condiciones, observaciones&#8230;"></textarea></div>
               </div>
@@ -412,15 +425,15 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
           <!-- Resumen -->
           <div class="nc-right">
             <div class="nc-card">
-              <div class="nc-card-head"><div class="nc-card-title">&#128202; Resumen</div></div>
+              <div class="nc-card-head"><div class="nc-card-title" style="gap:8px"><i data-lucide="calculator" style="width:15px;height:15px"></i> Resumen</div></div>
               <div class="nc-card-body">
                 <div class="res-row"><span>Subtotal sin IVA</span><span class="v" id="nc-t-sub">$0.00</span></div>
                 <div class="res-row"><span id="nc-t-desc-lbl">Descuento (0%)</span><span class="v" id="nc-t-desc" style="color:var(--ok)">-$0.00</span></div>
                 <div class="res-row"><span>IVA 15% aplicado</span><span class="v" id="nc-t-iva">$0.00</span></div>
                 <div class="res-total"><span>TOTAL</span><span class="v" id="nc-t-total">$0.00</span></div>
-                <div class="res-note">&#8505;&#65039; El IVA se controla por &#237;tem. Si el material ya incluye IVA, desmarca la casilla.</div>
-                <button class="btn-guardar" id="btn-guardar-cot" onclick="guardarCot()">&#128190; Guardar Cotizaci&#243;n</button>
-                <button class="btn btn-ghost" style="width:100%;margin-top:8px;justify-content:center" onclick="irSubTab('vista-previa');generarVP()">&#128065; Vista Previa &amp; PDF</button>
+                <div class="res-note" style="display:flex;gap:8px;align-items:flex-start"><i data-lucide="info" style="width:14px;height:14px;flex-shrink:0;margin-top:2px"></i><span>El IVA se controla por &#237;tem. Si el material ya incluye IVA, desmarca la casilla.</span></div>
+                <button type="button" class="btn-guardar" id="btn-guardar-cot" onclick="guardarCot()"><i data-lucide="save" style="width:18px;height:18px;flex-shrink:0"></i><span class="btn-lbl">Guardar Cotizaci&#243;n</span></button>
+                <button type="button" class="btn btn-ghost" style="width:100%;margin-top:8px;justify-content:center" onclick="irSubTab('vista-previa');generarVP()"><i data-lucide="file-down" style="width:16px;height:16px"></i> Vista Previa &amp; PDF</button>
               </div>
             </div>
           </div>
@@ -428,13 +441,13 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
       </div>
 
       <!-- TAB 3 -->
-      <div id="ctab-content-vista-previa" style="display:none">
+      <div id="ctab-content-vista-previa" data-subpanel="vista-previa" style="display:none" role="tabpanel">
         <div class="vp-toolbar">
-          <button class="btn btn-ghost" onclick="irSubTab('cotizacion')">&#8592; Volver a editar</button>
-          <button class="btn btn-info" onclick="exportarPDFNc()">&#8659; Exportar PDF</button>
-          <button class="btn btn-acc" onclick="guardarCot()">&#128190; Guardar Cotizaci&#243;n</button>
+          <button type="button" class="btn btn-ghost" onclick="irSubTab('cotizacion')"><i data-lucide="arrow-left" style="width:16px;height:16px"></i> Volver a editar</button>
+          <button type="button" class="btn btn-info" onclick="exportarPDFNc()"><i data-lucide="download" style="width:16px;height:16px"></i> Exportar PDF</button>
+          <button type="button" class="btn btn-acc" onclick="guardarCot()"><i data-lucide="save" style="width:16px;height:16px"></i> Guardar Cotizaci&#243;n</button>
         </div>
-        <div id="nc-preview-content"><div class="empty"><div class="empty-ico">&#128065;</div><p>Agrega materiales y datos del cliente para ver la vista previa</p></div></div>
+        <div id="nc-preview-content"><div class="empty"><div class="empty-ico" style="display:flex;justify-content:center"><i data-lucide="eye" style="width:36px;height:36px;color:var(--t3)"></i></div><p>Agrega materiales y datos del cliente para ver la vista previa</p></div></div>
       </div>
     </div><!-- /sec-nueva-cot -->
 
@@ -442,14 +455,14 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
     <div class="sec" id="sec-materiales">
       <div class="card">
         <div class="card-head">
-          <div class="card-title">&#128268; Cat&#225;logo de Materiales</div>
+          <div class="card-title" style="display:flex;align-items:center;gap:8px"><i data-lucide="package" style="width:18px;height:18px;stroke-width:2;color:var(--acc)"></i> Cat&#225;logo de Materiales</div>
           <div class="card-tools">
             <div class="search-wrap">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-              <input class="inp-search" id="bm" placeholder="cable negro 10, breaker&#8230;" oninput="filtrarMats()"/>
+              <i data-lucide="search" style="position:absolute;left:10px;width:15px;height:15px;color:var(--t3);pointer-events:none"></i>
+              <input class="inp-search" id="bm" placeholder="cable negro 10, breaker&#8230;" oninput="filtrarMats()" style="padding-left:34px"/>
             </div>
             <select class="inp-search" id="bm-cat" style="width:155px;padding-left:10px" onchange="filtrarMats()"><option value="">Todas las categor&#237;as</option></select>
-            <button class="btn btn-acc" onclick="abrirModalMat()">+ Material</button>
+            <button type="button" class="btn btn-acc" onclick="abrirModalMat()"><i data-lucide="plus" style="width:16px;height:16px"></i> Material</button>
           </div>
         </div>
         <div class="tbl-wrap" id="tbl-mats"><div class="loading"><div class="spin"></div><p>Cargando&#8230;</p></div></div>
@@ -460,13 +473,13 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
     <div class="sec" id="sec-clientes">
       <div class="card">
         <div class="card-head">
-          <div class="card-title">&#128101; Mis Clientes</div>
+          <div class="card-title" style="display:flex;align-items:center;gap:8px"><i data-lucide="users" style="width:18px;height:18px;stroke-width:2;color:var(--acc)"></i> Mis Clientes</div>
           <div class="card-tools">
             <div class="search-wrap">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-              <input class="inp-search" id="bc" placeholder="nombre, empresa, RUC&#8230;" oninput="filtrarClis()"/>
+              <i data-lucide="search" style="position:absolute;left:10px;width:15px;height:15px;color:var(--t3);pointer-events:none"></i>
+              <input class="inp-search" id="bc" placeholder="nombre, empresa, RUC&#8230;" oninput="filtrarClis()" style="padding-left:34px"/>
             </div>
-            <button class="btn btn-acc" onclick="abrirModalCli()">+ Cliente</button>
+            <button type="button" class="btn btn-acc" onclick="abrirModalCli()"><i data-lucide="user-plus" style="width:16px;height:16px"></i> Cliente</button>
           </div>
         </div>
         <div class="tbl-wrap" id="tbl-clis"><div class="loading"><div class="spin"></div><p>Cargando&#8230;</p></div></div>
@@ -479,7 +492,7 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
 <!-- MODALES -->
 <div class="modal-bg" id="m-mat">
   <div class="modal">
-    <div class="modal-hd"><div class="modal-title" id="m-mat-title">Nuevo material</div><button class="modal-x" onclick="closeModal('m-mat')">&#10005;</button></div>
+    <div class="modal-hd"><div class="modal-title" id="m-mat-title">Nuevo material</div><button type="button" class="modal-x" onclick="closeModal('m-mat')" aria-label="Cerrar"><i data-lucide="x"></i></button></div>
     <div class="modal-body">
       <input type="hidden" id="mat-id"/>
       <div id="mat-err" class="alert err"></div>
@@ -489,17 +502,17 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
         <div class="fld span2"><label>Nombre *</label><input id="mat-nombre" placeholder="Cable THHN #12 AWG negro"/></div>
         <div class="fld span2"><label>Descripci&#243;n</label><input id="mat-desc" placeholder="Descripci&#243;n opcional"/></div>
         <div class="fld"><label>Unidad</label><select id="mat-unidad"><option>metro</option><option>rollo</option><option>unidad</option><option>tramo 3m</option><option>caja</option><option>hora</option><option>kg</option></select></div>
-        <div class="fld"><label>Stock</label><input type="number" id="mat-stock" placeholder="0" min="0"/></div>
-        <div class="fld"><label>Precio costo ($)</label><input type="number" id="mat-costo" placeholder="0.00" step="0.01" min="0"/></div>
-        <div class="fld"><label>Precio venta ($) *</label><input type="number" id="mat-venta" placeholder="0.00" step="0.01" min="0"/></div>
+        <div class="fld"><label>Stock</label><input type="number" class="num-plain" id="mat-stock" placeholder="0" min="0" step="1"/></div>
+        <div class="fld"><label>Precio costo ($)</label><input type="number" class="num-plain" id="mat-costo" placeholder="0" step="1" min="0"/></div>
+        <div class="fld"><label>Precio venta ($) *</label><input type="number" class="num-plain" id="mat-venta" placeholder="0" step="1" min="0"/></div>
       </div>
     </div>
-    <div class="modal-ft"><button class="btn btn-ghost" onclick="closeModal('m-mat')">Cancelar</button><button class="btn btn-acc" id="btn-save-mat" onclick="guardarMat()">Guardar</button></div>
+    <div class="modal-ft"><button type="button" class="btn btn-ghost" onclick="closeModal('m-mat')">Cancelar</button><button type="button" class="btn btn-acc" id="btn-save-mat" onclick="guardarMat()">Guardar</button></div>
   </div>
 </div>
 <div class="modal-bg" id="m-cli">
   <div class="modal">
-    <div class="modal-hd"><div class="modal-title" id="m-cli-title">Nuevo cliente</div><button class="modal-x" onclick="closeModal('m-cli')">&#10005;</button></div>
+    <div class="modal-hd"><div class="modal-title" id="m-cli-title">Nuevo cliente</div><button type="button" class="modal-x" onclick="closeModal('m-cli')" aria-label="Cerrar"><i data-lucide="x"></i></button></div>
     <div class="modal-body">
       <input type="hidden" id="cli-id"/>
       <div id="cli-err" class="alert err"></div>
@@ -513,14 +526,14 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
         <div class="fld span2"><label>Notas</label><textarea id="cli-notas" placeholder="Observaciones&#8230;"></textarea></div>
       </div>
     </div>
-    <div class="modal-ft"><button class="btn btn-ghost" onclick="closeModal('m-cli')">Cancelar</button><button class="btn btn-acc" id="btn-save-cli" onclick="guardarCli()">Guardar</button></div>
+    <div class="modal-ft"><button type="button" class="btn btn-ghost" onclick="closeModal('m-cli')">Cancelar</button><button type="button" class="btn btn-acc" id="btn-save-cli" onclick="guardarCli()">Guardar</button></div>
   </div>
 </div>
 <div class="modal-bg" id="m-ver">
   <div class="modal modal-xl">
-    <div class="modal-hd"><div class="modal-title" id="ver-title">Cotizaci&#243;n</div><button class="modal-x" onclick="closeModal('m-ver')">&#10005;</button></div>
+    <div class="modal-hd"><div class="modal-title" id="ver-title">Cotizaci&#243;n</div><button type="button" class="modal-x" onclick="closeModal('m-ver')" aria-label="Cerrar"><i data-lucide="x"></i></button></div>
     <div class="modal-body" id="ver-body"><div class="loading"><div class="spin"></div><p>Cargando&#8230;</p></div></div>
-    <div class="modal-ft"><button class="btn btn-ghost" onclick="closeModal('m-ver')">Cerrar</button><button class="btn btn-info" onclick="exportarPDF()">&#8659; Exportar PDF</button></div>
+    <div class="modal-ft"><button type="button" class="btn btn-ghost" onclick="closeModal('m-ver')">Cerrar</button><button type="button" class="btn btn-info" onclick="exportarPDF()"><i data-lucide="download" style="width:16px;height:16px"></i> Exportar PDF</button></div>
   </div>
 </div>
 <div id="pdf-template"></div>
@@ -541,17 +554,21 @@ const UNIDADES=['metro','rollo','unidad','tramo 3m','caja','hora','kg','ml','par
   document.getElementById('user-av').textContent=usuario.nombre[0].toUpperCase();
   const rb=document.getElementById('role-badge');rb.textContent=usuario.rol;rb.className='role-badge '+(isAdmin?'r-admin':'r-vendedor');
   cargarTodo();
+  refreshIcons();
 })();
 
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('overlay').style.display=document.getElementById('sidebar').classList.contains('open')?'block':'none';}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').style.display='none';}
 
+function refreshIcons(){
+  if(typeof lucide!=='undefined'&&lucide.createIcons)lucide.createIcons();
+}
+
 function ir(sec){
   document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('on'));
-  document.getElementById('sec-'+sec).classList.add('on');
-  const map={inicio:0,cotizaciones:1,'nueva-cot':2,materiales:3,clientes:4};
-  document.querySelectorAll('.nav-item')[map[sec]]?.classList.add('on');
+  document.querySelectorAll('.nav-item[data-nav]').forEach(n=>n.classList.toggle('on',n.dataset.nav===sec));
+  const secEl=document.getElementById('sec-'+sec);
+  if(secEl)secEl.classList.add('on');
   const tit={inicio:'Dashboard',cotizaciones:'Mis Cotizaciones','nueva-cot':'Nueva Cotizaci\u00f3n',materiales:'Cat\u00e1logo de Materiales',clientes:'Mis Clientes'};
   document.getElementById('page-title').textContent=tit[sec]||sec;
   closeSidebar();
@@ -559,16 +576,20 @@ function ir(sec){
   if(sec==='clientes')renderClis(clis);
   if(sec==='cotizaciones')renderCots(cots);
   if(sec==='nueva-cot')renderNcMats();
+  refreshIcons();
 }
 
 function irSubTab(tab){
-  ['base-mat','cotizacion','vista-previa'].forEach(t=>{
-    document.getElementById('ctab-content-'+t).style.display='none';
-    document.getElementById('ctab-'+t).classList.remove('on');
+  document.querySelectorAll('[data-subpanel]').forEach(p=>{
+    p.style.display=p.dataset.subpanel===tab?'block':'none';
   });
-  document.getElementById('ctab-content-'+tab).style.display='block';
-  document.getElementById('ctab-'+tab).classList.add('on');
+  document.querySelectorAll('.cot-tab[data-subtab]').forEach(btn=>{
+    const on=btn.dataset.subtab===tab;
+    btn.classList.toggle('on',on);
+    btn.setAttribute('aria-selected',on?'true':'false');
+  });
   if(tab==='base-mat')renderNcMats();
+  refreshIcons();
 }
 
 async function api(ep,opts={}){
@@ -608,14 +629,14 @@ function poblarCats(){
 
 function renderRecientes(){
   const el=document.getElementById('tbl-recientes'),top=cots.slice(0,8);
-  if(!top.length){el.innerHTML='<div class="empty"><div class="empty-ico">&#128203;</div><p>Sin cotizaciones a\u00fan</p></div>';return;}
-  el.innerHTML=tablaCotsHTML(top,false);
+  if(!top.length){el.innerHTML='<div class="empty"><div class="empty-ico" style="display:flex;justify-content:center;color:var(--t3)"><i data-lucide="file-text" style="width:36px;height:36px"></i></div><p>Sin cotizaciones a\u00fan</p></div>';refreshIcons();return;}
+  el.innerHTML=tablaCotsHTML(top,false);refreshIcons();
 }
 function filtrarCots(){const q=sGet('bq');renderCots(q?cots.filter(c=>match(`${c.numero} ${c.titulo||''} ${c.cliente_nombre||''} ${c.estado}`,q)):cots);}
 function renderCots(lista){
   const el=document.getElementById('tbl-cots');
-  if(!lista.length){el.innerHTML='<div class="empty"><div class="empty-ico">&#128203;</div><p>Sin cotizaciones</p></div>';return;}
-  el.innerHTML=tablaCotsHTML(lista,true);
+  if(!lista.length){el.innerHTML='<div class="empty"><div class="empty-ico" style="display:flex;justify-content:center;color:var(--t3)"><i data-lucide="file-text" style="width:36px;height:36px"></i></div><p>Sin cotizaciones</p></div>';refreshIcons();return;}
+  el.innerHTML=tablaCotsHTML(lista,true);refreshIcons();
 }
 function tablaCotsHTML(lista,acc){
   return`<table><thead><tr><th>N\u00famero</th><th>Cliente</th><th>T\u00edtulo</th><th>Estado</th><th>Total</th><th>Fecha</th>${acc?'<th></th>':''}</tr></thead><tbody>${lista.map(c=>`
@@ -628,7 +649,7 @@ function tablaCotsHTML(lista,acc){
     </select></td>
     <td style="font-family:'DM Mono',monospace;font-weight:700">$${parseFloat(c.total||0).toFixed(2)}</td>
     <td style="font-size:12px;color:var(--t3)">${new Date(c.creado_en).toLocaleDateString('es-EC')}</td>
-    ${acc?`<td><button class="btn btn-ghost btn-sm" onclick="verCot(${c.id})">Ver / PDF</button></td>`:''}
+    ${acc?`<td><button type="button" class="btn btn-ghost btn-sm" onclick="verCot(${c.id})"><i data-lucide="eye" style="width:14px;height:14px"></i> Ver / PDF</button></td>`:''}
   </tr>`).join('')}</tbody></table>`;
 }
 async function cambiarEstado(id,estado){
@@ -677,19 +698,20 @@ function cotDetailHTML(c){
 function filtrarMats(){const q=sGet('bm'),cat=sGet('bm-cat');let l=mats;if(cat)l=l.filter(m=>String(m.categoria_id)===cat);if(q)l=l.filter(m=>match(`${m.nombre} ${m.codigo} ${m.categoria_nombre||''}`,q));renderMats(l);}
 function renderMats(lista){
   const el=document.getElementById('tbl-mats');
-  if(!lista.length){el.innerHTML='<div class="empty"><div class="empty-ico">&#128268;</div><p>Sin materiales que coincidan</p></div>';return;}
+  if(!lista.length){el.innerHTML='<div class="empty"><div class="empty-ico" style="display:flex;justify-content:center;color:var(--t3)"><i data-lucide="package" style="width:36px;height:36px"></i></div><p>Sin materiales que coincidan</p></div>';refreshIcons();return;}
   el.innerHTML=`<table><thead><tr><th>C\u00f3digo</th><th>Nombre</th><th>Categor\u00eda</th><th>Unidad</th><th></th></tr></thead>
   <tbody>${lista.map(m=>`<tr>
     <td><span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--acc)">${m.codigo}</span></td>
     <td style="font-weight:500">${m.nombre}</td>
     <td><span style="font-size:12px;color:var(--t3)">${m.categoria_nombre||'\u2014'}</span></td>
     <td style="color:var(--t3);font-size:12px">${m.unidad}</td>
-    <td><div style="display:flex;gap:5px">
-      <button class="btn btn-ok btn-sm" onclick="addItem(${m.id});ir('nueva-cot');irSubTab('cotizacion');toast('Agregado \u2713','ok')">+ Cot.</button>
-      <button class="btn btn-ghost btn-sm" onclick="editarMat(${m.id})">&#9999;</button>
-      ${isAdmin?`<button class="btn btn-danger btn-sm" onclick="eliminarMat(${m.id})">&#128465;</button>`:''}
+    <td><div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
+      <button type="button" class="btn btn-ok btn-sm" onclick="addItem(${m.id});ir('nueva-cot');irSubTab('cotizacion');toast('Agregado \u2713','ok')"><i data-lucide="plus" style="width:14px;height:14px"></i> Cot.</button>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="editarMat(${m.id})" title="Editar"><i data-lucide="pencil" style="width:14px;height:14px"></i></button>
+      ${isAdmin?`<button type="button" class="btn btn-danger btn-sm" onclick="eliminarMat(${m.id})" title="Eliminar"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button>`:''}
     </div></td>
   </tr>`).join('')}</tbody></table>`;
+  refreshIcons();
 }
 function abrirModalMat(mat=null){
   poblarCats();sSet('mat-id',mat?.id||'');sSet('mat-codigo',mat?.codigo||'');sSet('mat-nombre',mat?.nombre||'');
@@ -725,15 +747,16 @@ async function eliminarMat(id){
 function filtrarClis(){const q=sGet('bc');renderClis(q?clis.filter(c=>match(`${c.nombre} ${c.empresa||''} ${c.ruc_cedula||''} ${c.email||''}`,q)):clis);}
 function renderClis(lista){
   const el=document.getElementById('tbl-clis');
-  if(!lista.length){el.innerHTML='<div class="empty"><div class="empty-ico">&#128101;</div><p>Sin clientes</p></div>';return;}
+  if(!lista.length){el.innerHTML='<div class="empty"><div class="empty-ico" style="display:flex;justify-content:center;color:var(--t3)"><i data-lucide="users" style="width:36px;height:36px"></i></div><p>Sin clientes</p></div>';refreshIcons();return;}
   el.innerHTML=`<table><thead><tr><th>Nombre</th><th>Empresa</th><th>RUC/C\u00e9dula</th><th>Tel\u00e9fono</th><th>Email</th><th></th></tr></thead>
   <tbody>${lista.map(c=>`<tr>
     <td style="font-weight:500">${c.nombre}</td><td style="color:var(--t2)">${c.empresa||'\u2014'}</td>
     <td style="font-family:'DM Mono',monospace;font-size:12px;color:var(--t3)">${c.ruc_cedula||'\u2014'}</td>
     <td style="color:var(--t3);font-size:13px">${c.telefono||'\u2014'}</td>
     <td style="color:var(--t3);font-size:13px">${c.email||'\u2014'}</td>
-    <td><div style="display:flex;gap:5px"><button class="btn btn-ghost btn-sm" onclick="editarCli(${c.id})">&#9999;</button><button class="btn btn-danger btn-sm" onclick="eliminarCli(${c.id})">&#128465;</button></div></td>
+    <td><div style="display:flex;gap:5px;align-items:center"><button type="button" class="btn btn-ghost btn-sm" onclick="editarCli(${c.id})" title="Editar"><i data-lucide="pencil" style="width:14px;height:14px"></i></button><button type="button" class="btn btn-danger btn-sm" onclick="eliminarCli(${c.id})" title="Eliminar"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button></div></td>
   </tr>`).join('')}</tbody></table>`;
+  refreshIcons();
 }
 function abrirModalCli(cli=null){
   sSet('cli-id',cli?.id||'');sSet('cli-nombre',cli?.nombre||'');sSet('cli-empresa',cli?.empresa||'');
@@ -767,12 +790,13 @@ async function eliminarCli(id){
 function genNum(){const d=new Date();return`SEST-${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}-${Math.floor(Math.random()*9000)+1000}`;}
 
 function abrirNuevaCot(matId=null){
-  ir('nueva-cot');irSubTab('base-mat');
-  if(cotItems.length===0&&cotAdic.length===0)limpiarCot();
+  ir('nueva-cot');
+  irSubTab('base-mat');
+  if(cotItems.length===0&&cotAdic.length===0)limpiarCot(false);
   if(matId){addItem(matId);irSubTab('cotizacion');}
 }
 
-function limpiarCot(){
+function limpiarCot(mostrarAviso){
   cotItems=[];cotAdic=[];
   sSet('nc-numero',genNum());sSet('nc-fecha',new Date().toISOString().split('T')[0]);
   sSet('nc-validez','30');sSet('nc-cliente','');sSet('nc-ruc','');sSet('nc-telefono','');
@@ -780,6 +804,7 @@ function limpiarCot(){
   sSet('nc-descuento','0');sSet('nc-notas','');sSet('nc-bi','');
   const d=document.getElementById('nc-results-drop');if(d)d.style.display='none';
   renderItems();renderAdic();calcTotals();
+  if(mostrarAviso)toast('Cotizaci\u00f3n limpiada: se quitaron \u00edtems, datos del cliente y totales.','info');
 }
 
 /* Base de materiales */
@@ -791,7 +816,7 @@ function filtrarNcMats(){
 function renderNcMats(lista){
   if(!lista){filtrarNcMats();return;}
   const el=document.getElementById('nc-tbl-mats');if(!el)return;
-  if(!lista.length){el.innerHTML='<div class="empty"><div class="empty-ico">&#128268;</div><p>Sin resultados</p></div>';return;}
+  if(!lista.length){el.innerHTML='<div class="empty"><div class="empty-ico" style="display:flex;justify-content:center;color:var(--t3)"><i data-lucide="package" style="width:36px;height:36px"></i></div><p>Sin resultados</p></div>';refreshIcons();return;}
   const q=sGet('nc-bm');
   el.innerHTML=`<table><thead><tr><th>C\u00f3digo</th><th>Nombre</th><th>Categor\u00eda</th><th>Unidad</th><th>P. Venta</th><th></th></tr></thead>
   <tbody>${lista.map(m=>`<tr>
@@ -800,43 +825,45 @@ function renderNcMats(lista){
     <td><span style="font-size:12px;color:var(--t3)">${m.categoria_nombre||'\u2014'}</span></td>
     <td style="color:var(--t3);font-size:12px">${m.unidad}</td>
     <td style="font-family:'DM Mono',monospace;font-weight:700;color:var(--acc)">$${parseFloat(m.precio_venta).toFixed(2)}</td>
-    <td><button class="btn btn-ok btn-sm" onclick="addItem(${m.id});irSubTab('cotizacion');toast('Agregado \u2713','ok')">+ Agregar</button></td>
+    <td><button type="button" class="btn btn-ok btn-sm" onclick="addItem(${m.id});irSubTab('cotizacion');toast('Agregado \u2713','ok')"><i data-lucide="plus" style="width:14px;height:14px"></i> Agregar</button></td>
   </tr>`).join('')}</tbody></table>`;
+  refreshIcons();
 }
 
 /* Items del catálogo */
 function addItem(matId){
   const mat=mats.find(m=>m.id===matId);if(!mat)return;
   const ex=cotItems.find(i=>i.material_id===mat.id);
-  if(ex){ex.cantidad+=1;renderItems();calcTotals();return;}
-  cotItems.push({material_id:mat.id,descripcion:mat.nombre,cantidad:1,unidad:mat.unidad||'unidad',precio_unitario:parseFloat(mat.precio_venta),tiene_iva:true});
+  if(ex){ex.cantidad=Math.max(1,(parseInt(ex.cantidad,10)||1)+1);renderItems();calcTotals();return;}
+  cotItems.push({material_id:mat.id,descripcion:mat.nombre,cantidad:1,unidad:mat.unidad||'unidad',precio_unitario:parseFloat(mat.precio_venta)||0,tiene_iva:true});
   renderItems();calcTotals();
 }
 function renderItems(){
   const cont=document.getElementById('nc-items-list');if(!cont)return;
   if(!cotItems.length){
     cont.innerHTML=`<div style="text-align:center;padding:20px;color:var(--t3);font-size:13px;background:var(--s2);border-radius:8px;border:1px dashed var(--bd2)">
-      <div style="font-size:22px;margin-bottom:6px">&#128722;</div>
+      <div style="display:flex;justify-content:center;margin-bottom:8px;color:var(--t3)"><i data-lucide="shopping-cart" style="width:28px;height:28px"></i></div>
       Sin materiales \u2014 ve a <strong style="color:var(--acc);cursor:pointer" onclick="irSubTab('base-mat')">Base de Materiales</strong> y presiona <strong>+ Agregar</strong>
-    </div>`;return;
+    </div>`;refreshIcons();return;
   }
   cont.innerHTML=cotItems.map((it,i)=>`
     <div class="item-row">
       <input class="item-inp" value="${esc(it.descripcion)}" placeholder="Descripci\u00f3n" onchange="cotItems[${i}].descripcion=this.value"/>
-      <input class="item-inp" type="number" value="${it.cantidad}" min="0.01" step="0.01" style="text-align:center"
-        onchange="cotItems[${i}].cantidad=parseFloat(this.value)||1;renderItems();calcTotals()"/>
+      <input class="item-inp num-plain" type="number" value="${it.cantidad}" min="1" step="1" style="text-align:center"
+        onchange="cotItems[${i}].cantidad=Math.max(1,parseInt(this.value,10)||1);renderItems();calcTotals()"/>
       <select class="item-inp" onchange="cotItems[${i}].unidad=this.value">
         ${UNIDADES.map(u=>`<option${u===it.unidad?' selected':''}>${u}</option>`).join('')}
       </select>
-      <input class="item-inp" type="number" value="${it.precio_unitario}" min="0" step="0.01" style="text-align:right"
-        onchange="cotItems[${i}].precio_unitario=parseFloat(this.value)||0;renderItems();calcTotals()"/>
+      <input class="item-inp num-plain" type="number" value="${it.precio_unitario}" min="0" step="1" style="text-align:right"
+        onchange="cotItems[${i}].precio_unitario=Math.max(0,parseFloat(this.value)||0);renderItems();calcTotals()"/>
       <label class="iva-wrap">
         <input type="checkbox" ${it.tiene_iva?'checked':''} onchange="cotItems[${i}].tiene_iva=this.checked;calcTotals()"/>
         <span>IVA</span>
       </label>
       <div class="item-total">$${(it.cantidad*it.precio_unitario).toFixed(2)}</div>
-      <button class="del-item" onclick="cotItems.splice(${i},1);renderItems();calcTotals()">&#10005;</button>
+      <button type="button" class="del-item" title="Quitar" onclick="cotItems.splice(${i},1);renderItems();calcTotals()"><i data-lucide="x" style="width:16px;height:16px"></i></button>
     </div>`).join('');
+  refreshIcons();
 }
 
 /* Items adicionales */
@@ -849,20 +876,21 @@ function renderAdic(){
   cont.innerHTML=cotAdic.map((it,i)=>`
     <div class="adic-row">
       <input class="item-inp" value="${esc(it.descripcion)}" placeholder="Material o servicio adicional" onchange="cotAdic[${i}].descripcion=this.value"/>
-      <input class="item-inp" type="number" value="${it.cantidad}" min="0.01" step="0.01" style="text-align:center"
-        onchange="cotAdic[${i}].cantidad=parseFloat(this.value)||1;renderAdic();calcTotals()"/>
+      <input class="item-inp num-plain" type="number" value="${it.cantidad}" min="1" step="1" style="text-align:center"
+        onchange="cotAdic[${i}].cantidad=Math.max(1,parseInt(this.value,10)||1);renderAdic();calcTotals()"/>
       <select class="item-inp" onchange="cotAdic[${i}].unidad=this.value">
         ${UNIDADES.map(u=>`<option${u===it.unidad?' selected':''}>${u}</option>`).join('')}
       </select>
-      <input class="item-inp" type="number" value="${it.precio_unitario}" min="0" step="0.01" style="text-align:right" placeholder="0.00"
-        onchange="cotAdic[${i}].precio_unitario=parseFloat(this.value)||0;renderAdic();calcTotals()"/>
+      <input class="item-inp num-plain" type="number" value="${it.precio_unitario}" min="0" step="1" style="text-align:right" placeholder="0"
+        onchange="cotAdic[${i}].precio_unitario=Math.max(0,parseFloat(this.value)||0);renderAdic();calcTotals()"/>
       <label class="iva-wrap">
         <input type="checkbox" ${it.tiene_iva?'checked':''} onchange="cotAdic[${i}].tiene_iva=this.checked;calcTotals()"/>
         <span>IVA</span>
       </label>
       <div class="item-total">$${(it.cantidad*it.precio_unitario).toFixed(2)}</div>
-      <button class="del-item" onclick="cotAdic.splice(${i},1);renderAdic();calcTotals()">&#10005;</button>
+      <button type="button" class="del-item" title="Quitar" onclick="cotAdic.splice(${i},1);renderAdic();calcTotals()"><i data-lucide="x" style="width:16px;height:16px"></i></button>
     </div>`).join('');
+  refreshIcons();
 }
 
 /* Buscador rápido dentro del tab cotización */
@@ -900,7 +928,7 @@ function calcTotals(){
 function generarVP(){
   const cont=document.getElementById('nc-preview-content');if(!cont)return;
   const todos=[...cotItems,...cotAdic];
-  if(!todos.length){cont.innerHTML='<div class="empty"><div class="empty-ico">&#128065;</div><p>Agrega materiales para ver la vista previa</p></div>';return;}
+  if(!todos.length){cont.innerHTML='<div class="empty"><div class="empty-ico" style="display:flex;justify-content:center;color:var(--t3)"><i data-lucide="eye" style="width:36px;height:36px"></i></div><p>Agrega materiales para ver la vista previa</p></div>';refreshIcons();return;}
   const num=sGet('nc-numero')||genNum();
   const fecha=sGet('nc-fecha')||new Date().toISOString().split('T')[0];
   const validez=sGet('nc-validez')||'30';
@@ -973,6 +1001,7 @@ function generarVP(){
       ${forma?`<div style="font-size:13px;color:var(--t2);margin-bottom:10px"><strong style="color:var(--t1)">Forma de pago:</strong> ${forma}</div>`:''}
       ${notas?`<div style="padding:12px 14px;background:var(--s2);border-radius:8px;font-size:13px;color:var(--t2)"><strong style="color:var(--t1)">Notas y condiciones:</strong><br/>${notas}</div>`:''}
     </div>`;
+  refreshIcons();
 }
 
 /* Guardar cotización */
@@ -989,7 +1018,8 @@ async function guardarCot(){
   const body={titulo,descripcion:sGet('nc-descripcion').trim(),notas,descuento_pct:descPct,iva_pct:ivaPct,validez_dias:parseInt(sGet('nc-validez'))||30,items:todos};
   ['btn-guardar-top','btn-guardar-cot'].forEach(id=>setBL(id,true));
   const r=await api('quotes/index',{method:'POST',body:JSON.stringify(body)});
-  ['btn-guardar-top','btn-guardar-cot'].forEach(id=>setBL(id,false,'\uD83D\uDCBE Guardar'));
+  setBL('btn-guardar-top',false,'Guardar');
+  setBL('btn-guardar-cot',false,'Guardar Cotizaci\u00f3n');
   if(isErr(r)){toast(r.msg,'err');return;}
   cots.unshift({...r,cliente_nombre:titulo});sTxt('s-cots',cots.length);
   toast(`Cotizaci\u00f3n ${r.numero} guardada \u2713`,'ok');
@@ -1107,14 +1137,22 @@ function exportarPDF(){
 }
 
 /* Utilidades */
-function openModal(id){document.getElementById(id).classList.add('on');}
+function openModal(id){document.getElementById(id).classList.add('on');refreshIcons();}
 function closeModal(id){document.getElementById(id).classList.remove('on');}
-function setBL(id,load,txt){const b=document.getElementById(id);if(!b)return;b.disabled=load;if(!load&&txt)b.textContent=txt;}
+function setBL(id,load,txt){
+  const b=document.getElementById(id);if(!b)return;
+  b.disabled=!!load;
+  if(load||txt===undefined)return;
+  const lbl=b.querySelector('.btn-lbl');
+  if(lbl)lbl.textContent=txt;
+}
 let toastT;
 function toast(msg,tipo='ok'){
   const el=document.getElementById('toast');
-  el.textContent=(tipo==='ok'?'\u2705 ':'\u274C ')+msg;el.className='show '+tipo;
-  clearTimeout(toastT);toastT=setTimeout(()=>el.className='',4000);
+  const pref=tipo==='ok'?'\u2705 ':tipo==='err'?'\u274C ':tipo==='info'?'\u2728 ':'';
+  el.textContent=pref+msg;
+  el.className='show '+(tipo==='err'?'err':tipo==='info'?'info':'ok');
+  clearTimeout(toastT);toastT=setTimeout(()=>{el.className='';el.textContent='';},tipo==='info'?5000:4000);
 }
 function logout(){localStorage.clear();location.href='index.html';}
 document.querySelectorAll('.modal-bg').forEach(bg=>bg.addEventListener('click',e=>{if(e.target===bg)bg.classList.remove('on');}));
