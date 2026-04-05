@@ -22,6 +22,7 @@ export default async function handler(req, res) {
   try {
     if (req.method==='GET') {
       if (id) {
+        // Detalle completo con todos los datos del cliente para PDF
         const cots = await sql`
           SELECT c.*,
             cl.nombre AS cliente_nombre, cl.empresa AS cliente_empresa,
@@ -49,7 +50,6 @@ export default async function handler(req, res) {
         ORDER BY c.creado_en DESC LIMIT 500`;
       return res.status(200).json(rows);
     }
-
     if (req.method==='POST') {
       const {cliente_id,titulo,descripcion='',items=[],descuento_pct=0,iva_pct=15,notas='',validez_dias=30} = req.body;
       if (!titulo) return res.status(400).json({error:'El título es requerido'});
@@ -68,7 +68,6 @@ export default async function handler(req, res) {
       }
       return res.status(201).json(cot[0]);
     }
-
     if (req.method==='PUT') {
       if (!id) return res.status(400).json({error:'ID requerido'});
       const own = await sql`SELECT id FROM cotizaciones WHERE id=${parseInt(id)} AND usuario_id=${user.id}`;
@@ -77,15 +76,6 @@ export default async function handler(req, res) {
       const r = await sql`UPDATE cotizaciones SET estado=COALESCE(${estado||null},estado),titulo=COALESCE(${titulo||null},titulo),notas=COALESCE(${notas||null},notas),actualizado_en=NOW() WHERE id=${parseInt(id)} RETURNING *`;
       return res.status(200).json(r[0]);
     }
-
-    if (req.method==='DELETE') {
-      if (!id) return res.status(400).json({error:'ID requerido'});
-      const own = await sql`SELECT id FROM cotizaciones WHERE id=${parseInt(id)} AND usuario_id=${user.id}`;
-      if (!own.length) return res.status(403).json({error:'No tienes permiso o la cotización no existe'});
-      await sql`DELETE FROM cotizaciones WHERE id=${parseInt(id)} AND usuario_id=${user.id}`;
-      return res.status(200).json({success:true});
-    }
-
     return res.status(405).json({error:'Método no permitido'});
   } catch(err) { console.error(err); return res.status(500).json({error:err.message}); }
 }
