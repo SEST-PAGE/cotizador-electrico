@@ -1726,7 +1726,11 @@ async function togglePermisoAdmin(userId,darPermiso){
   const permisos=darPermiso?'admin':'vendedor';
   const r=await api(`users/index?id=${userId}`,{method:'PUT',body:JSON.stringify({permisos})});
   if(isErr(r)){toast(r.msg,'err');return;}
-  toast(darPermiso?'Permisos de admin otorgados \u2713':'Permisos revertidos','ok');
+  if(darPermiso){
+    toast('\u2728 Permisos de admin otorgados. El vendedor debe cerrar sesi\u00f3n y volver a entrar para que tome efecto.','info');
+  } else {
+    toast('Permisos revertidos a vendedor normal','ok');
+  }
   cargarUsuarios();
 }
 </script>

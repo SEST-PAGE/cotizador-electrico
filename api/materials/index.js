@@ -6,6 +6,15 @@ function getUser(req) {
   catch { return null; }
 }
 
+async function checkAdmin(sql, userId) {
+  try {
+    await sql`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS permisos VARCHAR(20) DEFAULT 'vendedor'`;
+  } catch(e) {}
+  const rows = await sql`SELECT rol, permisos FROM usuarios WHERE id=${userId}`;
+  if (!rows.length) return false;
+  return rows[0].rol === 'admin' || rows[0].permisos === 'admin';
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin','*');
   res.setHeader('Access-Control-Allow-Methods','GET,POST,PUT,DELETE,OPTIONS');
@@ -44,7 +53,8 @@ export default async function handler(req, res) {
       return res.status(200).json(r[0]);
     }
     if (req.method==='DELETE') {
-      if (user.rol!=='admin') return res.status(403).json({error:'Solo los administradores pueden eliminar materiales'});
+      const isAdmin = await checkAdmin(sql, user.id);
+      if (!isAdmin) return res.status(403).json({error:'Solo los administradores pueden eliminar materiales'});
       if (!id) return res.status(400).json({error:'ID requerido'});
       await sql`UPDATE materiales SET activo=false WHERE id=${parseInt(id)}`;
       return res.status(200).json({success:true});

@@ -13,38 +13,35 @@ export default async function handler(req, res) {
   if (req.method==='OPTIONS') return res.status(204).end();
   const user = getUser(req);
   if (!user) return res.status(401).json({error:'No autorizado'});
-  if (user.rol !== 'admin') return res.status(403).json({error:'Solo administradores pueden gestionar usuarios'});
+
   const sql = getDb();
+  // Ensure permisos column exists
+  try { await sql`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS permisos VARCHAR(20) DEFAULT 'vendedor'`; } catch(e) {}
+
+  // Verify current role/permisos from DB (permisos can change without re-login)
+  const dbUser = await sql`SELECT rol, permisos FROM usuarios WHERE id=${user.id} AND activo=true`;
+  if (!dbUser.length) return res.status(401).json({error:'Usuario no encontrado'});
+  const isAdmin = dbUser[0].rol === 'admin' || dbUser[0].permisos === 'admin';
+  if (!isAdmin) return res.status(403).json({error:'Solo administradores pueden gestionar usuarios'});
+
   const {id} = req.query;
   try {
     if (req.method==='GET') {
-      // Ensure permisos column exists (safe migration)
-      try {
-        await sql`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS permisos VARCHAR(20) DEFAULT 'vendedor'`;
-      } catch(e) {}
       const rows = await sql`SELECT id, nombre, email, rol, permisos, activo, creado_en FROM usuarios ORDER BY creado_en ASC`;
       return res.status(200).json(rows);
     }
     if (req.method==='PUT') {
       if (!id) return res.status(400).json({error:'ID requerido'});
-      if (parseInt(id) === user.id) return res.status(400).json({error:'No puedes modificar tu propio rol'});
+      if (parseInt(id) === user.id) return res.status(400).json({error:'No puedes modificar tu propio rol/permiso'});
       const {rol, permisos} = req.body;
-
-      // Handle permisos update (give/revoke admin-level access to a vendor)
       if (permisos !== undefined) {
-        const validPermisos = ['admin','vendedor'];
-        if (!validPermisos.includes(permisos)) return res.status(400).json({error:'Permiso inválido'});
-        try {
-          await sql`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS permisos VARCHAR(20) DEFAULT 'vendedor'`;
-        } catch(e) {}
+        if (!['admin','vendedor'].includes(permisos)) return res.status(400).json({error:'Permiso inválido'});
         const r = await sql`UPDATE usuarios SET permisos=${permisos} WHERE id=${parseInt(id)} RETURNING id, nombre, email, rol, permisos, activo`;
         if (!r.length) return res.status(404).json({error:'Usuario no encontrado'});
         return res.status(200).json(r[0]);
       }
-
-      // Handle rol update
       if (!['admin','vendedor'].includes(rol)) return res.status(400).json({error:'Rol inválido'});
-      const r = await sql`UPDATE usuarios SET rol=${rol} WHERE id=${parseInt(id)} RETURNING id, nombre, email, rol, activo`;
+      const r = await sql`UPDATE usuarios SET rol=${rol} WHERE id=${parseInt(id)} RETURNING id, nombre, email, rol, permisos, activo`;
       if (!r.length) return res.status(404).json({error:'Usuario no encontrado'});
       return res.status(200).json(r[0]);
     }
