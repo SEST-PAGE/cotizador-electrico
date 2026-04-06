@@ -451,6 +451,57 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
   .item-row .item-fields-grid,
   .adic-row .item-fields-grid{grid-template-columns:60px 1fr 80px!important}
 }
+/* ═══════ DASHBOARD INICIO ═══════ */
+.dash-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+.kpi-card{
+  background:var(--s1);border:1px solid var(--bd);border-radius:16px;
+  padding:20px;display:flex;align-items:flex-start;gap:14px;
+  position:relative;overflow:hidden;cursor:default;
+  transition:transform .2s,border-color .2s,box-shadow .2s;
+}
+.kpi-card:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.15);box-shadow:0 12px 32px rgba(0,0,0,.35)}
+.kpi-main{border-color:rgba(245,200,0,.18);background:linear-gradient(135deg,rgba(245,200,0,.06),var(--s1) 60%)}
+.kpi-icon-wrap{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.kpi-body{flex:1;min-width:0}
+.kpi-lbl{font-size:11px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--t3);margin-bottom:6px}
+.kpi-val{font-size:34px;font-weight:800;color:var(--acc);font-family:'DM Mono',monospace;line-height:1;margin-bottom:4px}
+.kpi-trend{font-size:12px;color:var(--t3)}
+.kpi-bg-ico{position:absolute;right:-8px;bottom:-8px;color:rgba(255,255,255,.03);pointer-events:none}
+.kpi-bg-ico i,.kpi-bg-ico [data-lucide]{width:72px!important;height:72px!important;stroke-width:1}
+/* Estados pill bar */
+.dash-estados-row{display:flex;align-items:center;background:var(--s1);border:1px solid var(--bd);border-radius:14px;padding:14px 20px;margin-bottom:20px;gap:0;flex-wrap:wrap;}
+.dash-estados-divider{width:1px;height:32px;background:var(--bd);margin:0 4px;flex-shrink:0}
+.estado-pill{display:flex;align-items:center;gap:8px;flex:1;min-width:80px;padding:4px 12px;border-radius:8px;transition:background .15s;cursor:default;}
+.estado-pill:hover{background:rgba(255,255,255,.04)}
+.ep-count{font-size:22px;font-weight:800;font-family:'DM Mono',monospace;line-height:1}
+.ep-lbl{font-size:11px;color:var(--t3);font-weight:500;white-space:nowrap}
+.estado-borrador{color:#7070a0}
+.estado-enviada{color:var(--info)}
+.estado-aprobada2{color:var(--ok)}
+.estado-rechazada{color:var(--err)}
+.estado-facturada{color:var(--acc)}
+/* Sección headers */
+.dash-section-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.dash-section-icon{width:28px;height:28px;border-radius:8px;background:rgba(245,200,0,.1);color:var(--acc);display:flex;align-items:center;justify-content:center;}
+.dash-section-title{font-size:14px;font-weight:700;color:var(--t1)}
+/* Tabla recientes */
+.dash-recientes-wrap{background:var(--s1);border:1px solid var(--bd);border-radius:14px;overflow:hidden;margin-bottom:20px;}
+.dash-recientes-wrap table{width:100%;border-collapse:collapse}
+.dash-recientes-wrap thead th{padding:10px 16px;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--t3);text-align:left;border-bottom:1px solid var(--bd);background:var(--s2);}
+.dash-recientes-wrap tbody tr{border-bottom:1px solid rgba(255,255,255,.04);transition:background .1s}
+.dash-recientes-wrap tbody tr:last-child{border-bottom:none}
+.dash-recientes-wrap tbody tr:hover{background:rgba(255,255,255,.03)}
+.dash-recientes-wrap tbody td{padding:11px 16px;font-size:13px;vertical-align:middle}
+/* Quick actions */
+.dash-quick-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:8px}
+.qa-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:20px 12px;background:var(--s1);border:1px solid var(--bd);border-radius:14px;color:var(--t2);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;}
+.qa-btn:hover{color:var(--t1);border-color:rgba(255,255,255,.2);background:var(--s2);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.qa-primary{background:linear-gradient(135deg,rgba(245,200,0,.12),rgba(245,200,0,.04));border-color:rgba(245,200,0,.3);color:var(--acc);}
+.qa-primary:hover{background:linear-gradient(135deg,rgba(245,200,0,.2),rgba(245,200,0,.08));border-color:rgba(245,200,0,.5);color:var(--acc)}
+/* Responsive dashboard */
+@media(max-width:1100px){.dash-kpi-grid{grid-template-columns:repeat(2,1fr)}.dash-quick-actions{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:768px){.dash-kpi-grid{grid-template-columns:repeat(2,1fr);gap:10px}.dash-estados-row{padding:10px}.dash-estados-divider{display:none}.estado-pill{min-width:calc(50% - 8px);padding:6px 8px}.ep-count{font-size:18px}.dash-quick-actions{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.dash-kpi-grid{grid-template-columns:1fr 1fr;gap:8px}.kpi-val{font-size:26px}.kpi-card{padding:14px}.dash-quick-actions{grid-template-columns:1fr 1fr;gap:8px}.qa-btn{padding:14px 8px;font-size:12px}}
 </style>
 </head>
 <body>
@@ -505,16 +556,131 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
 
     <!-- INICIO -->
     <div class="sec on" id="sec-inicio">
-      <div class="stats">
-        <div class="stat"><div class="stat-lbl">Cotizaciones</div><div class="stat-val" id="s-cots">&#8212;</div><div class="stat-sub">Total registradas</div></div>
-        <div class="stat"><div class="stat-lbl">Clientes</div><div class="stat-val" id="s-clis">&#8212;</div><div class="stat-sub">En tu base</div></div>
-        <div class="stat"><div class="stat-lbl">Materiales</div><div class="stat-val" id="s-mats">&#8212;</div><div class="stat-sub">En cat&#225;logo</div></div>
-        <div class="stat"><div class="stat-lbl">Aprobadas</div><div class="stat-val" id="s-apro" style="color:var(--ok)">&#8212;</div><div class="stat-sub">Cotizaciones aprobadas</div></div>
+
+      <!-- KPI CARDS ROW 1: principales -->
+      <div class="dash-kpi-grid">
+        <div class="kpi-card kpi-main" onclick="ir('cotizaciones')" style="cursor:pointer">
+          <div class="kpi-icon-wrap" style="background:rgba(245,200,0,.12);color:var(--acc)">
+            <i data-lucide="file-text" style="width:22px;height:22px"></i>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-lbl">Total Cotizaciones</div>
+            <div class="kpi-val" id="s-cots">—</div>
+            <div class="kpi-trend" id="s-cots-sub">registradas</div>
+          </div>
+          <div class="kpi-bg-ico"><i data-lucide="file-text"></i></div>
+        </div>
+
+        <div class="kpi-card" onclick="ir('clientes')" style="cursor:pointer">
+          <div class="kpi-icon-wrap" style="background:rgba(59,130,246,.12);color:var(--info)">
+            <i data-lucide="users" style="width:22px;height:22px"></i>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-lbl">Clientes</div>
+            <div class="kpi-val" style="color:var(--info)" id="s-clis">—</div>
+            <div class="kpi-trend">en tu base</div>
+          </div>
+          <div class="kpi-bg-ico"><i data-lucide="users"></i></div>
+        </div>
+
+        <div class="kpi-card" onclick="ir('materiales')" style="cursor:pointer">
+          <div class="kpi-icon-wrap" style="background:rgba(168,85,247,.12);color:#c084fc">
+            <i data-lucide="package" style="width:22px;height:22px"></i>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-lbl">Materiales</div>
+            <div class="kpi-val" style="color:#c084fc" id="s-mats">—</div>
+            <div class="kpi-trend">en catálogo</div>
+          </div>
+          <div class="kpi-bg-ico"><i data-lucide="package"></i></div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon-wrap" style="background:rgba(34,197,94,.12);color:var(--ok)">
+            <i data-lucide="check-circle" style="width:22px;height:22px"></i>
+          </div>
+          <div class="kpi-body">
+            <div class="kpi-lbl">Aprobadas</div>
+            <div class="kpi-val" style="color:var(--ok)" id="s-apro">—</div>
+            <div class="kpi-trend">cotizaciones aprobadas</div>
+          </div>
+          <div class="kpi-bg-ico"><i data-lucide="check-circle"></i></div>
+        </div>
       </div>
-      <div class="card">
-        <div class="card-head"><div class="card-title" style="display:flex;align-items:center;gap:8px"><i data-lucide="file-text" style="width:18px;height:18px;stroke-width:2;color:var(--acc)"></i> &#218;ltimas cotizaciones</div><button type="button" class="btn btn-ghost btn-sm" onclick="ir('cotizaciones')">Ver todas <i data-lucide="arrow-right" style="width:14px;height:14px"></i></button></div>
-        <div id="tbl-recientes"><div class="loading"><div class="spin"></div><p>Cargando&#8230;</p></div></div>
+
+      <!-- ESTADOS ROW -->
+      <div class="dash-estados-row">
+        <div class="estado-pill estado-borrador">
+          <i data-lucide="file-edit" style="width:15px;height:15px"></i>
+          <span class="ep-count" id="s-borrador">—</span>
+          <span class="ep-lbl">Borradores</span>
+        </div>
+        <div class="dash-estados-divider"></div>
+        <div class="estado-pill estado-enviada">
+          <i data-lucide="send" style="width:15px;height:15px"></i>
+          <span class="ep-count" id="s-enviada">—</span>
+          <span class="ep-lbl">Enviadas</span>
+        </div>
+        <div class="dash-estados-divider"></div>
+        <div class="estado-pill estado-aprobada2">
+          <i data-lucide="badge-check" style="width:15px;height:15px"></i>
+          <span class="ep-count" id="s-aprobada2">—</span>
+          <span class="ep-lbl">Aprobadas</span>
+        </div>
+        <div class="dash-estados-divider"></div>
+        <div class="estado-pill estado-rechazada">
+          <i data-lucide="x-circle" style="width:15px;height:15px"></i>
+          <span class="ep-count" id="s-rechazada">—</span>
+          <span class="ep-lbl">Rechazadas</span>
+        </div>
+        <div class="dash-estados-divider"></div>
+        <div class="estado-pill estado-facturada">
+          <i data-lucide="receipt" style="width:15px;height:15px"></i>
+          <span class="ep-count" id="s-facturada">—</span>
+          <span class="ep-lbl">Facturadas</span>
+        </div>
       </div>
+
+      <!-- ÚLTIMAS COTIZACIONES -->
+      <div class="dash-section-hd">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="dash-section-icon"><i data-lucide="clock" style="width:16px;height:16px"></i></div>
+          <span class="dash-section-title">Últimas cotizaciones</span>
+        </div>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="ir('cotizaciones')" style="display:flex;align-items:center;gap:6px">
+          Ver todas <i data-lucide="arrow-right" style="width:14px;height:14px"></i>
+        </button>
+      </div>
+      <div class="dash-recientes-wrap">
+        <div id="tbl-recientes"><div class="loading"><div class="spin"></div><p>Cargando…</p></div></div>
+      </div>
+
+      <!-- ACCIONES RÁPIDAS -->
+      <div class="dash-section-hd" style="margin-top:4px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="dash-section-icon"><i data-lucide="zap" style="width:16px;height:16px"></i></div>
+          <span class="dash-section-title">Acciones rápidas</span>
+        </div>
+      </div>
+      <div class="dash-quick-actions">
+        <button type="button" class="qa-btn qa-primary" onclick="abrirNuevaCot()">
+          <i data-lucide="file-plus" style="width:20px;height:20px"></i>
+          <span>Nueva Cotización</span>
+        </button>
+        <button type="button" class="qa-btn" onclick="ir('clientes');setTimeout(()=>abrirModalCli(),100)">
+          <i data-lucide="user-plus" style="width:20px;height:20px"></i>
+          <span>Nuevo Cliente</span>
+        </button>
+        <button type="button" class="qa-btn" onclick="ir('materiales');setTimeout(()=>abrirModalMat(),100)">
+          <i data-lucide="package-plus" style="width:20px;height:20px"></i>
+          <span>Nuevo Material</span>
+        </button>
+        <button type="button" class="qa-btn" onclick="ir('cotizaciones')">
+          <i data-lucide="list-filter" style="width:20px;height:20px"></i>
+          <span>Ver Cotizaciones</span>
+        </button>
+      </div>
+
     </div>
 
     <!-- COTIZACIONES lista -->
@@ -1019,7 +1185,7 @@ async function cargarTodo(){
   if(!isErr(dm)){mats=dm.materiales||[];cats=dm.categorias||[];poblarCats();}
   if(!isErr(dq))cots=Array.isArray(dq)?dq:[];
   sTxt('s-cots',cots.length);sTxt('s-clis',clis.length);sTxt('s-mats',mats.length);
-  sTxt('s-apro',cots.filter(c=>c.estado==='aprobada').length);
+  actualizarContadores();
   renderRecientes();
 }
 function poblarCats(){
@@ -1031,6 +1197,15 @@ function poblarCats(){
   });
 }
 
+function actualizarContadores(){
+  const apro=cots.filter(c=>c.estado==='aprobada').length;
+  sTxt('s-apro',apro);
+  sTxt('s-borrador',cots.filter(c=>c.estado==='borrador').length);
+  sTxt('s-enviada',cots.filter(c=>c.estado==='enviada').length);
+  sTxt('s-aprobada2',apro);
+  sTxt('s-rechazada',cots.filter(c=>c.estado==='rechazada').length);
+  sTxt('s-facturada',cots.filter(c=>c.estado==='facturada').length);
+}
 function renderRecientes(){
   const el=document.getElementById('tbl-recientes'),top=cots.slice(0,8);
   if(!top.length){el.innerHTML='<div class="empty"><div class="empty-ico" style="display:flex;justify-content:center;color:var(--t3)"><i data-lucide="file-text" style="width:36px;height:36px"></i></div><p>Sin cotizaciones a\u00fan</p></div>';refreshIcons();return;}
@@ -1062,7 +1237,7 @@ function tablaCotsHTML(lista,acc){
 }
 async function cambiarEstado(id,estado){
   const r=await api(`quotes/index?id=${id}`,{method:'PUT',body:JSON.stringify({estado})});
-  if(!isErr(r)){const i=cots.findIndex(c=>c.id===id);if(i>=0)cots[i].estado=estado;sTxt('s-apro',cots.filter(c=>c.estado==='aprobada').length);toast('Estado actualizado','ok');}else toast(r.msg,'err');
+  if(!isErr(r)){const i=cots.findIndex(c=>c.id===id);if(i>=0)cots[i].estado=estado;actualizarContadores();toast('Estado actualizado','ok');}else toast(r.msg,'err');
 }
 async function eliminarCot(id,numero){
   if(!confirm(`¿Eliminar la cotización ${numero}?\nEsta acción no se puede deshacer.`))return;
@@ -1070,7 +1245,7 @@ async function eliminarCot(id,numero){
   if(isErr(r)){toast(r.msg||'Error al eliminar','err');return;}
   cots=cots.filter(c=>c.id!==id);
   sTxt('s-cots',cots.length);
-  sTxt('s-apro',cots.filter(c=>c.estado==='aprobada').length);
+  actualizarContadores();
   renderCots(cots);renderRecientes();
   toast(`Cotización ${numero} eliminada`,'ok');
 }
@@ -1622,7 +1797,7 @@ async function guardarCot(){
     if(title)title.innerHTML=`<i data-lucide="pencil" style="width:26px;height:26px;stroke-width:2;color:var(--acc)"></i> ${r.numero}`;
     refreshIcons();
   }
-  sTxt('s-apro',cots.filter(c=>c.estado==='aprobada').length);
+  actualizarContadores();
   renderRecientes();
 }
 function _marcarCotGuardada(numero){
