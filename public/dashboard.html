@@ -193,14 +193,34 @@ body{background:var(--bg);color:var(--t1);font-family:'DM Sans',sans-serif;font-
 .btn-out:hover{border-color:var(--err);color:var(--err)}
 .sidebar.collapsed .btn-out{max-height:0;opacity:0;pointer-events:none;margin:0;padding:0;border-width:0}
 /* HAMBURGER */
-.hamburger{display:none;position:fixed;top:12px;left:12px;z-index:300;background:var(--s1);border:1px solid var(--bd2);border-radius:8px;width:38px;height:38px;align-items:center;justify-content:center;cursor:pointer;color:var(--t1);padding:0}
-.hamburger svg{width:20px;height:20px}
+/* ── Botón menú móvil ── */
+.hamburger{
+  display:none;
+  align-items:center;justify-content:center;
+  width:36px;height:36px;
+  background:transparent;border:none;
+  cursor:pointer;padding:0;
+  color:var(--t2);
+  border-radius:8px;
+  transition:color .15s,background .15s;
+  flex-shrink:0;
+}
+.hamburger:hover{color:var(--acc);background:rgba(245,200,0,.08)}
+/* Icono 3 líneas animado */
+.hbg-icon{width:20px;height:14px;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none}
+.hbg-line{display:block;height:2px;border-radius:2px;background:currentColor;transform-origin:center;transition:transform .28s cubic-bezier(.4,0,.2,1),opacity .2s,width .28s}
+.hbg-line:nth-child(1){width:20px}
+.hbg-line:nth-child(2){width:14px;margin-left:auto}
+.hbg-line:nth-child(3){width:20px}
+.hamburger.open .hbg-line:nth-child(1){transform:translateY(6px) rotate(45deg)}
+.hamburger.open .hbg-line:nth-child(2){opacity:0;transform:scaleX(0)}
+.hamburger.open .hbg-line:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:150;}
 /* MAIN */
 .main{margin-left:var(--sw);min-height:100vh;display:flex;flex-direction:column;transition:margin-left .25s}
 .main.sb-collapsed{margin-left:var(--sw-col)}
-.topbar{background:var(--s1);border-bottom:1px solid var(--bd);padding:0 28px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
-.page-title{font-size:16px;font-weight:700}
+.topbar{background:var(--s1);border-bottom:1px solid var(--bd);padding:0 20px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;gap:10px;}
+.page-title{font-size:16px;font-weight:700;flex:1}
 .content{padding:22px 26px;flex:1}
 .sec{display:none}.sec.on{display:block}
 /* STATS */
@@ -384,29 +404,16 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
   .sb-toggle{display:none}
   .overlay{display:block}.hamburger{display:flex}
   .main{margin-left:0!important}.content{padding:12px 10px}
-  .topbar{padding:0 10px 0 54px}
+  .topbar{padding:0 12px}
   .fg{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}
   .card-head,.nc-card-head{flex-direction:column;align-items:flex-start}
   .card-tools{width:100%}
   .inp-search{width:100%!important}
   .cot-tabs{width:100%;overflow-x:auto;flex-wrap:nowrap}
   .cot-tab{flex:1;justify-content:center;padding:8px 6px;font-size:11px;min-width:0}
-  .cot-tab span,.cot-tab i{flex-shrink:0}
   .g5{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr}
   .icols{display:none}
-  /* item rows en mobile: descripción + botón borrar en top, luego cant/unidad/precio */
-  .item-row,.adic-row{
-    grid-template-columns:1fr auto;
-    grid-template-rows:auto auto;
-    gap:4px;
-    padding:8px;
-  }
-  .item-row > *:nth-child(1),.adic-row > *:nth-child(1){grid-column:1;grid-row:1}
-  .item-row > *:nth-child(7),.adic-row > *:nth-child(7){grid-column:2;grid-row:1;align-self:center}
-  .item-row > *:nth-child(2),.item-row > *:nth-child(3),.item-row > *:nth-child(4),.item-row > *:nth-child(5),.item-row > *:nth-child(6){grid-column:1/-1;grid-row:2}
-  .item-mobile-row{display:flex;gap:5px;flex-wrap:wrap;width:100%}
-  .item-mobile-row .item-inp{flex:1;min-width:60px}
-  .item-total{text-align:left;font-size:13px;padding:2px 0}
+  .item-row,.adic-row{display:flex;flex-direction:column;gap:6px;padding:8px}
   table{display:block;overflow-x:auto}
   .modal-bg{padding:8px}.modal,.modal-xl{max-width:100%}
   .nc-header{flex-direction:column;align-items:flex-start;gap:8px}
@@ -437,8 +444,8 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
 @media(max-width:360px){
   .content{padding:6px 4px}
   .nc-card-body{padding:8px}
-  .topbar{padding:0 6px 0 50px}
-  .page-title{font-size:14px}
+  .topbar{padding:0 8px}
+  .page-title{font-size:13px}
   .cot-tab{font-size:9px;padding:6px 3px}
   /* item inner grid a 2 cols en pantallas muy pequeñas */
   .item-row .item-fields-grid,
@@ -447,7 +454,7 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
 </style>
 </head>
 <body>
-<button type="button" class="hamburger" id="hamburger" onclick="toggleSidebar()" aria-label="Menú"><i data-lucide="menu"></i></button>
+
 <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 <nav class="sidebar" id="sidebar">
   <div class="sb-brand">
@@ -481,7 +488,19 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
   </div>
 </nav>
 <div class="main" id="main-content">
-  <div class="topbar"><div class="page-title" id="page-title">Inicio</div><div id="topbar-actions"></div></div>
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:10px">
+      <button type="button" class="hamburger" id="hamburger" onclick="toggleSidebar()" aria-label="Menú">
+        <span class="hbg-icon">
+          <span class="hbg-line"></span>
+          <span class="hbg-line"></span>
+          <span class="hbg-line"></span>
+        </span>
+      </button>
+      <div class="page-title" id="page-title">Inicio</div>
+    </div>
+    <div id="topbar-actions"></div>
+  </div>
   <div class="content">
 
     <!-- INICIO -->
@@ -912,8 +931,20 @@ function textoResumenIva(todos,descPct,ivaVal,net){
   if(neo&&!String(neo.value||'').trim())neo.value=usuario.nombre||'';
 })();
 
-function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('overlay').style.display=document.getElementById('sidebar').classList.contains('open')?'block':'none';}
-function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').style.display='none';}
+function toggleSidebar(){
+  const sb=document.getElementById('sidebar');
+  const hb=document.getElementById('hamburger');
+  sb.classList.toggle('open');
+  const isOpen=sb.classList.contains('open');
+  if(hb)hb.classList.toggle('open',isOpen);
+  document.getElementById('overlay').style.display=isOpen?'block':'none';
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  const hb=document.getElementById('hamburger');
+  if(hb)hb.classList.remove('open');
+  document.getElementById('overlay').style.display='none';
+}
 function toggleCollapse(){
   const sb=document.getElementById('sidebar');
   const main=document.getElementById('main-content');
