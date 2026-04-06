@@ -14,9 +14,20 @@ export default async function handler(req, res) {
   const user = getUser(req);
   if (!user) return res.status(401).json({error:'No autorizado'});
   const sql = getDb();
-  const {id} = req.query;
+  try { await sql`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS compartir_datos BOOLEAN DEFAULT false`; } catch(e) {}
+  const {id, equipo} = req.query;
   try {
     if (req.method==='GET') {
+      // Equipo mode: return clients from users who have compartir_datos=true
+      if (equipo === '1') {
+        const rows = await sql`
+          SELECT c.*, u.nombre AS usuario_nombre
+          FROM clientes c
+          JOIN usuarios u ON c.usuario_id=u.id
+          WHERE u.compartir_datos=true
+          ORDER BY c.nombre ASC LIMIT 500`;
+        return res.status(200).json(rows);
+      }
       const rows = await sql`SELECT * FROM clientes WHERE usuario_id=${user.id} ORDER BY nombre ASC LIMIT 500`;
       return res.status(200).json(rows);
     }

@@ -149,7 +149,8 @@
     }
 
     @media (max-width: 768px) {
-      .panel-form { width: 100%; padding: 32px 24px; }
+      .panel-form { width: 100%; padding: 32px 24px; align-items: center; }
+      .form-container { max-width: 400px; margin: 0 auto; }
     }
 
     .form-container { width: 100%; }
@@ -163,8 +164,13 @@
       font-weight: 900;
       color: var(--amarillo);
       margin-bottom: 24px;
+      text-align: center;
     }
-    @media (max-width: 768px) { .logo-mobile { display: block; } }
+    @media (max-width: 768px) { 
+      .logo-mobile { display: block; }
+      .form-header { text-align: center; }
+      .tabs { justify-content: center; }
+    }
 
     .form-title {
       font-family: 'Barlow Condensed', sans-serif;
@@ -361,7 +367,7 @@
   <!-- Panel de formulario -->
   <div class="panel-form">
     <div class="form-container">
-      <div class="logo-mobile">⚡ SEST</div>
+      <div class="logo-mobile"><img src="logo.jpg" alt="SEST" style="width:70px;height:70px;border-radius:12px;object-fit:cover;box-shadow:0 0 24px rgba(245,200,0,.25);display:block;margin:0 auto 8px"/> SEST</div>
 
       <div class="form-header">
         <div class="form-title" id="form-title">Bienvenido</div>

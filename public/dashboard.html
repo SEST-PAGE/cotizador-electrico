@@ -46,6 +46,9 @@ body{background:var(--bg);color:var(--t1);font-family:'DM Sans',sans-serif;font-
 .role-badge{display:inline-block;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;}
 .r-admin{background:rgba(245,200,0,.15);color:var(--acc)}
 .r-vendedor{background:var(--info-d);color:var(--info)}
+.r-admin-delegado{background:rgba(168,85,247,.15);color:#c084fc}
+.role-icon{display:inline-flex;align-items:center;gap:4px}
+.role-icon svg{width:13px;height:13px;flex-shrink:0}
 .btn-out{width:100%;margin-top:8px;background:transparent;border:1px solid var(--bd2);color:var(--t2);padding:8px;border-radius:var(--r);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;transition:all .15s;}
 .btn-out:hover{border-color:var(--err);color:var(--err)}
 /* HAMBURGER */
@@ -238,6 +241,7 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
   .overlay{display:block}.hamburger{display:flex}
   .main{margin-left:0}.content{padding:12px 10px}
   .topbar{padding:0 10px 0 54px}
+  .sb-brand{padding-left:54px}
   .fg{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}
   .card-head,.nc-card-head{flex-direction:column;align-items:flex-start}
   .card-tools{width:100%}
@@ -271,6 +275,7 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
     <div class="nav-item" data-nav="clientes" onclick="ir('clientes')"><span class="nav-ico"><i data-lucide="users"></i></span> Clientes</div>
     <div class="nav-item admin-only" data-nav="categorias" onclick="ir('categorias')" style="display:none"><span class="nav-ico"><i data-lucide="tag"></i></span> Categor&#237;as</div>
     <div class="nav-item admin-only" data-nav="usuarios" onclick="ir('usuarios')" style="display:none"><span class="nav-ico"><i data-lucide="shield"></i></span> Usuarios</div>
+    <div class="nav-item" data-nav="equipo" onclick="ir('equipo')"><span class="nav-ico"><i data-lucide="users-2"></i></span> Equipo</div>
   </div>
   <div class="sb-foot">
     <div class="user-card">
@@ -370,6 +375,7 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
                 </div>
               </div>
               <div class="nc-card-body">
+                <input type="hidden" id="nc-cliente-id" value=""/>
                 <div class="g5">
                   <div class="fld"><label>N&#176; Cotizaci&#243;n</label><input id="nc-numero" readonly style="background:var(--s3);color:var(--acc);font-family:'DM Mono',monospace;font-size:12px;font-weight:700"/></div>
                   <div class="fld"><label>Fecha</label><input type="date" id="nc-fecha"/></div>
@@ -538,6 +544,39 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
       </div>
     </div>
 
+    <!-- EQUIPO (datos compartidos) -->
+    <div class="sec" id="sec-equipo">
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-head">
+          <div class="card-title" style="display:flex;align-items:center;gap:8px"><i data-lucide="users-2" style="width:18px;height:18px;stroke-width:2;color:var(--acc)"></i> Datos del Equipo</div>
+          <div class="card-tools">
+            <div style="display:flex;align-items:center;gap:8px;background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:6px 12px">
+              <span style="font-size:12px;color:var(--t2)">Compartir mis datos:</span>
+              <div id="eq-share-toggle" onclick="toggleCompartirDatos()" style="width:36px;height:20px;border-radius:99px;background:var(--s4);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;border:1px solid var(--bd2)">
+                <div id="eq-share-knob" style="position:absolute;top:3px;left:3px;width:12px;height:12px;border-radius:50%;background:var(--t3);transition:left .2s"></div>
+              </div>
+              <span id="eq-share-lbl" style="font-size:12px;color:var(--t3);font-weight:600">Desactivado</span>
+            </div>
+          </div>
+        </div>
+        <div style="padding:10px 18px;font-size:12px;color:var(--t3);border-bottom:1px solid var(--bd)">
+          Al activar, tus cotizaciones y clientes ser&#225;n visibles para todos los miembros del equipo. Los datos de otros usuarios que han compartido tambi&#233;n aparecer&#225;n aqu&#237;.
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title" style="display:flex;align-items:center;gap:8px"><i data-lucide="file-text" style="width:16px;height:16px;color:var(--acc)"></i> Cotizaciones compartidas</div>
+        </div>
+        <div class="tbl-wrap" id="tbl-eq-cots"><div class="loading"><div class="spin"></div><p>Cargando&#8230;</p></div></div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title" style="display:flex;align-items:center;gap:8px"><i data-lucide="users" style="width:16px;height:16px;color:var(--acc)"></i> Clientes compartidos</div>
+        </div>
+        <div class="tbl-wrap" id="tbl-eq-clis"><div class="loading"><div class="spin"></div><p>Cargando&#8230;</p></div></div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -655,10 +694,23 @@ function textoResumenIva(todos,descPct,ivaVal,net){
   try{usuario=JSON.parse(localStorage.getItem('usuario'));}catch{}
   if(!usuario){location.href='index.html';return;}
   isAdmin=usuario.rol==='admin'||usuario.permisos==='admin';
+  const isPrincipalAdmin=usuario.rol==='admin';
   document.getElementById('user-nm').textContent=usuario.nombre;
   document.getElementById('user-av').textContent=usuario.nombre[0].toUpperCase();
-  const rb=document.getElementById('role-badge');rb.textContent=usuario.rol;rb.className='role-badge '+(usuario.rol==='admin'?'r-admin':'r-vendedor');
-  if(isAdmin){document.querySelectorAll('.admin-only').forEach(el=>el.style.display='flex');}
+  const rb=document.getElementById('role-badge');
+  if(usuario.rol==='admin'){
+    rb.innerHTML=`<span class="role-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 4l3 12h14l3-12-6 7.5L12 4l-4 7.5z"/></svg> Admin Principal</span>`;
+    rb.className='role-badge r-admin';
+  } else if(usuario.permisos==='admin'){
+    rb.innerHTML=`<span class="role-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Acceso Admin</span>`;
+    rb.className='role-badge r-admin-delegado';
+  } else {
+    rb.innerHTML=`<span class="role-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Vendedor</span>`;
+    rb.className='role-badge r-vendedor';
+  }
+  // admin-only nav: categorias visible to isAdmin, usuarios only to principal admin
+  if(isAdmin){document.querySelectorAll('.admin-only[data-nav="categorias"]').forEach(el=>el.style.display='flex');}
+  if(isPrincipalAdmin){document.querySelectorAll('.admin-only[data-nav="usuarios"]').forEach(el=>el.style.display='flex');}
   cargarTodo();
   refreshIcons();
   const neo=document.getElementById('nc-elaborado');
@@ -677,7 +729,7 @@ function ir(sec){
   document.querySelectorAll('.nav-item[data-nav]').forEach(n=>n.classList.toggle('on',n.dataset.nav===sec));
   const secEl=document.getElementById('sec-'+sec);
   if(secEl)secEl.classList.add('on');
-  const tit={inicio:'Inicio',cotizaciones:'Mis Cotizaciones','nueva-cot':'Nueva Cotizaci\u00f3n',materiales:'Cat\u00e1logo de Materiales',clientes:'Mis Clientes',categorias:'Categor\u00edas',usuarios:'Gesti\u00f3n de Usuarios'};
+  const tit={inicio:'Inicio',cotizaciones:'Mis Cotizaciones','nueva-cot':'Nueva Cotizaci\u00f3n',materiales:'Cat\u00e1logo de Materiales',clientes:'Mis Clientes',categorias:'Categor\u00edas',usuarios:'Gesti\u00f3n de Usuarios',equipo:'Datos del Equipo'};
   document.getElementById('page-title').textContent=tit[sec]||sec;
   closeSidebar();
   if(sec==='materiales')renderMats(mats);
@@ -685,6 +737,7 @@ function ir(sec){
   if(sec==='cotizaciones')renderCots(cots);
   if(sec==='categorias')renderCatsAdmin();
   if(sec==='usuarios')cargarUsuarios();
+  if(sec==='equipo')cargarEquipo();
   if(sec==='nueva-cot'){
     renderNcMats();
     const neo=document.getElementById('nc-elaborado');
@@ -947,15 +1000,27 @@ function abrirNuevaCot(matId=null){
 }
 
 function limpiarCot(mostrarAviso){
-  cotItems=[];cotAdic=[];
+  cotItems=[];cotAdic=[];cotEditandoId=null;
   sSet('nc-numero',genNum());sSet('nc-fecha',new Date().toISOString().split('T')[0]);
   sSet('nc-validez','30');sSet('nc-cliente','');sSet('nc-ruc','');sSet('nc-telefono','');
   sSet('nc-email','');sSet('nc-direccion','');sSet('nc-descripcion','');
   sSet('nc-descuento','0');sSet('nc-notas','');sSet('nc-bi','');
-  sSet('nc-elaborado',usuario?.nombre||'');
+  sSet('nc-elaborado',usuario?.nombre||'');sSet('nc-cliente-id','');
   const d=document.getElementById('nc-results-drop');if(d)d.style.display='none';
+  // Reset button state
+  ['btn-guardar-top','btn-guardar-cot'].forEach(id=>{
+    const b=document.getElementById(id);if(!b)return;
+    b.disabled=false;b.style.background='';
+    const lbl=b.querySelector('.btn-lbl');
+    if(lbl)lbl.textContent=id==='btn-guardar-cot'?'Guardar Cotizaci\u00f3n':'Guardar';
+  });
+  const eyebrow=document.querySelector('.nc-eyebrow');
+  const title=document.querySelector('.nc-title');
+  if(eyebrow)eyebrow.textContent='Crear cotizaci\u00f3n';
+  if(title)title.innerHTML=`<i data-lucide="banknote" style="width:26px;height:26px;stroke-width:2;color:var(--acc)"></i> NUEVA COTIZACI\u00d3N`;
   renderItems();renderAdic();calcTotals();
   if(mostrarAviso)toast('Cotizaci\u00f3n limpiada: se quitaron \u00edtems, datos del cliente y totales.','info');
+  refreshIcons();
 }
 
 /* Base de materiales */
@@ -1114,6 +1179,7 @@ function buscarClienteNc(){
 }
 function seleccionarClienteNc(id){
   const c=clis.find(x=>x.id===id);if(!c)return;
+  sSet('nc-cliente-id',c.id);
   sSet('nc-cliente',c.nombre+(c.empresa?` / ${c.empresa}`:''));
   sSet('nc-ruc',c.ruc_cedula||'');
   sSet('nc-telefono',c.telefono||'');
@@ -1124,7 +1190,7 @@ function seleccionarClienteNc(id){
   toast(`Cliente "${c.nombre}" seleccionado \u2713`,'ok');
 }
 function limpiarClienteNc(){
-  sSet('nc-cliente','');sSet('nc-ruc','');sSet('nc-telefono','');sSet('nc-email','');sSet('nc-direccion','');sSet('nc-cli-buscar','');
+  sSet('nc-cliente','');sSet('nc-ruc','');sSet('nc-telefono','');sSet('nc-email','');sSet('nc-direccion','');sSet('nc-cli-buscar','');sSet('nc-cliente-id','');
   document.getElementById('nc-cli-drop').style.display='none';
 }
 document.addEventListener('click',e=>{
@@ -1142,6 +1208,7 @@ async function prepEditarCot(id){
   sSet('nc-numero',r.numero);
   sSet('nc-fecha',(r.creado_en||new Date().toISOString()).split('T')[0]);
   sSet('nc-validez',r.validez_dias||30);
+  sSet('nc-cliente-id',r.cliente_id||'');
   sSet('nc-cliente',r.cliente_nombre||r.titulo||'');
   sSet('nc-ruc',r.cliente_ruc||'');
   sSet('nc-telefono',r.cliente_telefono||'');
@@ -1279,8 +1346,10 @@ async function guardarCot(){
   const net=sub-dv;
   const ivaVal=ivaValorDesdeLineas(todos,descPct);
   const ivaPct=net>0.001?Math.round((ivaVal/net)*1000)/10:0;
-  const notas=[sGet('nc-forma-pago')?`Forma de pago: ${sGet('nc-forma-pago')}`:'',sGet('nc-notas').trim(),sGet('nc-descripcion').trim()].filter(Boolean).join('\n');
-  const body={titulo,descripcion:sGet('nc-descripcion').trim(),notas,descuento_pct:descPct,iva_pct:ivaPct,validez_dias:parseInt(sGet('nc-validez'))||30,items:todos};
+  const notas=[sGet('nc-forma-pago')?`Forma de pago: ${sGet('nc-forma-pago')}`:'',sGet('nc-notas').trim()].filter(Boolean).join('\n');
+  const clienteIdRaw=sGet('nc-cliente-id');
+  const clienteId=clienteIdRaw?parseInt(clienteIdRaw):null;
+  const body={titulo,descripcion:sGet('nc-descripcion').trim(),notas,descuento_pct:descPct,iva_pct:ivaPct,validez_dias:parseInt(sGet('nc-validez'))||30,items:todos,cliente_id:clienteId};
   ['btn-guardar-top','btn-guardar-cot'].forEach(id=>setBL(id,true));
   let r;
   if(cotEditandoId){
@@ -1295,18 +1364,31 @@ async function guardarCot(){
     const i=cots.findIndex(c=>c.id===cotEditandoId);
     if(i>=0)cots[i]={...cots[i],...r,cliente_nombre:titulo};
     toast(`Cotizaci\u00f3n ${r.numero||sGet('nc-numero')} actualizada \u2713`,'ok');
-    cotEditandoId=null;
+    // Keep editing same quote — show updated state
+    _marcarCotGuardada(r.numero||sGet('nc-numero'));
+  } else {
+    // NEW save: lock in as editing this quote to prevent re-creation
+    cotEditandoId=r.id;
+    cots.unshift({...r,cliente_nombre:titulo});
+    sTxt('s-cots',cots.length);
+    toast(`Cotizaci\u00f3n ${r.numero} guardada \u2713 — puedes seguir editando y actualizar`,'ok');
+    _marcarCotGuardada(r.numero);
     const eyebrow=document.querySelector('.nc-eyebrow');
     const title=document.querySelector('.nc-title');
-    if(eyebrow)eyebrow.textContent='Crear cotizaci\u00f3n';
-    if(title)title.innerHTML=`<i data-lucide="banknote" style="width:26px;height:26px;stroke-width:2;color:var(--acc)"></i> NUEVA COTIZACI\u00d3N`;
+    if(eyebrow)eyebrow.textContent='Editando cotizaci\u00f3n';
+    if(title)title.innerHTML=`<i data-lucide="pencil" style="width:26px;height:26px;stroke-width:2;color:var(--acc)"></i> ${r.numero}`;
     refreshIcons();
-  } else {
-    cots.unshift({...r,cliente_nombre:titulo});sTxt('s-cots',cots.length);
-    toast(`Cotizaci\u00f3n ${r.numero} guardada \u2713`,'ok');
   }
   sTxt('s-apro',cots.filter(c=>c.estado==='aprobada').length);
   renderRecientes();
+}
+function _marcarCotGuardada(numero){
+  ['btn-guardar-top','btn-guardar-cot'].forEach(id=>{
+    const b=document.getElementById(id);if(!b)return;
+    const lbl=b.querySelector('.btn-lbl');
+    const txt=`\u2713 Actualizar ${numero}`;
+    if(lbl)lbl.textContent=txt;else b.textContent=txt;
+  });
 }
 
 function esperarImagenesEn(root){
@@ -1699,39 +1781,84 @@ async function guardarCat(){
 
 /* ═══════════ USUARIOS (admin) ═══════════ */
 let usuarios=[];
+function rolIconHTML(u){
+  if(u.rol==='admin'){
+    return`<span class="role-badge r-admin role-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:3px"><path d="M2 4l3 12h14l3-12-6 7.5L12 4l-4 7.5z"/></svg>Admin Principal</span>`;
+  } else if(u.permisos==='admin'){
+    return`<span class="role-badge r-admin-delegado role-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:3px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Acceso Admin</span>`;
+  }
+  return`<span class="role-badge r-vendedor role-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:3px"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Vendedor</span>`;
+}
 async function cargarUsuarios(){
   const el=document.getElementById('tbl-usuarios');if(!el)return;
   el.innerHTML='<div class="loading"><div class="spin"></div><p>Cargando\u2026</p></div>';
   const r=await api('users/index');
   if(isErr(r)){el.innerHTML=`<div class="empty"><p>${r.msg}</p></div>`;return;}
   usuarios=r;
-  el.innerHTML=`<table><thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Permisos</th><th>Estado</th></tr></thead>
+  const isPrincipalAdmin=usuario?.rol==='admin';
+  el.innerHTML=`<table><thead><tr><th>Nombre</th><th>Email</th><th>Rol / Nivel</th><th>Acceso Admin</th><th>Compartir datos</th><th>Estado</th></tr></thead>
   <tbody>${usuarios.map(u=>`<tr>
     <td style="font-weight:600">${u.nombre}</td>
     <td style="color:var(--t3);font-size:13px">${u.email}</td>
-    <td><span class="role-badge ${u.rol==='admin'?'r-admin':'r-vendedor'}">${u.rol}</span></td>
+    <td>${rolIconHTML(u)}</td>
     <td>${u.rol!=='admin'?`<div style="display:flex;align-items:center;gap:8px">
-      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--t2)">
-        <div onclick="togglePermisoAdmin(${u.id},${u.permisos==='admin'?'false':'true'})"
-          style="width:36px;height:20px;border-radius:99px;background:${u.permisos==='admin'?'var(--ok)':'var(--s4)'};position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;border:1px solid var(--bd2)">
-          <div style="position:absolute;top:3px;left:${u.permisos==='admin'?'18':'3'}px;width:12px;height:12px;border-radius:50%;background:${u.permisos==='admin'?'#fff':'var(--t3)'};transition:left .2s"></div>
-        </div>
-        <span style="color:${u.permisos==='admin'?'var(--ok)':'var(--t3)'};">${u.permisos==='admin'?'Acceso admin':'Vendedor normal'}</span>
-      </label>
-    </div>`:`<span style="font-size:12px;color:var(--t3)">Administrador completo</span>`}</td>
+      ${isPrincipalAdmin?`<div onclick="togglePermisoAdmin(${u.id},${u.permisos==='admin'?'false':'true'})"
+        style="width:36px;height:20px;border-radius:99px;background:${u.permisos==='admin'?'rgba(192,132,252,.4)':'var(--s4)'};position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;border:1px solid var(--bd2)">
+        <div style="position:absolute;top:3px;left:${u.permisos==='admin'?'18':'3'}px;width:12px;height:12px;border-radius:50%;background:${u.permisos==='admin'?'#c084fc':'var(--t3)'};transition:left .2s"></div>
+      </div>
+      <span style="color:${u.permisos==='admin'?'#c084fc':'var(--t3)'};font-size:12px;font-weight:600">${u.permisos==='admin'?'Con acceso':'Sin acceso'}</span>`
+      :`<span style="font-size:12px;color:var(--t3)">Solo el admin principal puede cambiar</span>`}
+    </div>`:`<span style="font-size:12px;color:var(--t3)">Es administrador principal</span>`}</td>
+    <td><div style="display:flex;align-items:center;gap:6px">
+      <div style="width:10px;height:10px;border-radius:50%;background:${u.compartir_datos?'var(--ok)':'var(--s4)'}"></div>
+      <span style="font-size:12px;color:${u.compartir_datos?'var(--ok)':'var(--t3)'};">${u.compartir_datos?'Activo':'Inactivo'}</span>
+    </div></td>
     <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${u.activo?'var(--ok)':'var(--err)'};margin-right:6px"></span>${u.activo?'Activo':'Inactivo'}</td>
   </tr>`).join('')}</tbody></table>`;
 }
 async function togglePermisoAdmin(userId,darPermiso){
+  if(usuario?.rol!=='admin'){toast('Solo el administrador principal puede cambiar permisos','err');return;}
   const permisos=darPermiso?'admin':'vendedor';
   const r=await api(`users/index?id=${userId}`,{method:'PUT',body:JSON.stringify({permisos})});
   if(isErr(r)){toast(r.msg,'err');return;}
-  if(darPermiso){
-    toast('\u2728 Permisos de admin otorgados. El vendedor debe cerrar sesi\u00f3n y volver a entrar para que tome efecto.','info');
-  } else {
-    toast('Permisos revertidos a vendedor normal','ok');
-  }
+  toast(darPermiso?'\u2728 Acceso admin otorgado. El usuario debe re-iniciar sesi\u00f3n.':'Acceso revertido a vendedor','ok');
   cargarUsuarios();
+}
+
+/* ═══════════ EQUIPO (datos compartidos) ═══════════ */
+let miCompartir=false;
+async function cargarEquipo(){
+  const ru=await api('users/index');
+  if(!isErr(ru)){const yo=ru.find(u=>u.id===usuario?.id);if(yo){miCompartir=!!(yo.compartir_datos);_actualizarToggleCompartir();}}
+  const [rq,rc]=await Promise.all([api('quotes/index?equipo=1'),api('clients/index?equipo=1')]);
+  const tblCots=document.getElementById('tbl-eq-cots');
+  if(tblCots){
+    if(isErr(rq)||!Array.isArray(rq)||!rq.length){tblCots.innerHTML='<div class="empty"><div class="empty-ico" style="display:flex;justify-content:center;color:var(--t3)"><i data-lucide="file-text" style="width:36px;height:36px"></i></div><p>Ning\u00fan usuario ha compartido cotizaciones todav\u00eda</p></div>';}
+    else{tblCots.innerHTML=tablaCotsHTML(rq,false);}
+    refreshIcons();
+  }
+  const tblClis=document.getElementById('tbl-eq-clis');
+  if(tblClis){
+    if(isErr(rc)||!Array.isArray(rc)||!rc.length){tblClis.innerHTML='<div class="empty"><div class="empty-ico" style="display:flex;justify-content:center;color:var(--t3)"><i data-lucide="users" style="width:36px;height:36px"></i></div><p>Ning\u00fan usuario ha compartido clientes todav\u00eda</p></div>';}
+    else{tblClis.innerHTML=`<table><thead><tr><th>Nombre</th><th>Empresa</th><th>Tel\u00e9fono</th><th>Email</th><th>Compartido por</th></tr></thead><tbody>${rc.map(c=>`<tr><td style="font-weight:500">${c.nombre}</td><td style="color:var(--t2)">${c.empresa||'\u2014'}</td><td style="color:var(--t3)">${c.telefono||'\u2014'}</td><td style="color:var(--t3)">${c.email||'\u2014'}</td><td style="font-size:12px;color:var(--t3)">${c.usuario_nombre||'\u2014'}</td></tr>`).join('')}</tbody></table>`;}
+    refreshIcons();
+  }
+}
+function _actualizarToggleCompartir(){
+  const tog=document.getElementById('eq-share-toggle');
+  const knob=document.getElementById('eq-share-knob');
+  const lbl=document.getElementById('eq-share-lbl');
+  if(tog)tog.style.background=miCompartir?'var(--ok)':'var(--s4)';
+  if(knob){knob.style.left=miCompartir?'18px':'3px';knob.style.background=miCompartir?'#fff':'var(--t3)';}
+  if(lbl){lbl.textContent=miCompartir?'Activado':'Desactivado';lbl.style.color=miCompartir?'var(--ok)':'var(--t3)';}
+}
+async function toggleCompartirDatos(){
+  const nuevo=!miCompartir;
+  const r=await api(`users/index?id=${usuario?.id}`,{method:'PUT',body:JSON.stringify({compartir_datos:nuevo})});
+  if(isErr(r)){toast(r.msg||'Error al cambiar','err');return;}
+  miCompartir=nuevo;_actualizarToggleCompartir();
+  toast(nuevo?'\u2728 Tus datos ahora son visibles para el equipo':'Datos privados. Ya no se comparten.','info');
+  cargarEquipo();
 }
 </script>
 </body>
