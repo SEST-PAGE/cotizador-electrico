@@ -1209,52 +1209,117 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
       <!-- ══════════ TAB 2: BALANCE DE CARGAS ══════════ -->
       <div id="calctab-cargas" data-calctab="cargas" style="display:none">
 
-        <div class="card" style="margin-bottom:16px">
+        <div class="card" style="margin-bottom:16px" id="bc-main-card">
+          <!-- HEADER -->
           <div class="card-head" style="flex-wrap:wrap;gap:12px">
             <div class="card-title" style="display:flex;align-items:center;gap:8px">
-              <i data-lucide="zap" style="width:18px;height:18px;stroke-width:2;color:var(--acc)"></i>
-              Balance de Cargas y Factor de Simultaneidad
+              <i data-lucide="layout-dashboard" style="width:18px;height:18px;stroke-width:2;color:var(--acc)"></i>
+              Balance de Cargas — Tablero El&#233;ctrico
             </div>
-            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-              <div class="calc-radio-group" id="bc-sistema-grp" style="height:36px">
-                <button type="button" class="calc-radio-btn" data-bcsys="120/240" onclick="setBcSistema('120/240')"><i data-lucide="home" style="width:12px;height:12px"></i> 120/240V</button>
-                <button type="button" class="calc-radio-btn on" data-bcsys="120" onclick="setBcSistema('120')"><i data-lucide="plug" style="width:12px;height:12px"></i> 120V</button>
-                <button type="button" class="calc-radio-btn" data-bcsys="220" onclick="setBcSistema('220')"><i data-lucide="zap" style="width:12px;height:12px"></i> 220V</button>
-                <button type="button" class="calc-radio-btn" data-bcsys="380" onclick="setBcSistema('380')"><i data-lucide="activity" style="width:12px;height:12px"></i> 380V 3F</button>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <div id="bc-project-badge" class="bc-project-badge" onclick="abrirModalBalances()" title="Proyectos guardados">
+                <i data-lucide="folder-open" style="width:13px;height:13px"></i>
+                <span id="bc-project-name-lbl">Sin proyecto</span>
               </div>
-              <button type="button" class="btn btn-acc" onclick="agregarCarga()" style="height:36px;white-space:nowrap">
+              <button type="button" class="btn btn-acc" onclick="agregarCarga()" style="height:34px;white-space:nowrap">
                 <i data-lucide="plus" style="width:15px;height:15px"></i> Agregar carga
               </button>
             </div>
           </div>
 
-          <div style="padding:0 16px 14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;border-bottom:1px solid var(--bd)">
-            <span style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--t3)">Presets:</span>
-            <button type="button" class="bc-preset-btn" onclick="presetResidencial()"><span>🏠</span><span>Residencial</span></button>
-            <button type="button" class="bc-preset-btn" onclick="presetComercial()"><span>🏢</span><span>Comercial</span></button>
-            <button type="button" class="bc-preset-btn" onclick="presetIndustrial()"><span>🏭</span><span>Industrial</span></button>
-            <button type="button" class="bc-preset-btn" onclick="limpiarCargas()" style="color:var(--err);border-color:rgba(239,68,68,.25)"><span>🗑</span><span>Limpiar</span></button>
+          <!-- CONFIGURACI&#211;N GLOBAL DEL TABLERO -->
+          <div class="bc-enhanced-header">
+            <div class="bc-config-field">
+              <label class="bc-config-lbl"><i data-lucide="zap" style="width:11px;height:11px"></i> Sistema / Voltaje</label>
+              <div class="calc-radio-group" id="bc-sistema-grp" style="height:34px">
+                <button type="button" class="calc-radio-btn" data-bcsys="120/240" onclick="setBcSistema('120/240')"><i data-lucide="home" style="width:11px;height:11px"></i> 120/240V</button>
+                <button type="button" class="calc-radio-btn on" data-bcsys="120" onclick="setBcSistema('120')"><i data-lucide="plug" style="width:11px;height:11px"></i> 120V</button>
+                <button type="button" class="calc-radio-btn" data-bcsys="220" onclick="setBcSistema('220')"><i data-lucide="zap" style="width:11px;height:11px"></i> 220V</button>
+                <button type="button" class="calc-radio-btn" data-bcsys="380" onclick="setBcSistema('380')"><i data-lucide="activity" style="width:11px;height:11px"></i> 380V 3F</button>
+              </div>
+            </div>
+            <div class="bc-config-field">
+              <label class="bc-config-lbl"><i data-lucide="building" style="width:11px;height:11px"></i> Nombre del proyecto</label>
+              <input class="bc-config-inp" id="bc-proyecto-nombre" placeholder="Ej: Tablero Residencial Casa 1" style="width:100%"/>
+            </div>
+            <div class="bc-config-field">
+              <label class="bc-config-lbl"><i data-lucide="user" style="width:11px;height:11px"></i> Cliente / Propietario</label>
+              <input class="bc-config-inp" id="bc-proyecto-cliente" placeholder="Nombre del cliente" style="width:100%"/>
+            </div>
+            <div class="bc-config-field">
+              <label class="bc-config-lbl"><i data-lucide="map-pin" style="width:11px;height:11px"></i> Ubicaci&#243;n / Direcci&#243;n</label>
+              <input class="bc-config-inp" id="bc-proyecto-ubicacion" placeholder="Direcci&#243;n de la instalaci&#243;n" style="width:100%"/>
+            </div>
+            <div class="bc-config-field">
+              <label class="bc-config-lbl"><i data-lucide="cpu" style="width:11px;height:11px"></i> Tipo de tablero</label>
+              <select class="bc-config-inp" id="bc-tipo-tablero">
+                <option value="residencial">&#127968; Residencial</option>
+                <option value="comercial">&#127970; Comercial</option>
+                <option value="industrial">&#127981; Industrial</option>
+                <option value="mixto">&#128256; Mixto</option>
+              </select>
+            </div>
+            <div class="bc-config-field">
+              <label class="bc-config-lbl"><i data-lucide="thermometer" style="width:11px;height:11px"></i> Temperatura ambiente</label>
+              <select class="bc-config-inp" id="bc-temperatura-global">
+                <option value="1.0" selected>&#8804;30&#176;C &#8212; Factor 1.00 (Sierra)</option>
+                <option value="0.91">31&#8211;35&#176;C &#8212; Factor 0.91 (Costa)</option>
+                <option value="0.82">36&#8211;40&#176;C &#8212; Factor 0.82 (Oriente)</option>
+                <option value="0.71">41&#8211;45&#176;C &#8212; Factor 0.71</option>
+              </select>
+            </div>
           </div>
 
+          <!-- PRESETS -->
+          <div style="padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;border-bottom:1px solid var(--bd)">
+            <span style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--t3)">Presets:</span>
+            <button type="button" class="bc-preset-btn" onclick="presetResidencial()"><span>&#127968;</span><span>Residencial</span></button>
+            <button type="button" class="bc-preset-btn" onclick="presetComercial()"><span>&#127970;</span><span>Comercial</span></button>
+            <button type="button" class="bc-preset-btn" onclick="presetIndustrial()"><span>&#127981;</span><span>Industrial</span></button>
+            <button type="button" class="bc-preset-btn" onclick="limpiarCargas()" style="color:var(--err);border-color:rgba(239,68,68,.25)"><span>&#128465;</span><span>Limpiar</span></button>
+          </div>
+
+          <!-- TABLA DE CARGAS MEJORADA -->
           <div class="tbl-wrap" style="padding:0 0 4px">
-            <table id="tbl-cargas" style="min-width:700px">
+            <table id="tbl-cargas" style="min-width:1200px">
               <thead>
                 <tr>
-                  <th style="min-width:160px">Descripción</th>
-                  <th style="min-width:145px">Tipo de carga</th>
-                  <th style="min-width:120px">Potencia (W)</th>
-                  <th style="min-width:80px">Fase</th>
-                  <th style="min-width:95px">Fs (%)</th>
-                  <th style="min-width:110px">P. Demanda</th>
-                  <th style="min-width:90px">Corriente</th>
-                  <th style="width:44px"></th>
+                  <th style="min-width:150px">Descripci&#243;n</th>
+                  <th style="min-width:55px;text-align:center">Cant.</th>
+                  <th style="min-width:130px">Tipo de carga</th>
+                  <th style="min-width:100px">Pot./ud (W)</th>
+                  <th style="min-width:85px">Fases</th>
+                  <th style="min-width:80px">Voltaje (V)</th>
+                  <th style="min-width:65px">F.P.</th>
+                  <th style="min-width:60px">Fase</th>
+                  <th style="min-width:55px">Fs %</th>
+                  <th style="min-width:85px">P. Demanda</th>
+                  <th style="min-width:85px">Corriente</th>
+                  <th style="min-width:80px">Cable AWG</th>
+                  <th style="min-width:72px">Breaker</th>
+                  <th style="min-width:70px">Conduit</th>
+                  <th style="width:36px"></th>
                 </tr>
               </thead>
               <tbody id="tbody-cargas"></tbody>
             </table>
           </div>
-        </div>
 
+          <!-- BARRA DE ACCIONES -->
+          <div class="bc-actions-bar">
+            <button type="button" class="btn-save-bc primary" onclick="guardarBalance()">
+              <i data-lucide="save" style="width:14px;height:14px"></i> Guardar proyecto
+            </button>
+            <button type="button" class="btn-save-bc" onclick="abrirModalBalances()">
+              <i data-lucide="folder-open" style="width:14px;height:14px"></i> Mis proyectos
+            </button>
+            <button type="button" class="bc-pdf-btn" onclick="generarInformePDF()">
+              <i data-lucide="file-text" style="width:14px;height:14px"></i> Informe T&#233;cnico PDF
+            </button>
+            <div style="flex:1"></div>
+            <span id="bc-save-status" style="font-size:11px;color:var(--t3)"></span>
+          </div>
+        </div>
         <div id="bc-resumen"></div>
 
         <div class="card" style="margin-top:16px">
@@ -3149,8 +3214,11 @@ function calcCable() {
 }
 
 // ─── BALANCE DE CARGAS ───────────────────────────────────
-function agregarCarga(desc='', tipo='iluminacion', potencia=1000, fase='L1', fs=100) {
-  cargas.push({ desc, tipo, potencia, fase, fs });
+function agregarCarga(desc='', tipo='iluminacion', potencia=1000, fase='L1', fs=100, cantidad=1, sistema='mono', voltaje=null, fp=0.9) {
+  const cfg = BC_SISTEMAS[_bcSistema] || BC_SISTEMAS['120'];
+  const v = voltaje || cfg.tension;
+  const sys = sistema || (cfg.esTri ? 'tri' : 'mono');
+  cargas.push({ desc, tipo, potencia, fase, fs, cantidad, sistema: sys, voltaje: v, fp });
   renderCargas();
   recalcBalance();
 }
@@ -3177,7 +3245,6 @@ function renderCargas() {
   if (!tb) return;
   const cfg = BC_SISTEMAS[_bcSistema] || BC_SISTEMAS['120'];
   const { tension, esTri, fases } = cfg;
-
   const TIPOS = {
     iluminacion:  '💡 Iluminación',
     tomacorriente:'🔌 Tomacorriente',
@@ -3187,62 +3254,108 @@ function renderCargas() {
     otro:         '📦 Otro',
   };
   const FASE_COLOR = { L1:'#60a5fa', L2:'#f472b6', L3:'#4ade80' };
+  const tempF = parseFloat(document.getElementById('bc-temperatura-global')?.value || 1.0);
 
   if (!cargas.length) {
-    tb.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px 16px">
+    tb.innerHTML = `<tr><td colspan="15" style="text-align:center;padding:32px 16px">
       <div style="color:var(--t3);font-size:13px">Sin cargas cargadas.</div>
       <div style="color:var(--t3);font-size:12px;margin-top:4px">Usa un preset o agrega una carga manualmente.</div>
     </td></tr>`;
     return;
   }
 
-  const sqrt3 = esTri ? Math.sqrt(3) : 1;
   tb.innerHTML = cargas.map((c, i) => {
-    const pd = (c.potencia || 0) * (c.fs || 100) / 100;
-    const Ic = pd / (tension * sqrt3 * 0.9);
+    const cant = c.cantidad || 1;
+    const fp   = c.fp || 0.9;
+    const vCarga = c.voltaje || tension;
+    const esTri_c = c.sistema === 'tri';
+    const sqrt3_c = esTri_c ? Math.sqrt(3) : 1;
+    const potUnit = c.potencia || 0;
+    const potTotal = potUnit * cant;
+    const pd    = potTotal * (c.fs || 100) / 100;
+    const Ic    = pd > 0 ? pd / (vCarga * sqrt3_c * fp) : 0;
+    // Factor motor NEC 430.22
+    const factorM = (c.tipo === 'motor' || c.tipo === 'hvac') ? 1.25 : 1.0;
+    const IdD = Ic * factorM / tempF;
+    // AWG selection
+    const colIdx = 4; // Cu 90°C
+    let awgRow = AWG_TABLE.find(r => r[colIdx] != null && r[colIdx] >= IdD) || AWG_TABLE[AWG_TABLE.length-1];
+    const awgLabel = awgRow ? '#' + awgRow[0] : '—';
+    // Breaker
+    const IbMin = Ic * (factorM > 1 ? 2.5 : 1.25);
+    const brkRec = BREAKERS_STD.find(b => b >= IbMin) || 2000;
+    const polos = esTri_c ? '3P' : vCarga > 120 ? '2P' : '2P';
+    // Conduit (3 conductors + ground = 4 conductors default)
+    const areaC = THHN_AREA[awgRow ? awgRow[0] : '14'] || THHN_AREA['12'];
+    const nCond = esTri_c ? 4 : 3;
+    const totArea = areaC * nCond;
+    const factor = 0.40; // 3+ conductors NEC
+    const emtTbl = CONDUIT_AREA.EMT;
+    let conduitSel = emtTbl.find(([nom, area]) => area * factor >= totArea);
+    if (!conduitSel) conduitSel = emtTbl[emtTbl.length-1];
+    const conduitNom = conduitSel ? conduitSel[0] : '—';
     const fc = FASE_COLOR[c.fase] || '#9090aa';
     return `<tr>
       <td><input class="bc-inp" value="${c.desc}" placeholder="Descripción…"
         oninput="cargas[${i}].desc=this.value" style="min-width:130px"/></td>
+      <td style="text-align:center">
+        <input class="bc-inp" type="number" min="1" max="999" value="${cant}"
+          oninput="cargas[${i}].cantidad=parseInt(this.value)||1;recalcBalance()" style="width:50px;text-align:center"/>
+      </td>
       <td><select class="bc-inp" onchange="cargas[${i}].tipo=this.value;recalcBalance()">
-        ${Object.entries(TIPOS).map(([k,v]) =>
-          `<option value="${k}"${c.tipo===k?' selected':''}>${v}</option>`).join('')}
+        ${Object.entries(TIPOS).map(([k,v])=>`<option value="${k}"${c.tipo===k?' selected':''}>${v}</option>`).join('')}
       </select></td>
       <td>
-        <div style="display:flex;align-items:center;gap:4px">
-          <input class="bc-inp" type="number" min="0" value="${c.potencia}"
-            oninput="cargas[${i}].potencia=parseFloat(this.value)||0;recalcBalance()"
-            style="width:80px"/>
-          <span style="font-size:10px;color:var(--t3);font-weight:600">W</span>
+        <div style="display:flex;align-items:center;gap:3px">
+          <input class="bc-inp" type="number" min="0" step="1" value="${potUnit}"
+            oninput="cargas[${i}].potencia=parseFloat(this.value)||0;recalcBalance()" style="width:78px"/>
+          <span style="font-size:10px;color:var(--t3)">W</span>
         </div>
       </td>
       <td>
-        <select class="bc-inp" onchange="cargas[${i}].fase=this.value;recalcBalance()" style="width:64px">
-          ${fases.map(f => `<option value="${f}"${c.fase===f?' selected':''}>${f}</option>`).join('')}
+        <select class="bc-inp" onchange="cargas[${i}].sistema=this.value;recalcBalance()" style="width:76px">
+          <option value="mono"${c.sistema!=='tri'?' selected':''}>1F Mono</option>
+          <option value="tri"${c.sistema==='tri'?' selected':''}>3F Tri</option>
         </select>
       </td>
       <td>
-        <div style="display:flex;align-items:center;gap:4px">
-          <input class="bc-inp" type="number" min="1" max="100" value="${c.fs}"
-            oninput="cargas[${i}].fs=parseFloat(this.value)||100;recalcBalance()"
-            style="width:60px"/>
-          <span style="font-size:10px;color:var(--t3);font-weight:600">%</span>
+        <select class="bc-inp" onchange="cargas[${i}].voltaje=parseInt(this.value);recalcBalance()" style="width:72px">
+          <option value="120"${vCarga===120?' selected':''}>120 V</option>
+          <option value="220"${vCarga===220?' selected':''}>220 V</option>
+          <option value="240"${vCarga===240?' selected':''}>240 V</option>
+          <option value="380"${vCarga===380?' selected':''}>380 V</option>
+          <option value="440"${vCarga===440?' selected':''}>440 V</option>
+        </select>
+      </td>
+      <td>
+        <input class="bc-inp" type="number" min="0.5" max="1" step="0.01" value="${fp}"
+          oninput="cargas[${i}].fp=parseFloat(this.value)||0.9;recalcBalance()" style="width:56px"/>
+      </td>
+      <td>
+        <select class="bc-inp" onchange="cargas[${i}].fase=this.value;recalcBalance()" style="width:52px">
+          ${fases.map(f=>`<option value="${f}"${c.fase===f?' selected':''}>${f}</option>`).join('')}
+        </select>
+      </td>
+      <td>
+        <input class="bc-inp" type="number" min="1" max="100" value="${c.fs||100}"
+          oninput="cargas[${i}].fs=parseFloat(this.value)||100;recalcBalance()" style="width:48px"/>
+      </td>
+      <td>
+        <div>
+          <span style="font-family:'DM Mono',monospace;font-weight:700;font-size:12px;color:var(--acc)">${(pd/1000).toFixed(2)}</span>
+          <span style="font-size:10px;color:var(--t3)"> kW</span>
         </div>
+        <div style="font-size:10px;color:var(--t3)">${potTotal.toFixed(0)}W total</div>
       </td>
-      <td>
-        <span style="font-family:'DM Mono',monospace;font-weight:700;font-size:13px;color:var(--acc)">${pd.toFixed(0)}</span>
-        <span style="font-size:10px;color:var(--t3);margin-left:2px">W</span>
-      </td>
-      <td>
-        <span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--t1)">${Ic.toFixed(2)}</span>
-        <span style="font-size:10px;color:var(--t3);margin-left:2px">A</span>
-      </td>
+      <td><span class="bc-cell-result bc-cell-I">${Ic.toFixed(2)} A</span></td>
+      <td><span class="bc-cell-result bc-cell-cable">AWG ${awgLabel}</span></td>
+      <td><span class="bc-cell-result bc-cell-breaker">${brkRec}A ${polos}</span></td>
+      <td><span class="bc-cell-result bc-cell-conduit">EMT ${conduitNom}</span></td>
       <td>
         <button type="button" onclick="cargas.splice(${i},1);renderCargas();recalcBalance()"
           style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);
-            color:var(--err);border-radius:7px;width:30px;height:30px;
-            display:flex;align-items:center;justify-content:center;cursor:pointer;
-            transition:background .15s;font-size:14px;line-height:1"
+            color:var(--err);border-radius:6px;width:28px;height:28px;
+            display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px"
           onmouseover="this.style.background='rgba(239,68,68,.2)'"
           onmouseout="this.style.background='rgba(239,68,68,.1)'">×</button>
       </td>
@@ -3369,7 +3482,47 @@ function recalcBalance() {
     </div>
   `;
   renderChartFases(potPorFase, esTri);
+  calcTablero();
   refreshIcons();
+
+  // Update KPI bar
+  const kpiEl = document.getElementById('bc-kpis');
+  if (kpiEl) {
+    kpiEl.style.display = 'grid';
+    const cDesBal = desbalance > 10 ? 'var(--err)' : desbalance > 5 ? 'var(--acc)' : 'var(--ok)';
+    kpiEl.innerHTML = `
+      <div class="bc-kpi">
+        <div class="bc-kpi-lbl">Potencia instalada</div>
+        <div class="bc-kpi-val" style="color:var(--t1)">${(totalW/1000).toFixed(2)} <span style="font-size:12px;font-weight:500">kW</span></div>
+        <div class="bc-kpi-sub">${cargas.length} circuito${cargas.length!==1?'s':''}</div>
+        <div class="bc-kpi-icon"><i data-lucide="database"></i></div>
+      </div>
+      <div class="bc-kpi" style="border-color:rgba(245,200,0,.3)">
+        <div class="bc-kpi-lbl">Demanda real</div>
+        <div class="bc-kpi-val" style="color:var(--acc)">${(totalWD/1000).toFixed(2)} <span style="font-size:12px;font-weight:500">kW</span></div>
+        <div class="bc-kpi-sub">Fs prom: ${fsPromedio.toFixed(0)}%</div>
+        <div class="bc-kpi-icon"><i data-lucide="zap"></i></div>
+      </div>
+      <div class="bc-kpi">
+        <div class="bc-kpi-lbl">Corriente total</div>
+        <div class="bc-kpi-val" style="color:var(--info)">${ITotal.toFixed(2)} <span style="font-size:12px;font-weight:500">A</span></div>
+        <div class="bc-kpi-sub">${label}</div>
+        <div class="bc-kpi-icon"><i data-lucide="activity"></i></div>
+      </div>
+      <div class="bc-kpi" style="border-color:${desbalance>10?'rgba(239,68,68,.4)':'var(--bd)'}">
+        <div class="bc-kpi-lbl">Desbalance fases</div>
+        <div class="bc-kpi-val" style="color:${cDesBal}">${desbalance.toFixed(1)}<span style="font-size:12px;font-weight:500">%</span></div>
+        <div class="bc-kpi-sub">${desbalance>10?'⚠️ Excede 10%':desbalance>5?'⚠️ Revisar':'✅ OK'}</div>
+        <div class="bc-kpi-icon"><i data-lucide="scale"></i></div>
+      </div>
+      <div class="bc-kpi" style="border-color:rgba(245,200,0,.3)">
+        <div class="bc-kpi-lbl">Breaker principal</div>
+        <div class="bc-kpi-val" style="color:var(--acc)">${breakerAcom} <span style="font-size:12px;font-weight:500">A</span></div>
+        <div class="bc-kpi-sub">${esTri?'3 Polos':'2 Polos'}</div>
+        <div class="bc-kpi-icon"><i data-lucide="shield"></i></div>
+      </div>`;
+    refreshIcons();
+  }
 }
 
 function renderChartFases(potPorFase, esTri) {
@@ -3426,40 +3579,50 @@ function renderChartFases(potPorFase, esTri) {
 }
 
 // Presets de cargas
+function _c(desc,tipo,potencia,fase,fs,cantidad,sistema,voltaje,fp){
+  return{desc,tipo,potencia,fase,fs,cantidad:cantidad||1,sistema:sistema||'mono',voltaje:voltaje||120,fp:fp||0.9};
+}
 function presetResidencial() {
+  _bcSistema='120/240'; setBcSistema('120/240');
   cargas = [
-    {desc:'Iluminación sala/comedor',tipo:'iluminacion',potencia:400,fase:'L1',fs:75},
-    {desc:'Iluminación dormitorios',tipo:'iluminacion',potencia:300,fase:'L2',fs:50},
-    {desc:'Tomacorrientes sala',tipo:'tomacorriente',potencia:1500,fase:'L1',fs:50},
-    {desc:'Tomacorrientes dormitorios',tipo:'tomacorriente',potencia:1000,fase:'L2',fs:40},
-    {desc:'Cocina eléctrica',tipo:'resistivo',potencia:4000,fase:'L1',fs:60},
-    {desc:'Ducha eléctrica',tipo:'resistivo',potencia:3500,fase:'L2',fs:30},
-    {desc:'Lavadora',tipo:'motor',potencia:1200,fase:'L1',fs:25},
-    {desc:'Refrigeradora',tipo:'motor',potencia:350,fase:'L2',fs:100},
-    {desc:'Aire acondicionado',tipo:'hvac',potencia:2200,fase:'L1',fs:70},
+    _c('Iluminación sala/comedor','iluminacion',400,'L1',75,1,'mono',120,1.0),
+    _c('Iluminación dormitorios','iluminacion',200,'L2',50,2,'mono',120,1.0),
+    _c('Iluminación exterior','iluminacion',150,'L1',80,1,'mono',120,1.0),
+    _c('Tomacorrientes sala','tomacorriente',1500,'L2',50,1,'mono',120,0.9),
+    _c('Tomacorrientes dormitorios','tomacorriente',1000,'L1',40,1,'mono',120,0.9),
+    _c('Cocina eléctrica','resistivo',4000,'L2',60,1,'mono',240,1.0),
+    _c('Ducha eléctrica','resistivo',3500,'L1',30,1,'mono',240,1.0),
+    _c('Lavadora','motor',1200,'L2',25,1,'mono',120,0.85),
+    _c('Refrigeradora','motor',350,'L1',100,1,'mono',120,0.85),
+    _c('Aire acondicionado','hvac',2200,'L2',70,1,'mono',220,0.85),
   ];
   renderCargas(); recalcBalance();
 }
 function presetComercial() {
+  _bcSistema='220'; setBcSistema('220');
   cargas = [
-    {desc:'Iluminación general',tipo:'iluminacion',potencia:3000,fase:'L1',fs:100},
-    {desc:'Computadoras / equipos',tipo:'tomacorriente',potencia:4000,fase:'L2',fs:80},
-    {desc:'Aire acondicionado',tipo:'hvac',potencia:8000,fase:'L1',fs:80},
-    {desc:'Cocina / cafetería',tipo:'resistivo',potencia:3000,fase:'L2',fs:50},
-    {desc:'Servidores / UPS',tipo:'otro',potencia:2000,fase:'L1',fs:100},
-    {desc:'Tomacorrientes varios',tipo:'tomacorriente',potencia:2500,fase:'L2',fs:60},
+    _c('Iluminación general LED','iluminacion',2000,'L1',100,2,'mono',220,1.0),
+    _c('Computadoras / equipos','tomacorriente',300,'L2',80,12,'mono',120,0.9),
+    _c('Aire acondicionado central','hvac',8000,'L1',80,1,'mono',220,0.85),
+    _c('Aire acondicionado oficinas','hvac',3500,'L2',70,2,'mono',220,0.85),
+    _c('Cocina / cafetería','resistivo',3000,'L1',50,1,'mono',220,1.0),
+    _c('Servidores / UPS','otro',2000,'L2',100,1,'mono',220,0.9),
+    _c('Tomacorrientes generales','tomacorriente',2500,'L1',60,1,'mono',120,0.9),
+    _c('Sistema CCTV / alarmas','otro',500,'L2',100,1,'mono',120,0.9),
   ];
   renderCargas(); recalcBalance();
 }
 function presetIndustrial() {
+  _bcSistema='380'; setBcSistema('380');
   cargas = [
-    {desc:'Motor bomba 10HP',tipo:'motor',potencia:7460,fase:'L1',fs:80},
-    {desc:'Motor compresor 5HP',tipo:'motor',potencia:3730,fase:'L2',fs:70},
-    {desc:'Motor ventilador 3HP',tipo:'motor',potencia:2238,fase:'L1',fs:90},
-    {desc:'Iluminación planta',tipo:'iluminacion',potencia:5000,fase:'L2',fs:100},
-    {desc:'Soldadora',tipo:'resistivo',potencia:10000,fase:'L1',fs:40},
-    {desc:'Tomacorrientes industriales',tipo:'tomacorriente',potencia:3000,fase:'L2',fs:50},
-    {desc:'Sistema de control PLC',tipo:'otro',potencia:500,fase:'L1',fs:100},
+    _c('Motor bomba 10HP','motor',7460,'L1',80,1,'tri',380,0.85),
+    _c('Motor compresor 5HP','motor',3730,'L2',70,1,'tri',380,0.85),
+    _c('Motor ventilador 3HP','motor',2238,'L1',90,2,'tri',380,0.85),
+    _c('Iluminación planta industrial','iluminacion',5000,'L2',100,1,'mono',220,0.95),
+    _c('Soldadora industrial','resistivo',10000,'L1',40,1,'mono',220,0.7),
+    _c('Tomacorrientes 220V','tomacorriente',3000,'L2',50,1,'mono',220,0.9),
+    _c('Sistema de control PLC','otro',500,'L1',100,1,'mono',220,0.9),
+    _c('Horno industrial','resistivo',15000,'L2',60,1,'tri',380,1.0),
   ];
   renderCargas(); recalcBalance();
 }
@@ -3624,6 +3787,699 @@ async function toggleCompartirDatos(){
   toast(nuevo?'\u2728 Tus datos ahora son visibles para el equipo':'Datos privados. Ya no se comparten.','info');
   cargarEquipo();
 }
+
+
+// ═══════════════════════════════════════════════════════════════
+// BALANCE DE CARGAS — TABLERO / CIRCUITOS
+// ═══════════════════════════════════════════════════════════════
+
+let _bcProyectoId = null; // ID del proyecto activo en localStorage
+
+function calcTablero() {
+  const cfg = BC_SISTEMAS[_bcSistema] || BC_SISTEMAS['120'];
+  const { tension, esTri, fases } = cfg;
+  const tempF = parseFloat(document.getElementById('bc-temperatura-global')?.value || 1.0);
+
+  // Agrupar cargas por tipo para distribución
+  const TIPO_COLOR = {
+    iluminacion: { color:'#facc15', bg:'rgba(250,204,21,.15)', label:'Iluminación', icon:'💡' },
+    tomacorriente:{ color:'#60a5fa', bg:'rgba(96,165,250,.15)', label:'Tomacorrientes', icon:'🔌' },
+    motor:       { color:'#4ade80', bg:'rgba(74,222,128,.15)', label:'Motores', icon:'⚙️' },
+    hvac:        { color:'#38bdf8', bg:'rgba(56,189,248,.15)', label:'HVAC/Clima', icon:'❄️' },
+    resistivo:   { color:'#f87171', bg:'rgba(248,113,113,.15)', label:'Resistivos', icon:'🔥' },
+    otro:        { color:'#a78bfa', bg:'rgba(167,139,250,.15)', label:'Especiales', icon:'📦' },
+  };
+
+  // Construir lista de circuitos con cálculos completos
+  const circuitos = [];
+  cargas.forEach((c, ci) => {
+    const cant = c.cantidad || 1;
+    const fp   = c.fp || 0.9;
+    const vCarga = c.voltaje || tension;
+    const esTri_c = c.sistema === 'tri';
+    const sqrt3_c = esTri_c ? Math.sqrt(3) : 1;
+    const potUnit = c.potencia || 0;
+    const potTotal = potUnit * cant;
+    const pd    = potTotal * (c.fs || 100) / 100;
+    const Ic    = pd > 0 ? pd / (vCarga * sqrt3_c * fp) : 0;
+    const factorM = (c.tipo === 'motor' || c.tipo === 'hvac') ? 1.25 : 1.0;
+    const IdD = Ic * factorM / tempF;
+    // AWG
+    let awgRow = AWG_TABLE.find(r => r[4] != null && r[4] >= IdD) || AWG_TABLE[AWG_TABLE.length-1];
+    const awgLabel = awgRow ? '#' + awgRow[0] : '—';
+    // Breaker
+    const IbMin = Ic * (factorM > 1 ? 2.5 : 1.25);
+    const brkRec = BREAKERS_STD.find(b => b >= IbMin) || 2000;
+    const polos = esTri_c ? 3 : vCarga > 120 ? 2 : 2;
+    // Conduit
+    const areaC = THHN_AREA[awgRow ? awgRow[0] : '12'] || THHN_AREA['12'];
+    const nCond = esTri_c ? 4 : 3;
+    const totArea = areaC * nCond;
+    let conduitSel = CONDUIT_AREA.EMT.find(([n, a]) => a * 0.40 >= totArea);
+    if (!conduitSel) conduitSel = CONDUIT_AREA.EMT[CONDUIT_AREA.EMT.length-1];
+    circuitos.push({
+      idx: ci + 1,
+      desc: c.desc || `Carga ${ci+1}`,
+      tipo: c.tipo,
+      cant,
+      potTotal,
+      pd,
+      Ic,
+      awg: awgLabel,
+      brkRec,
+      polos,
+      conduit: conduitSel ? conduitSel[0] : '—',
+      vCarga,
+      esTri_c,
+      fp,
+      fs: c.fs,
+    });
+  });
+
+  // Acometida general
+  const totalWD = circuitos.reduce((a, c) => a + c.pd, 0);
+  const ITotal  = cfg.esTri
+    ? totalWD / (cfg.tension * Math.sqrt(3) * 0.9)
+    : totalWD / (cfg.tension * 0.9);
+  const brkAco  = BREAKERS_STD.find(b => b >= ITotal * 1.25) || 2000;
+  const IdAco   = ITotal * 1.25 / tempF;
+  let acometidaRow = AWG_TABLE.find(r => r[4] != null && r[4] >= IdAco) || AWG_TABLE[AWG_TABLE.length-1];
+
+  // Renderizar tablero
+  const sec = document.getElementById('bc-tablero-section');
+  const grid = document.getElementById('bc-tablero-grid');
+  if (!sec || !grid) return;
+
+  if (circuitos.length === 0) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+
+  // Agrupar por tipo para tarjetas de distribución
+  const grupos = {};
+  circuitos.forEach(c => {
+    if (!grupos[c.tipo]) grupos[c.tipo] = [];
+    grupos[c.tipo].push(c);
+  });
+
+  // Tarjeta resumen de distribución
+  const resumenGrupos = Object.entries(grupos).map(([tipo, lista]) => {
+    const tc = TIPO_COLOR[tipo] || TIPO_COLOR.otro;
+    const totalBrk = lista.reduce((a, c) => a + 1, 0);
+    const totalPD  = lista.reduce((a, c) => a + c.pd, 0);
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--s2);border:1px solid var(--bd);border-radius:8px;border-left:3px solid ${tc.color}">
+      <span style="font-size:18px">${tc.icon}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:12px;color:${tc.color}">${tc.label}</div>
+        <div style="font-size:11px;color:var(--t3)">${lista.length} circuito${lista.length!==1?'s':''} · ${(totalPD/1000).toFixed(2)} kW demanda</div>
+      </div>
+      <div style="font-family:'DM Mono',monospace;font-weight:800;font-size:13px;color:${tc.color}">${lista.length}</div>
+    </div>`;
+  }).join('');
+
+  // Tarjeta de acometida principal
+  const acometidaCard = `
+    <div class="tablero-card">
+      <div class="tablero-card-head">
+        <i data-lucide="zap-off" style="width:16px;height:16px;color:var(--acc)"></i>
+        <span class="tablero-card-title">Acometida Principal</span>
+        <span style="font-size:10px;color:var(--t3)">${circuitos.length} circ.</span>
+      </div>
+      <div style="padding:12px 14px;border-bottom:1px solid var(--bd)">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div style="background:var(--s2);border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px">Breaker principal</div>
+            <div style="font-family:'DM Mono',monospace;font-size:22px;font-weight:800;color:var(--acc)">${brkAco}A</div>
+            <div style="font-size:10px;color:var(--t3)">${cfg.esTri?'3 polos':'2 polos'}</div>
+          </div>
+          <div style="background:var(--s2);border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px">Cable acometida</div>
+            <div style="font-family:'DM Mono',monospace;font-size:22px;font-weight:800;color:var(--info)">AWG #${acometidaRow?acometidaRow[0]:'—'}</div>
+            <div style="font-size:10px;color:var(--t3)">Cu THHN 90°C</div>
+          </div>
+        </div>
+        <div style="background:rgba(245,200,0,.07);border:1px solid rgba(245,200,0,.2);border-radius:8px;padding:10px;font-size:12px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span style="color:var(--t3)">Corriente total demanda</span>
+            <span style="font-family:'DM Mono',monospace;font-weight:700;color:var(--acc)">${ITotal.toFixed(2)} A</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span style="color:var(--t3)">Potencia instalada total</span>
+            <span style="font-family:'DM Mono',monospace;font-weight:700;color:var(--t1)">${(circuitos.reduce((a,c)=>a+c.potTotal,0)/1000).toFixed(2)} kW</span>
+          </div>
+          <div style="display:flex;justify-content:space-between">
+            <span style="color:var(--t3)">Potencia demanda real</span>
+            <span style="font-family:'DM Mono',monospace;font-weight:700;color:var(--ok)">${(totalWD/1000).toFixed(2)} kW</span>
+          </div>
+        </div>
+      </div>
+      <div style="padding:10px 12px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--t3);margin-bottom:8px">Distribución por tipo</div>
+        <div style="display:flex;flex-direction:column;gap:5px">${resumenGrupos}</div>
+      </div>
+    </div>`;
+
+  // Diagrama visual del tablero
+  const breakerSlots = circuitos.map((c, i) => {
+    const tc = TIPO_COLOR[c.tipo] || TIPO_COLOR.otro;
+    return `<div class="breaker-slot">
+      <div class="breaker-handle" style="background:${tc.bg};border:1px solid ${tc.color}40">
+        <span style="font-size:9px;font-weight:800;color:${tc.color}">${c.polos}P</span>
+      </div>
+      <span class="breaker-amp" style="color:${tc.color}">${c.brkRec}A</span>
+      <div class="breaker-info">
+        <div class="breaker-desc" title="${c.desc}">${String(i+1).padStart(2,'0')}. ${c.desc}</div>
+        <div class="breaker-sub">AWG ${c.awg} · EMT ${c.conduit} · ${c.vCarga}V</div>
+      </div>
+      <span style="font-size:10px;color:${tc.color}">${tc.icon}</span>
+    </div>`;
+  }).join('');
+
+  const diagramaCard = `
+    <div class="tablero-card">
+      <div class="tablero-card-head">
+        <i data-lucide="server" style="width:16px;height:16px;color:var(--acc)"></i>
+        <span class="tablero-card-title">Diagrama del Tablero</span>
+        <span style="font-size:10px;color:var(--t3);font-family:'DM Mono',monospace">${circuitos.length} breakers</span>
+      </div>
+      <!-- Main breaker -->
+      <div style="background:rgba(245,200,0,.08);border-bottom:2px solid rgba(245,200,0,.25);padding:10px 12px;display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:42px;background:rgba(245,200,0,.2);border:2px solid var(--acc);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative">
+          <span style="font-size:8px;font-weight:800;color:var(--acc)">${cfg.esTri?'3P':'2P'}</span>
+          <div style="position:absolute;top:4px;left:50%;transform:translateX(-50%);width:4px;height:18px;background:rgba(0,0,0,.4);border-radius:2px"></div>
+        </div>
+        <div>
+          <div style="font-weight:800;font-size:13px;color:var(--acc)">INTERRUPTOR PRINCIPAL — ${brkAco}A</div>
+          <div style="font-size:10px;color:var(--t3)">Cable acometida: AWG #${acometidaRow?acometidaRow[0]:'—'} Cu · ${cfg.esTri?'Trifásico 380V':'Bifásico 120/240V'}</div>
+        </div>
+      </div>
+      ${breakerSlots}
+    </div>`;
+
+  // Tabla detallada de circuitos
+  const tablaCard = `
+    <div class="tablero-card" style="grid-column:1/-1">
+      <div class="tablero-card-head">
+        <i data-lucide="table-2" style="width:16px;height:16px;color:var(--acc)"></i>
+        <span class="tablero-card-title">Tabla Detallada de Circuitos</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          <thead>
+            <tr style="background:var(--s2)">
+              <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);white-space:nowrap">N°</th>
+              <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);white-space:nowrap">Descripción</th>
+              <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);white-space:nowrap">Tipo</th>
+              <th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);white-space:nowrap">Cant.</th>
+              <th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);white-space:nowrap">Voltaje</th>
+              <th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);white-space:nowrap">F.P.</th>
+              <th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);white-space:nowrap">Fs %</th>
+              <th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);white-space:nowrap">P. Dem. (kW)</th>
+              <th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);white-space:nowrap">I (A)</th>
+              <th style="padding:8px 10px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);white-space:nowrap">Cable AWG</th>
+              <th style="padding:8px 10px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);white-space:nowrap">Breaker</th>
+              <th style="padding:8px 10px;text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);white-space:nowrap">Conduit</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${circuitos.map((c,i) => {
+              const tc = TIPO_COLOR[c.tipo] || TIPO_COLOR.otro;
+              return `<tr style="border-bottom:1px solid var(--bd);transition:background .1s" onmouseover="this.style.background='rgba(255,255,255,.025)'" onmouseout="this.style.background=''">
+                <td style="padding:8px 10px;font-family:'DM Mono',monospace;font-weight:700;color:var(--t3)">${String(i+1).padStart(2,'0')}</td>
+                <td style="padding:8px 10px;font-weight:600;color:var(--t1)">${c.desc}</td>
+                <td style="padding:8px 10px">
+                  <span style="font-size:11px;font-weight:600;color:${tc.color};background:${tc.bg};padding:2px 8px;border-radius:4px">${tc.icon} ${tc.label}</span>
+                </td>
+                <td style="padding:8px 10px;text-align:right;font-family:'DM Mono',monospace;color:var(--t2)">${c.cant}</td>
+                <td style="padding:8px 10px;text-align:right;font-family:'DM Mono',monospace;color:var(--t2)">${c.vCarga}V</td>
+                <td style="padding:8px 10px;text-align:right;font-family:'DM Mono',monospace;color:var(--t2)">${c.fp}</td>
+                <td style="padding:8px 10px;text-align:right;font-family:'DM Mono',monospace;color:var(--t2)">${c.fs}%</td>
+                <td style="padding:8px 10px;text-align:right;font-family:'DM Mono',monospace;font-weight:700;color:var(--acc)">${(c.pd/1000).toFixed(3)}</td>
+                <td style="padding:8px 10px;text-align:right;font-family:'DM Mono',monospace;color:#c084fc">${c.Ic.toFixed(2)}</td>
+                <td style="padding:8px 10px;text-align:center"><span style="background:rgba(59,130,246,.12);color:var(--info);font-family:'DM Mono',monospace;font-weight:700;padding:3px 8px;border-radius:5px;font-size:11px">${c.awg}</span></td>
+                <td style="padding:8px 10px;text-align:center"><span style="background:rgba(245,200,0,.12);color:var(--acc);font-family:'DM Mono',monospace;font-weight:700;padding:3px 8px;border-radius:5px;font-size:11px">${c.brkRec}A ${c.polos}P</span></td>
+                <td style="padding:8px 10px;text-align:center"><span style="background:rgba(34,197,94,.12);color:var(--ok);font-family:'DM Mono',monospace;font-weight:700;padding:3px 8px;border-radius:5px;font-size:11px">EMT ${c.conduit}</span></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+          <tfoot>
+            <tr style="background:rgba(245,200,0,.05);border-top:2px solid rgba(245,200,0,.25)">
+              <td colspan="7" style="padding:10px;font-weight:800;color:var(--acc);font-size:12px">TOTALES</td>
+              <td style="padding:10px;text-align:right;font-family:'DM Mono',monospace;font-weight:800;color:var(--acc)">${(totalWD/1000).toFixed(3)}</td>
+              <td style="padding:10px;text-align:right;font-family:'DM Mono',monospace;font-weight:800;color:#c084fc">${ITotal.toFixed(2)}</td>
+              <td colspan="3" style="padding:10px;text-align:center;font-size:11px;color:var(--t3)">Interruptor principal: <strong style="color:var(--acc)">${brkAco}A</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>`;
+
+  grid.innerHTML = acometidaCard + diagramaCard + tablaCard;
+  refreshIcons();
+
+  // Guardar circuitos calculados para PDF
+  window._bcCircuitos    = circuitos;
+  window._bcAcometida    = { brkAco, awg: acometidaRow ? '#'+acometidaRow[0] : '—', ITotal, totalWD };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GUARDAR / CARGAR PROYECTOS (localStorage)
+// ═══════════════════════════════════════════════════════════════
+
+function _getBalances() {
+  try { return JSON.parse(localStorage.getItem('sest_balances') || '[]'); }
+  catch { return []; }
+}
+function _setBalances(arr) {
+  localStorage.setItem('sest_balances', JSON.stringify(arr));
+}
+
+function guardarBalance() {
+  const nombre   = (document.getElementById('bc-proyecto-nombre')?.value || '').trim();
+  const cliente  = (document.getElementById('bc-proyecto-cliente')?.value || '').trim();
+  const ubicacion= (document.getElementById('bc-proyecto-ubicacion')?.value || '').trim();
+  const tipo     = document.getElementById('bc-tipo-tablero')?.value || 'residencial';
+  const tempF    = document.getElementById('bc-temperatura-global')?.value || '1.0';
+
+  if (!nombre) { toast('Ingresa un nombre para el proyecto','err'); document.getElementById('bc-proyecto-nombre')?.focus(); return; }
+  if (!cargas.length) { toast('Agrega al menos una carga antes de guardar','err'); return; }
+
+  const balances = _getBalances();
+  const ahora = new Date().toISOString();
+
+  if (_bcProyectoId) {
+    // Actualizar existente
+    const idx = balances.findIndex(b => b.id === _bcProyectoId);
+    if (idx >= 0) {
+      balances[idx] = { ...balances[idx], nombre, cliente, ubicacion, tipo, tempF, sistema: _bcSistema, cargas: JSON.parse(JSON.stringify(cargas)), updatedAt: ahora };
+      _setBalances(balances);
+      toast(`✅ Proyecto "${nombre}" actualizado`, 'ok');
+      _actualizarBadgeProyecto(nombre);
+      document.getElementById('bc-save-status').textContent = 'Guardado ' + new Date().toLocaleTimeString();
+      return;
+    }
+  }
+
+  // Nuevo
+  const id = 'bc_' + Date.now();
+  balances.push({ id, nombre, cliente, ubicacion, tipo, tempF, sistema: _bcSistema, cargas: JSON.parse(JSON.stringify(cargas)), createdAt: ahora, updatedAt: ahora });
+  _setBalances(balances);
+  _bcProyectoId = id;
+  toast(`✅ Proyecto "${nombre}" guardado`, 'ok');
+  _actualizarBadgeProyecto(nombre);
+  document.getElementById('bc-save-status').textContent = 'Guardado ' + new Date().toLocaleTimeString();
+}
+
+function _actualizarBadgeProyecto(nombre) {
+  const lbl = document.getElementById('bc-project-name-lbl');
+  if (lbl) lbl.textContent = nombre || 'Sin proyecto';
+}
+
+function abrirModalBalances() {
+  const balances = _getBalances();
+  const cont = document.getElementById('bc-saved-list-container');
+  if (!cont) return;
+  if (!balances.length) {
+    cont.innerHTML = `<div style="text-align:center;padding:28px;color:var(--t3)">
+      <i data-lucide="inbox" style="width:32px;height:32px;margin-bottom:8px;display:block;margin:0 auto 8px"></i>
+      <p>No hay proyectos guardados todavía.</p>
+      <p style="font-size:11px;margin-top:4px">Completa el formulario y presiona "Guardar proyecto".</p>
+    </div>`;
+  } else {
+    cont.innerHTML = `<div class="bc-saved-list">` +
+      balances.slice().reverse().map(b => {
+        const d = new Date(b.updatedAt || b.createdAt);
+        const dStr = d.toLocaleDateString('es-EC', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+        const activo = b.id === _bcProyectoId;
+        return `<div class="bc-saved-item" style="${activo?'border-color:var(--acc);background:var(--acc-d)':''}" onclick="cargarBalance('${b.id}')">
+          <i data-lucide="${activo?'folder-open':'folder'}" style="width:18px;height:18px;color:${activo?'var(--acc)':'var(--t3)'};flex-shrink:0"></i>
+          <div style="flex:1;min-width:0">
+            <div class="bc-saved-item-name">${b.nombre}</div>
+            <div class="bc-saved-item-date">${b.cliente?b.cliente+' · ':''}${b.sistema||'120'}V · ${dStr}</div>
+          </div>
+          <span class="bc-saved-item-cnt">${b.cargas?.length||0} cargas</span>
+          <button type="button" onclick="event.stopPropagation();eliminarBalance('${b.id}')" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--err);border-radius:5px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;flex-shrink:0;line-height:1" title="Eliminar" onmouseover="this.style.background='rgba(239,68,68,.2)'" onmouseout="this.style.background='rgba(239,68,68,.1)'">×</button>
+        </div>`;
+      }).join('') + `</div>`;
+  }
+  openModal('m-balances');
+  refreshIcons();
+}
+
+function cargarBalance(id) {
+  const balances = _getBalances();
+  const b = balances.find(x => x.id === id);
+  if (!b) { toast('Proyecto no encontrado','err'); return; }
+  cargas = JSON.parse(JSON.stringify(b.cargas || []));
+  _bcSistema = b.sistema || '120';
+  _bcProyectoId = id;
+  setBcSistema(_bcSistema);
+  // Restaurar campos del formulario
+  const setV = (id, v) => { const el=document.getElementById(id); if(el) el.value=v||''; };
+  setV('bc-proyecto-nombre', b.nombre);
+  setV('bc-proyecto-cliente', b.cliente);
+  setV('bc-proyecto-ubicacion', b.ubicacion);
+  setV('bc-tipo-tablero', b.tipo||'residencial');
+  setV('bc-temperatura-global', b.tempF||'1.0');
+  renderCargas();
+  recalcBalance();
+  _actualizarBadgeProyecto(b.nombre);
+  document.getElementById('bc-save-status').textContent = 'Cargado: ' + b.nombre;
+  closeModal('m-balances');
+  toast(`📂 Proyecto "${b.nombre}" cargado`, 'ok');
+}
+
+function eliminarBalance(id) {
+  if (!confirm('¿Eliminar este proyecto?')) return;
+  let balances = _getBalances();
+  balances = balances.filter(b => b.id !== id);
+  _setBalances(balances);
+  if (_bcProyectoId === id) {
+    _bcProyectoId = null;
+    _actualizarBadgeProyecto('Sin proyecto');
+    document.getElementById('bc-save-status').textContent = '';
+  }
+  abrirModalBalances();
+  toast('Proyecto eliminado', 'ok');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INFORME TÉCNICO PDF
+// ═══════════════════════════════════════════════════════════════
+
+function generarInformePDF() {
+  if (!cargas.length) { toast('Agrega cargas antes de generar el informe', 'err'); return; }
+
+  const nombre   = document.getElementById('bc-proyecto-nombre')?.value || 'Sin nombre';
+  const cliente  = document.getElementById('bc-proyecto-cliente')?.value || '—';
+  const ubicacion= document.getElementById('bc-proyecto-ubicacion')?.value || '—';
+  const tipoTab  = document.getElementById('bc-tipo-tablero')?.value || 'residencial';
+  const tempFactor = parseFloat(document.getElementById('bc-temperatura-global')?.value || 1.0);
+  const fecha = new Date().toLocaleDateString('es-EC', {day:'2-digit',month:'long',year:'numeric'});
+
+  const cfg = BC_SISTEMAS[_bcSistema] || BC_SISTEMAS['120'];
+  const { tension, esTri, fases, label } = cfg;
+
+  // Calcular datos para el informe
+  const tempF = tempFactor;
+  const circuitos = (window._bcCircuitos || []);
+  const acometida = window._bcAcometida || {};
+
+  const potPorFase = {};
+  fases.forEach(f => potPorFase[f] = 0);
+  let totalW = 0, totalWD = 0;
+  cargas.forEach(c => {
+    const cant = c.cantidad || 1;
+    const potUnit = c.potencia || 0;
+    const potTotal = potUnit * cant;
+    const pd = potTotal * (c.fs || 100) / 100;
+    if (potPorFase[c.fase] !== undefined) potPorFase[c.fase] += pd;
+    totalW  += potTotal;
+    totalWD += pd;
+  });
+  const ITotal = acometida.ITotal || (esTri ? totalWD/(tension*Math.sqrt(3)*0.9) : totalWD/(tension*0.9));
+  const brkAco = acometida.brkAco || (BREAKERS_STD.find(b => b >= ITotal*1.25)||2000);
+  const fsPromedio = cargas.length > 0 ? cargas.reduce((a,c)=>a+(c.fs||100),0)/cargas.length : 0;
+  const vals = Object.values(potPorFase);
+  const maxF = Math.max(...vals);
+  const minF = Math.min(...vals);
+  const desbalance = maxF > 0 ? ((maxF-minF)/maxF*100) : 0;
+
+  const TIPO_LABEL = {
+    iluminacion:'Iluminación', tomacorriente:'Tomacorriente', motor:'Motor',
+    hvac:'HVAC/Clima', resistivo:'Resistivo', otro:'Especial'
+  };
+
+  const filasCargas = cargas.map((c,i) => {
+    const cant = c.cantidad || 1;
+    const fp   = c.fp || 0.9;
+    const vC   = c.voltaje || tension;
+    const esTri_c = c.sistema === 'tri';
+    const sqrt3_c = esTri_c ? Math.sqrt(3) : 1;
+    const potTotal = (c.potencia||0) * cant;
+    const pd    = potTotal * (c.fs||100) / 100;
+    const Ic    = pd > 0 ? pd / (vC * sqrt3_c * fp) : 0;
+    const factorM = (c.tipo==='motor'||c.tipo==='hvac') ? 1.25 : 1.0;
+    const IdD = Ic * factorM / tempF;
+    let awgRow = AWG_TABLE.find(r => r[4]!=null && r[4]>=IdD) || AWG_TABLE[AWG_TABLE.length-1];
+    const IbMin = Ic * (factorM>1 ? 2.5 : 1.25);
+    const brkRec = BREAKERS_STD.find(b=>b>=IbMin)||2000;
+    const polos = esTri_c ? '3P' : '2P';
+    const areaC = THHN_AREA[awgRow ? awgRow[0] : '12'] || THHN_AREA['12'];
+    const nCond = esTri_c ? 4 : 3;
+    const totArea = areaC * nCond;
+    let conduitSel = CONDUIT_AREA.EMT.find(([n,a]) => a*0.40>=totArea);
+    if (!conduitSel) conduitSel = CONDUIT_AREA.EMT[CONDUIT_AREA.EMT.length-1];
+    return `<tr style="${i%2===0?'background:#fafafa':''}">
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;font-weight:600">${String(i+1).padStart(2,'0')}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee">${c.desc||'—'}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee">${TIPO_LABEL[c.tipo]||c.tipo}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center">${cant}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center">${vC}V</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center">${esTri_c?'3F':'1F'}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center">${fp}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center">${c.fase}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center">${c.fs||100}%</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:right;font-weight:700">${(pd/1000).toFixed(3)}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:right;color:#3b82f6;font-weight:600">${Ic.toFixed(2)}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center;color:#1d4ed8;font-weight:700">AWG #${awgRow?awgRow[0]:'—'}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center;color:#b45309;font-weight:700">${brkRec}A ${polos}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center;color:#166534;font-weight:700">EMT ${conduitSel?conduitSel[0]:'—'}</td>
+    </tr>`;
+  }).join('');
+
+  const filasFase = fases.map(f => {
+    const pf = potPorFase[f] || 0;
+    const pct = totalWD > 0 ? (pf/totalWD*100) : 0;
+    const If = pf / (tension * 0.9);
+    return `<tr>
+      <td style="padding:5px 8px;border-bottom:1px solid #eee;font-weight:700">${f}</td>
+      <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right;font-weight:700">${(pf/1000).toFixed(3)} kW</td>
+      <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right">${If.toFixed(2)} A</td>
+      <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right">${pct.toFixed(1)}%</td>
+    </tr>`;
+  }).join('');
+
+  const htmlInforme = `
+    <div style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#111;line-height:1.5">
+      <!-- ENCABEZADO -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;border-bottom:3px solid #f5c800;margin-bottom:20px">
+        <div>
+          <div style="font-size:22px;font-weight:900;color:#0c0c12;letter-spacing:-0.5px">INFORME TÉCNICO ELÉCTRICO</div>
+          <div style="font-size:13px;font-weight:700;color:#555;margin-top:2px">Balance de Cargas · Dimensionamiento de Tablero</div>
+          <div style="font-size:11px;color:#888;margin-top:6px">Norma: NEC / NTE INEN 2345 / ARCONEL Ecuador</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:11px;color:#888">Fecha de elaboración</div>
+          <div style="font-size:14px;font-weight:700;color:#0c0c12">${fecha}</div>
+          <div style="font-size:11px;color:#888;margin-top:4px">SEST · Sistema de Ingeniería</div>
+        </div>
+      </div>
+
+      <!-- DATOS DEL PROYECTO -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#0c0c12;border-bottom:2px solid #f5c800;padding-bottom:5px;margin-bottom:10px">1. DATOS DEL PROYECTO</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+          <div style="background:#f8f8f8;border-radius:8px;padding:10px 12px;border-left:3px solid #f5c800">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#888;margin-bottom:3px">Proyecto</div>
+            <div style="font-size:14px;font-weight:800;color:#0c0c12">${nombre}</div>
+          </div>
+          <div style="background:#f8f8f8;border-radius:8px;padding:10px 12px;border-left:3px solid #3b82f6">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#888;margin-bottom:3px">Cliente / Propietario</div>
+            <div style="font-size:13px;font-weight:700;color:#0c0c12">${cliente}</div>
+          </div>
+          <div style="background:#f8f8f8;border-radius:8px;padding:10px 12px;border-left:3px solid #22c55e">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#888;margin-bottom:3px">Ubicación</div>
+            <div style="font-size:13px;font-weight:700;color:#0c0c12">${ubicacion}</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-top:8px">
+          <div style="background:#fef9ec;border-radius:6px;padding:8px 10px;border:1px solid #fde68a">
+            <div style="font-size:10px;color:#92400e;font-weight:700">Sistema</div>
+            <div style="font-size:12px;font-weight:700;color:#78350f">${label}</div>
+          </div>
+          <div style="background:#fef9ec;border-radius:6px;padding:8px 10px;border:1px solid #fde68a">
+            <div style="font-size:10px;color:#92400e;font-weight:700">Tipo de tablero</div>
+            <div style="font-size:12px;font-weight:700;color:#78350f;text-transform:capitalize">${tipoTab}</div>
+          </div>
+          <div style="background:#fef9ec;border-radius:6px;padding:8px 10px;border:1px solid #fde68a">
+            <div style="font-size:10px;color:#92400e;font-weight:700">Temp. ambiente</div>
+            <div style="font-size:12px;font-weight:700;color:#78350f">Factor ${tempFactor}</div>
+          </div>
+          <div style="background:#fef9ec;border-radius:6px;padding:8px 10px;border:1px solid #fde68a">
+            <div style="font-size:10px;color:#92400e;font-weight:700">Total circuitos</div>
+            <div style="font-size:12px;font-weight:700;color:#78350f">${cargas.length} circuitos</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RESUMEN EJECUTIVO -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#0c0c12;border-bottom:2px solid #f5c800;padding-bottom:5px;margin-bottom:10px">2. RESUMEN EJECUTIVO</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:8px">
+          <div style="background:#0c0c12;color:#fff;border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:#999;margin-bottom:4px">Potencia Instalada</div>
+            <div style="font-size:18px;font-weight:900;color:#f5c800;font-family:monospace">${(totalW/1000).toFixed(2)}</div>
+            <div style="font-size:11px;color:#888">kW</div>
+          </div>
+          <div style="background:#0c0c12;color:#fff;border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:#999;margin-bottom:4px">Potencia Demanda</div>
+            <div style="font-size:18px;font-weight:900;color:#22c55e;font-family:monospace">${(totalWD/1000).toFixed(2)}</div>
+            <div style="font-size:11px;color:#888">kW</div>
+          </div>
+          <div style="background:#0c0c12;color:#fff;border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:#999;margin-bottom:4px">Corriente Total</div>
+            <div style="font-size:18px;font-weight:900;color:#60a5fa;font-family:monospace">${ITotal.toFixed(2)}</div>
+            <div style="font-size:11px;color:#888">A</div>
+          </div>
+          <div style="background:#0c0c12;color:#fff;border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:#999;margin-bottom:4px">Breaker Principal</div>
+            <div style="font-size:18px;font-weight:900;color:#f5c800;font-family:monospace">${brkAco}A</div>
+            <div style="font-size:11px;color:#888">${esTri?'3 Polos':'2 Polos'}</div>
+          </div>
+          <div style="background:#0c0c12;color:#fff;border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:#999;margin-bottom:4px">Fs Promedio</div>
+            <div style="font-size:18px;font-weight:900;color:#f5c800;font-family:monospace">${fsPromedio.toFixed(0)}</div>
+            <div style="font-size:11px;color:#888">%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABLA DE CARGAS -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#0c0c12;border-bottom:2px solid #f5c800;padding-bottom:5px;margin-bottom:10px">3. TABLA DE BALANCE DE CARGAS Y DIMENSIONAMIENTO</div>
+        <table style="width:100%;border-collapse:collapse;font-size:10px">
+          <thead>
+            <tr style="background:#0c0c12;color:#fff">
+              <th style="padding:6px 7px;text-align:left">N°</th>
+              <th style="padding:6px 7px;text-align:left">Descripción</th>
+              <th style="padding:6px 7px;text-align:left">Tipo</th>
+              <th style="padding:6px 7px;text-align:center">Cant.</th>
+              <th style="padding:6px 7px;text-align:center">Voltaje</th>
+              <th style="padding:6px 7px;text-align:center">Fases</th>
+              <th style="padding:6px 7px;text-align:center">F.P.</th>
+              <th style="padding:6px 7px;text-align:center">Fase</th>
+              <th style="padding:6px 7px;text-align:center">Fs%</th>
+              <th style="padding:6px 7px;text-align:right">Dem.(kW)</th>
+              <th style="padding:6px 7px;text-align:right">I (A)</th>
+              <th style="padding:6px 7px;text-align:center">Cable</th>
+              <th style="padding:6px 7px;text-align:center">Breaker</th>
+              <th style="padding:6px 7px;text-align:center">Conduit</th>
+            </tr>
+          </thead>
+          <tbody>${filasCargas}</tbody>
+          <tfoot>
+            <tr style="background:#f5c80020;border-top:2px solid #f5c800">
+              <td colspan="9" style="padding:7px;font-weight:800;color:#0c0c12">TOTALES</td>
+              <td style="padding:7px;text-align:right;font-weight:800;color:#b45309">${(totalWD/1000).toFixed(3)}</td>
+              <td style="padding:7px;text-align:right;font-weight:800;color:#1d4ed8">${ITotal.toFixed(2)}</td>
+              <td colspan="3" style="padding:7px;text-align:center;font-weight:700;color:#166534">Breaker Ppal: ${brkAco}A</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- BALANCE POR FASES -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#0c0c12;border-bottom:2px solid #f5c800;padding-bottom:5px;margin-bottom:10px">4. BALANCE DE FASES</div>
+        <table style="width:50%;border-collapse:collapse;font-size:11px">
+          <thead><tr style="background:#0c0c12;color:#fff">
+            <th style="padding:6px 8px;text-align:left">Fase</th>
+            <th style="padding:6px 8px;text-align:right">Potencia</th>
+            <th style="padding:6px 8px;text-align:right">Corriente</th>
+            <th style="padding:6px 8px;text-align:right">% Total</th>
+          </tr></thead>
+          <tbody>${filasFase}</tbody>
+        </table>
+        <div style="margin-top:8px;padding:8px 12px;background:${desbalance>10?'#fef2f2':'#f0fdf4'};border:1px solid ${desbalance>10?'#fecaca':'#bbf7d0'};border-radius:6px;font-size:11px">
+          <strong>${desbalance>10?'⚠️ DESBALANCE EXCEDE 10%':'✅ Desbalance dentro del rango NEC'}</strong>: ${desbalance.toFixed(1)}%
+          (Máx. permitido: 10% — NEC / NTE INEN)
+        </div>
+      </div>
+
+      <!-- NOTAS TÉCNICAS -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#0c0c12;border-bottom:2px solid #f5c800;padding-bottom:5px;margin-bottom:10px">5. NOTAS TÉCNICAS Y NORMATIVA APLICADA</div>
+        <div style="font-size:11px;line-height:1.7;color:#333">
+          <p>• <strong>Conductor:</strong> Cobre THHN/THWN-2, temperatura 90°C — NEC 310.15(B)(16) / NTE INEN 2345</p>
+          <p>• <strong>Factor de temperatura:</strong> ${tempFactor} aplicado a la capacidad de conducción</p>
+          <p>• <strong>Protecciones:</strong> Termomagnéticos dimensionados según NEC Art. 240 / 430</p>
+          <p>• <strong>Motores:</strong> Factor de servicio 1.25 aplicado — NEC 430.22</p>
+          <p>• <strong>Conduit:</strong> Llenado máximo 40% para 3+ conductores — NEC Chapter 9 Table 1</p>
+          <p>• <strong>Desbalance de fases:</strong> No debe superar el 10% según NEC y NTE INEN</p>
+          <p>• <strong>Breaker principal:</strong> Dimensionado al 125% de la corriente total de demanda</p>
+        </div>
+      </div>
+
+      <!-- PIE DE PÁGINA -->
+      <div style="text-align:center;font-size:10px;color:#999;padding-top:12px;border-top:1px solid #eee;margin-top:20px">
+        <p>Documento generado por SEST · Sistema de Ingeniería Eléctrica · ${fecha}</p>
+        <p>Este informe técnico ha sido elaborado según las normas NEC (National Electrical Code) y NTE INEN aplicables en Ecuador.</p>
+        <p style="margin-top:4px;font-weight:700;color:#666">${usuario?.nombre ? 'Elaborado por: ' + usuario.nombre : ''}</p>
+      </div>
+    </div>`;
+
+  // Inyectar en el contenedor oculto y generar PDF
+  const cont = document.getElementById('pdf-informe');
+  if (!cont) { toast('Error: contenedor PDF no encontrado', 'err'); return; }
+  cont.innerHTML = htmlInforme;
+  cont.style.display = 'block';
+  cont.style.position = 'fixed';
+  cont.style.left = '-9999px';
+  cont.style.top = '0';
+  cont.style.width = '794px';
+  cont.style.background = '#fff';
+  cont.style.padding = '40px';
+  cont.style.zIndex = '9999';
+
+  toast('⏳ Generando PDF…', 'info');
+
+  const opt = {
+    margin:       [10, 10, 10, 10],
+    filename:     `Informe_${nombre.replace(/[^a-zA-Z0-9]/g,'_')}.pdf`,
+    image:        { type: 'jpeg', quality: 0.98 },
+    html2canvas:  { scale: 2, useCORS: true, logging: false },
+    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  setTimeout(() => {
+    html2pdf().set(opt).from(cont).save().then(() => {
+      cont.style.display = 'none';
+      cont.innerHTML = '';
+      toast('✅ Informe PDF generado', 'ok');
+    }).catch(err => {
+      cont.style.display = 'none';
+      toast('Error al generar PDF: ' + err.message, 'err');
+    });
+  }, 300);
+}
+
+
 </script>
+
+<!-- MODAL: Proyectos guardados de Balance de Cargas -->
+<div class="modal-bg" id="m-balances" style="display:none" onclick="if(event.target===this)closeModal('m-balances')">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-head">
+      <span style="font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px">
+        <i data-lucide="folder-open" style="width:18px;height:18px;color:var(--acc)"></i>
+        Proyectos de Balance de Cargas
+      </span>
+      <button type="button" onclick="closeModal('m-balances')" class="btn btn-ghost btn-sm">
+        <i data-lucide="x" style="width:14px;height:14px"></i>
+      </button>
+    </div>
+    <div style="padding:16px">
+      <div id="bc-saved-list-container" class="bc-saved-list">
+        <div style="text-align:center;padding:24px;color:var(--t3)">
+          <i data-lucide="inbox" style="width:32px;height:32px;margin-bottom:8px;display:block;margin-left:auto;margin-right:auto"></i>
+          <p>No hay proyectos guardados</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PDF INFORME (oculto para renderizado) -->
+<div id="pdf-informe" style="display:none;position:absolute;left:-9999px;top:0;width:794px"></div>
+
 </body>
 </html>
