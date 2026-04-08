@@ -391,6 +391,25 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
 .calc-card-lbl svg{width:12px;height:12px}
 .calc-card-val{font-size:26px;font-weight:700;font-family:'DM Mono',monospace;line-height:1.1}
 .calc-card-sub{font-size:11px;color:var(--t3);margin-top:4px}
+/* Preset buttons */
+.bc-preset-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 13px;border-radius:8px;border:1.5px solid var(--bd2);
+  background:var(--s2);color:var(--t2);font-family:'DM Sans',sans-serif;
+  font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;
+}
+.bc-preset-btn:hover{background:var(--s3);color:var(--t1);border-color:var(--bd2)}
+/* Tabla de cargas — inputs inline modernos */
+.bc-inp{
+  background:var(--s3);border:1.5px solid transparent;color:var(--t1);
+  padding:6px 10px;border-radius:8px;font-family:'DM Sans',sans-serif;
+  font-size:13px;font-weight:500;outline:none;width:100%;
+  transition:border-color .15s,background .15s;
+}
+.bc-inp:focus{border-color:var(--acc);background:var(--s4)}
+.bc-inp option{background:var(--s2)}
+/* Badge por fase en la tabla resumen */
+.fase-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
 /* ALERT */
 .alert{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;display:none;}
 .alert.err{background:var(--err-d);border:1px solid rgba(239,68,68,.3);color:#fca5a5}
@@ -1189,54 +1208,63 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
 
       <!-- ══════════ TAB 2: BALANCE DE CARGAS ══════════ -->
       <div id="calctab-cargas" data-calctab="cargas" style="display:none">
+
         <div class="card" style="margin-bottom:16px">
-          <div class="card-head">
-            <div class="card-title" style="display:flex;align-items:center;gap:8px"><i data-lucide="zap" style="width:18px;height:18px;stroke-width:2;color:var(--acc)"></i> Balance de Cargas y Factor de Simultaneidad</div>
-            <div class="card-tools">
-              <select class="inp" id="bc-tension" onchange="recalcBalance()" style="width:160px">
-                <option value="120">120 V — 1F</option>
-                <option value="220" selected>220 V — 1F</option>
-                <option value="208">208 V — 3F</option>
-                <option value="380">380 V — 3F</option>
-              </select>
-              <button type="button" class="btn btn-acc" onclick="agregarCarga()"><i data-lucide="plus" style="width:16px;height:16px"></i> Agregar carga</button>
+          <div class="card-head" style="flex-wrap:wrap;gap:12px">
+            <div class="card-title" style="display:flex;align-items:center;gap:8px">
+              <i data-lucide="zap" style="width:18px;height:18px;stroke-width:2;color:var(--acc)"></i>
+              Balance de Cargas y Factor de Simultaneidad
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <div class="calc-radio-group" id="bc-sistema-grp" style="height:36px">
+                <button type="button" class="calc-radio-btn" data-bcsys="120/240" onclick="setBcSistema('120/240')"><i data-lucide="home" style="width:12px;height:12px"></i> 120/240V</button>
+                <button type="button" class="calc-radio-btn on" data-bcsys="120" onclick="setBcSistema('120')"><i data-lucide="plug" style="width:12px;height:12px"></i> 120V</button>
+                <button type="button" class="calc-radio-btn" data-bcsys="220" onclick="setBcSistema('220')"><i data-lucide="zap" style="width:12px;height:12px"></i> 220V</button>
+                <button type="button" class="calc-radio-btn" data-bcsys="380" onclick="setBcSistema('380')"><i data-lucide="activity" style="width:12px;height:12px"></i> 380V 3F</button>
+              </div>
+              <button type="button" class="btn btn-acc" onclick="agregarCarga()" style="height:36px;white-space:nowrap">
+                <i data-lucide="plus" style="width:15px;height:15px"></i> Agregar carga
+              </button>
             </div>
           </div>
-          <div style="padding:12px">
-            <!-- Tabla de cargas -->
-            <div class="tbl-wrap" style="margin-bottom:12px">
-              <table id="tbl-cargas">
-                <thead>
-                  <tr>
-                    <th>Circuito / Descripción</th>
-                    <th>Tipo</th>
-                    <th>Potencia (W)</th>
-                    <th>Fase</th>
-                    <th>Fs (%)</th>
-                    <th>P. Demanda (W)</th>
-                    <th>Corriente (A)</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody id="tbody-cargas"></tbody>
-              </table>
-            </div>
-            <!-- Botones preset -->
-            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
-              <span style="font-size:12px;color:var(--t2);align-self:center">Presets:</span>
-              <button type="button" class="btn" onclick="presetResidencial()" style="font-size:12px;padding:5px 12px">🏠 Residencial típico</button>
-              <button type="button" class="btn" onclick="presetComercial()" style="font-size:12px;padding:5px 12px">🏢 Comercial típico</button>
-              <button type="button" class="btn" onclick="presetIndustrial()" style="font-size:12px;padding:5px 12px">🏭 Industrial típico</button>
-              <button type="button" class="btn" onclick="limpiarCargas()" style="font-size:12px;padding:5px 12px;color:var(--err)">🗑 Limpiar todo</button>
-            </div>
-            <!-- Resumen balance -->
-            <div id="bc-resumen"></div>
+
+          <div style="padding:0 16px 14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;border-bottom:1px solid var(--bd)">
+            <span style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--t3)">Presets:</span>
+            <button type="button" class="bc-preset-btn" onclick="presetResidencial()"><span>🏠</span><span>Residencial</span></button>
+            <button type="button" class="bc-preset-btn" onclick="presetComercial()"><span>🏢</span><span>Comercial</span></button>
+            <button type="button" class="bc-preset-btn" onclick="presetIndustrial()"><span>🏭</span><span>Industrial</span></button>
+            <button type="button" class="bc-preset-btn" onclick="limpiarCargas()" style="color:var(--err);border-color:rgba(239,68,68,.25)"><span>🗑</span><span>Limpiar</span></button>
+          </div>
+
+          <div class="tbl-wrap" style="padding:0 0 4px">
+            <table id="tbl-cargas" style="min-width:700px">
+              <thead>
+                <tr>
+                  <th style="min-width:160px">Descripción</th>
+                  <th style="min-width:145px">Tipo de carga</th>
+                  <th style="min-width:120px">Potencia (W)</th>
+                  <th style="min-width:80px">Fase</th>
+                  <th style="min-width:95px">Fs (%)</th>
+                  <th style="min-width:110px">P. Demanda</th>
+                  <th style="min-width:90px">Corriente</th>
+                  <th style="width:44px"></th>
+                </tr>
+              </thead>
+              <tbody id="tbody-cargas"></tbody>
+            </table>
           </div>
         </div>
-        <!-- Gráfica de barras por fase -->
-        <div class="card">
-          <div class="card-head"><div class="card-title" style="display:flex;align-items:center;gap:8px"><i data-lucide="bar-chart-2" style="width:18px;height:18px;stroke-width:2;color:var(--acc)"></i> Distribución por Fases</div></div>
-          <div id="bc-chart" style="padding:16px"></div>
+
+        <div id="bc-resumen"></div>
+
+        <div class="card" style="margin-top:16px">
+          <div class="card-head">
+            <div class="card-title" style="display:flex;align-items:center;gap:8px">
+              <i data-lucide="bar-chart-2" style="width:18px;height:18px;stroke-width:2;color:var(--acc)"></i>
+              Distribución de potencia por fase
+            </div>
+          </div>
+          <div id="bc-chart" style="padding:16px 20px 20px"></div>
         </div>
       </div>
 
@@ -2818,6 +2846,7 @@ function initCalculadora() {
     calcInited = true;
     window._ccSistema = '120/240';
     window._ccMaterial = 'Cu';
+    _bcSistema = '120';
     renderAWGTable();
     renderConduitTable();
     setSistema('120/240');
@@ -3126,135 +3155,274 @@ function agregarCarga(desc='', tipo='iluminacion', potencia=1000, fase='L1', fs=
   recalcBalance();
 }
 
+// Sistema balance de cargas (Ecuador)
+const BC_SISTEMAS = {
+  '120/240': { tension: 120, esTri: false, fases: ['L1','L2'], label: '120/240V Bifásico Ecuador' },
+  '120':     { tension: 120, esTri: false, fases: ['L1','L2'], label: '120V Monofásico' },
+  '220':     { tension: 220, esTri: false, fases: ['L1','L2'], label: '220V Monofásico' },
+  '380':     { tension: 380, esTri: true,  fases: ['L1','L2','L3'], label: '380V Trifásico' },
+};
+let _bcSistema = '120';
+
+function setBcSistema(sys) {
+  _bcSistema = sys;
+  document.querySelectorAll('#bc-sistema-grp .calc-radio-btn').forEach(b =>
+    b.classList.toggle('on', b.dataset.bcsys === sys));
+  renderCargas();
+  recalcBalance();
+}
+
 function renderCargas() {
   const tb = document.getElementById('tbody-cargas');
   if (!tb) return;
-  const tipos = {iluminacion:'💡 Iluminación',tomacorriente:'🔌 Tomacorriente',motor:'⚙️ Motor',hvac:'❄️ HVAC/Clima',resistivo:'🔥 Resistivo',otro:'📦 Otro'};
-  if (!cargas.length) { tb.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--t3);padding:24px">Sin cargas. Agrega una carga o usa un preset.</td></tr>'; return; }
-  const tension = parseFloat(document.getElementById('bc-tension').value);
-  const esTri = [208,380].includes(tension);
-  tb.innerHTML = cargas.map((c,i) => {
-    const pd = c.potencia * c.fs / 100;
-    const sqrt3 = esTri ? Math.sqrt(3) : 1;
+  const cfg = BC_SISTEMAS[_bcSistema] || BC_SISTEMAS['120'];
+  const { tension, esTri, fases } = cfg;
+
+  const TIPOS = {
+    iluminacion:  '💡 Iluminación',
+    tomacorriente:'🔌 Tomacorriente',
+    motor:        '⚙️ Motor',
+    hvac:         '❄️ HVAC/Clima',
+    resistivo:    '🔥 Resistivo',
+    otro:         '📦 Otro',
+  };
+  const FASE_COLOR = { L1:'#60a5fa', L2:'#f472b6', L3:'#4ade80' };
+
+  if (!cargas.length) {
+    tb.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px 16px">
+      <div style="color:var(--t3);font-size:13px">Sin cargas cargadas.</div>
+      <div style="color:var(--t3);font-size:12px;margin-top:4px">Usa un preset o agrega una carga manualmente.</div>
+    </td></tr>`;
+    return;
+  }
+
+  const sqrt3 = esTri ? Math.sqrt(3) : 1;
+  tb.innerHTML = cargas.map((c, i) => {
+    const pd = (c.potencia || 0) * (c.fs || 100) / 100;
     const Ic = pd / (tension * sqrt3 * 0.9);
+    const fc = FASE_COLOR[c.fase] || '#9090aa';
     return `<tr>
-      <td><input class="inp" value="${c.desc}" oninput="cargas[${i}].desc=this.value;recalcBalance()" style="min-width:130px"/></td>
-      <td><select class="inp" onchange="cargas[${i}].tipo=this.value;recalcBalance()" style="width:130px">
-        ${Object.entries(tipos).map(([k,v])=>`<option value="${k}"${c.tipo===k?' selected':''}>${v}</option>`).join('')}
+      <td><input class="bc-inp" value="${c.desc}" placeholder="Descripción…"
+        oninput="cargas[${i}].desc=this.value" style="min-width:130px"/></td>
+      <td><select class="bc-inp" onchange="cargas[${i}].tipo=this.value;recalcBalance()">
+        ${Object.entries(TIPOS).map(([k,v]) =>
+          `<option value="${k}"${c.tipo===k?' selected':''}>${v}</option>`).join('')}
       </select></td>
-      <td><input class="inp" type="number" value="${c.potencia}" oninput="cargas[${i}].potencia=parseFloat(this.value)||0;recalcBalance()" style="width:90px"/></td>
-      <td><select class="inp" onchange="cargas[${i}].fase=this.value;recalcBalance()" style="width:70px">
-        <option${c.fase==='L1'?' selected':''}>L1</option>
-        <option${c.fase==='L2'?' selected':''}>L2</option>
-        ${esTri?`<option${c.fase==='L3'?' selected':''}>L3</option>`:''}
-      </select></td>
-      <td><input class="inp" type="number" min="1" max="100" value="${c.fs}" oninput="cargas[${i}].fs=parseFloat(this.value)||100;recalcBalance()" style="width:70px"/></td>
-      <td style="font-family:'DM Mono',monospace;font-weight:700;color:var(--acc)">${pd.toFixed(0)} W</td>
-      <td style="font-family:'DM Mono',monospace">${Ic.toFixed(2)} A</td>
-      <td><button type="button" class="btn" onclick="cargas.splice(${i},1);renderCargas();recalcBalance()" style="color:var(--err);padding:4px 8px;font-size:12px">✕</button></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:4px">
+          <input class="bc-inp" type="number" min="0" value="${c.potencia}"
+            oninput="cargas[${i}].potencia=parseFloat(this.value)||0;recalcBalance()"
+            style="width:80px"/>
+          <span style="font-size:10px;color:var(--t3);font-weight:600">W</span>
+        </div>
+      </td>
+      <td>
+        <select class="bc-inp" onchange="cargas[${i}].fase=this.value;recalcBalance()" style="width:64px">
+          ${fases.map(f => `<option value="${f}"${c.fase===f?' selected':''}>${f}</option>`).join('')}
+        </select>
+      </td>
+      <td>
+        <div style="display:flex;align-items:center;gap:4px">
+          <input class="bc-inp" type="number" min="1" max="100" value="${c.fs}"
+            oninput="cargas[${i}].fs=parseFloat(this.value)||100;recalcBalance()"
+            style="width:60px"/>
+          <span style="font-size:10px;color:var(--t3);font-weight:600">%</span>
+        </div>
+      </td>
+      <td>
+        <span style="font-family:'DM Mono',monospace;font-weight:700;font-size:13px;color:var(--acc)">${pd.toFixed(0)}</span>
+        <span style="font-size:10px;color:var(--t3);margin-left:2px">W</span>
+      </td>
+      <td>
+        <span style="font-family:'DM Mono',monospace;font-size:13px;color:var(--t1)">${Ic.toFixed(2)}</span>
+        <span style="font-size:10px;color:var(--t3);margin-left:2px">A</span>
+      </td>
+      <td>
+        <button type="button" onclick="cargas.splice(${i},1);renderCargas();recalcBalance()"
+          style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);
+            color:var(--err);border-radius:7px;width:30px;height:30px;
+            display:flex;align-items:center;justify-content:center;cursor:pointer;
+            transition:background .15s;font-size:14px;line-height:1"
+          onmouseover="this.style.background='rgba(239,68,68,.2)'"
+          onmouseout="this.style.background='rgba(239,68,68,.1)'">×</button>
+      </td>
     </tr>`;
   }).join('');
 }
 
 function recalcBalance() {
-  const tension = parseFloat(document.getElementById('bc-tension').value);
-  const esTri = [208,380].includes(tension);
-  const fases = esTri ? ['L1','L2','L3'] : ['L1','L2'];
-  const sqrt3 = esTri ? Math.sqrt(3) : 1;
+  const cfg     = BC_SISTEMAS[_bcSistema] || BC_SISTEMAS['120'];
+  const { tension, esTri, fases, label } = cfg;
+  const sqrt3   = esTri ? Math.sqrt(3) : 1;
+  const FASE_COLOR = { L1:'#60a5fa', L2:'#f472b6', L3:'#4ade80' };
 
   const potPorFase = {};
   fases.forEach(f => potPorFase[f] = 0);
-  let totalKW = 0, totalKWD = 0;
+  let totalW = 0, totalWD = 0;
 
   cargas.forEach(c => {
-    const pd = c.potencia * c.fs / 100;
+    const pd = (c.potencia||0) * (c.fs||100) / 100;
     if (potPorFase[c.fase] !== undefined) potPorFase[c.fase] += pd;
-    totalKW  += c.potencia;
-    totalKWD += pd;
+    totalW  += (c.potencia||0);
+    totalWD += pd;
   });
 
-  const maxFase = Math.max(...Object.values(potPorFase));
-  const minFase = Math.min(...Object.values(potPorFase));
+  const vals      = Object.values(potPorFase);
+  const maxFase   = Math.max(...vals);
+  const minFase   = Math.min(...vals);
   const desbalance = maxFase > 0 ? ((maxFase - minFase) / maxFase * 100) : 0;
-  const ITotal = totalKWD / (tension * sqrt3 * 0.9);
-  const colorDesBal = desbalance > 10 ? 'var(--err)' : desbalance > 5 ? 'var(--acc)' : 'var(--ok)';
+  const ITotal    = totalWD / (tension * sqrt3 * 0.9);
+  const fsPromedio = cargas.length > 0
+    ? cargas.reduce((a,c) => a + (c.fs||100), 0) / cargas.length : 0;
+  const breakerAcom = BREAKERS_STD.find(b => b >= ITotal * 1.25) || 2000;
+
+  const cDesBal = desbalance > 10 ? 'var(--err)' : desbalance > 5 ? 'var(--acc)' : 'var(--ok)';
+  const txtDesBal = desbalance > 10 ? '⚠️ Excede 10%' : desbalance > 5 ? '⚠️ Revisar' : '✅ Balanceado';
 
   const res = document.getElementById('bc-resumen');
   if (!res) return;
+
   res.innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:16px">
-      <div style="background:var(--s2);border-radius:10px;padding:14px">
-        <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Potencia instalada</div>
-        <div style="font-size:22px;font-weight:700;font-family:'DM Mono',monospace;color:var(--t1)">${(totalKW/1000).toFixed(2)} kW</div>
+    <!-- KPI cards -->
+    <div class="calc-result-grid" style="grid-template-columns:repeat(auto-fill,minmax(175px,1fr))">
+      <div class="calc-card">
+        <div class="calc-card-lbl"><i data-lucide="database" style="width:12px;height:12px"></i> Potencia instalada</div>
+        <div class="calc-card-val" style="color:var(--t1);font-size:22px">${(totalW/1000).toFixed(2)} <span style="font-size:13px">kW</span></div>
+        <div class="calc-card-sub">${cargas.length} circuito${cargas.length!==1?'s':''}</div>
       </div>
-      <div style="background:var(--s2);border-radius:10px;padding:14px">
-        <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Demanda real (con Fs)</div>
-        <div style="font-size:22px;font-weight:700;font-family:'DM Mono',monospace;color:var(--acc)">${(totalKWD/1000).toFixed(2)} kW</div>
+      <div class="calc-card highlight">
+        <div class="calc-card-lbl"><i data-lucide="zap" style="width:12px;height:12px"></i> Demanda real (con Fs)</div>
+        <div class="calc-card-val" style="color:var(--acc);font-size:22px">${(totalWD/1000).toFixed(2)} <span style="font-size:13px">kW</span></div>
+        <div class="calc-card-sub">Fs promedio: ${fsPromedio.toFixed(0)}%</div>
       </div>
-      <div style="background:var(--s2);border-radius:10px;padding:14px">
-        <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Corriente total estimada</div>
-        <div style="font-size:22px;font-weight:700;font-family:'DM Mono',monospace;color:var(--info)">${ITotal.toFixed(2)} A</div>
+      <div class="calc-card">
+        <div class="calc-card-lbl"><i data-lucide="activity" style="width:12px;height:12px"></i> Corriente total</div>
+        <div class="calc-card-val" style="color:var(--info);font-size:22px">${ITotal.toFixed(2)} <span style="font-size:13px">A</span></div>
+        <div class="calc-card-sub">${tension} V · ${esTri?'Trifásico':'Bifásico'}</div>
       </div>
-      <div style="background:var(--s2);border-radius:10px;padding:14px">
-        <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Desbalance entre fases</div>
-        <div style="font-size:22px;font-weight:700;font-family:'DM Mono',monospace;color:${colorDesBal}">${desbalance.toFixed(1)}%</div>
-        <div style="font-size:11px;color:var(--t3)">${desbalance>10?'⚠️ Excede 10% — redistribuir':desbalance>5?'⚠️ Revisar distribución':'✅ Balanceado'}</div>
+      <div class="calc-card" style="border-color:${desbalance>10?'rgba(239,68,68,.4)':desbalance>5?'rgba(245,200,0,.3)':'var(--bd)'}">
+        <div class="calc-card-lbl"><i data-lucide="scale" style="width:12px;height:12px"></i> Desbalance</div>
+        <div class="calc-card-val" style="color:${cDesBal};font-size:22px">${desbalance.toFixed(1)}<span style="font-size:13px">%</span></div>
+        <div class="calc-card-sub">${txtDesBal}</div>
+      </div>
+      <div class="calc-card">
+        <div class="calc-card-lbl"><i data-lucide="toggle-left" style="width:12px;height:12px"></i> Acometida sugerida</div>
+        <div class="calc-card-val" style="color:var(--ok);font-size:22px">${breakerAcom} <span style="font-size:13px">A</span></div>
+        <div class="calc-card-sub">Al 125% de Ic total</div>
       </div>
     </div>
-    <div style="margin-bottom:12px">
-      <table style="width:100%;border-collapse:collapse">
-        <thead><tr><th>Fase</th><th>P. Instalada (W)</th><th>P. Demanda (W)</th><th>Corriente (A)</th><th>% del total</th></tr></thead>
-        <tbody>${fases.map(f=>{
-          const pf = potPorFase[f]||0;
-          const pct = totalKWD>0?(pf/totalKWD*100):0;
-          const If = pf/(tension*0.9);
-          return `<tr>
-            <td style="font-weight:700;color:${f==='L1'?'#60a5fa':f==='L2'?'#f472b6':'#4ade80'}">${f}</td>
-            <td style="font-family:'DM Mono',monospace">${pf.toFixed(0)}</td>
-            <td style="font-family:'DM Mono',monospace;color:var(--acc);font-weight:600">${pf.toFixed(0)}</td>
-            <td style="font-family:'DM Mono',monospace">${If.toFixed(2)}</td>
-            <td>
-              <div style="display:flex;align-items:center;gap:8px">
-                <div style="flex:1;background:var(--s3);border-radius:4px;height:8px;overflow:hidden">
-                  <div style="width:${Math.min(pct,100)}%;height:100%;background:${f==='L1'?'#60a5fa':f==='L2'?'#f472b6':'#4ade80'};border-radius:4px;transition:width .3s"></div>
-                </div>
-                <span style="font-size:12px;font-family:'DM Mono',monospace;min-width:40px">${pct.toFixed(1)}%</span>
-              </div>
-            </td>
-          </tr>`;
-        }).join('')}</tbody>
-      </table>
-    </div>
-    <div style="background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:12px;font-size:12px;color:var(--t2)">
-      <strong style="color:var(--info)">Recomendación NEC:</strong> El desbalance entre fases no debe superar el 10% en instalaciones trifásicas. 
-      Factor de simultaneidad aplicado: promedio ${cargas.length>0?(cargas.reduce((a,c)=>a+c.fs,0)/cargas.length).toFixed(0):'—'}%. 
-      Acometida sugerida: <strong style="color:var(--acc)">${BREAKERS_STD.find(b=>b>=ITotal*1.25)||2000} A</strong>
+
+    <!-- Tabla por fase -->
+    <div class="card" style="margin-top:16px">
+      <div class="card-head">
+        <div class="card-title" style="display:flex;align-items:center;gap:8px">
+          <i data-lucide="columns-2" style="width:16px;height:16px;color:var(--acc)"></i>
+          Distribución por fases — ${label}
+        </div>
+      </div>
+      <div class="tbl-wrap" style="padding:12px">
+        <table>
+          <thead>
+            <tr>
+              <th>Fase</th>
+              <th>P. Demanda (W)</th>
+              <th>Corriente (A)</th>
+              <th style="min-width:200px">Carga relativa</th>
+              <th>% del total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${fases.map(f => {
+              const pf  = potPorFase[f] || 0;
+              const pct = totalWD > 0 ? (pf / totalWD * 100) : 0;
+              const If  = pf / (tension * 0.9);
+              const fc  = FASE_COLOR[f] || '#aaa';
+              return `<tr>
+                <td>
+                  <div style="display:flex;align-items:center;gap:7px">
+                    <div style="width:10px;height:10px;border-radius:50%;background:${fc};flex-shrink:0;box-shadow:0 0 6px ${fc}60"></div>
+                    <span style="font-weight:700;font-size:14px;color:${fc}">${f}</span>
+                  </div>
+                </td>
+                <td style="font-family:'DM Mono',monospace;font-weight:600">${pf.toFixed(0)} W</td>
+                <td style="font-family:'DM Mono',monospace">${If.toFixed(2)} A</td>
+                <td>
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <div style="flex:1;background:var(--s3);border-radius:6px;height:10px;overflow:hidden">
+                      <div style="width:${Math.min(pct,100)}%;height:100%;
+                        background:linear-gradient(90deg,${fc},${fc}99);
+                        border-radius:6px;transition:width .4s cubic-bezier(.4,0,.2,1)"></div>
+                    </div>
+                  </div>
+                </td>
+                <td style="font-family:'DM Mono',monospace;font-weight:600;color:${fc}">${pct.toFixed(1)}%</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div style="margin:0 12px 12px;background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:10px;padding:12px;font-size:12px;color:var(--t2)">
+        <strong style="color:var(--info)">📋 NEC / NTE INEN:</strong> El desbalance entre fases no debe superar el <strong>10%</strong>.
+        ${_bcSistema==='120/240' ? ' Para el sistema <strong>120/240 V Ecuador</strong>: las cargas de 120 V deben distribuirse equitativamente entre L1 y L2 para minimizar corriente de neutro.' : ''}
+        Acometida recomendada: <strong style="color:var(--acc)">${breakerAcom} A</strong> (125% × ${ITotal.toFixed(1)} A).
+      </div>
     </div>
   `;
   renderChartFases(potPorFase, esTri);
+  refreshIcons();
 }
 
 function renderChartFases(potPorFase, esTri) {
   const cont = document.getElementById('bc-chart');
   if (!cont) return;
-  const fases = esTri ? ['L1','L2','L3'] : ['L1','L2'];
-  const colors = { L1:'#60a5fa', L2:'#f472b6', L3:'#4ade80' };
-  const max = Math.max(...Object.values(potPorFase), 1);
-  cont.innerHTML = `<div style="display:flex;align-items:flex-end;gap:24px;height:180px;padding:0 16px 0 0">
-    ${fases.map(f => {
-      const v = potPorFase[f]||0;
-      const h = (v/max*100);
-      return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;gap:6px">
-        <div style="font-family:'DM Mono',monospace;font-size:13px;font-weight:700;color:${colors[f]}">${(v/1000).toFixed(2)} kW</div>
-        <div style="width:100%;height:${Math.max(h,2)}%;background:${colors[f]};border-radius:6px 6px 0 0;min-height:4px;transition:height .4s;position:relative">
-          <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,.08);border-radius:6px 6px 0 0"></div>
-        </div>
-        <div style="font-weight:700;color:${colors[f]};font-size:14px">${f}</div>
-      </div>`;
-    }).join('')}
-    <div style="position:absolute;left:0;right:0;border-top:1px dashed rgba(255,255,255,.1);top:0" title="Máximo"></div>
-  </div>
-  <p style="text-align:center;font-size:12px;color:var(--t3);margin-top:8px">Distribución de potencia por fase — Valor máximo: ${(max/1000).toFixed(2)} kW</p>`;
+  const fases  = esTri ? ['L1','L2','L3'] : ['L1','L2'];
+  const COLORS = { L1:'#60a5fa', L2:'#f472b6', L3:'#4ade80' };
+  const max    = Math.max(...Object.values(potPorFase), 1);
+  const totalW = Object.values(potPorFase).reduce((a,v) => a+v, 0);
+
+  cont.innerHTML = `
+    <div style="display:flex;align-items:flex-end;gap:20px;height:200px;position:relative;padding:0 8px">
+      <!-- Líneas de referencia -->
+      ${[25,50,75,100].map(pct => `
+        <div style="position:absolute;left:0;right:0;bottom:${pct}%;border-top:1px dashed rgba(255,255,255,${pct===100?'.12':'.06'});pointer-events:none">
+          <span style="position:absolute;right:calc(100% + 6px);top:-8px;font-size:10px;color:var(--t3);font-family:'DM Mono',monospace;white-space:nowrap">${((max*pct/100)/1000).toFixed(1)}k</span>
+        </div>`).join('')}
+      ${fases.map(f => {
+        const v   = potPorFase[f] || 0;
+        const pct = (v / max * 100);
+        const fc  = COLORS[f];
+        const If  = v / (BC_SISTEMAS[_bcSistema]?.tension || 120) / 0.9;
+        return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;gap:6px;height:100%;justify-content:flex-end">
+          <div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;color:${fc}">${(v/1000).toFixed(2)} kW</div>
+          <div style="width:100%;position:relative;border-radius:8px 8px 0 0;overflow:hidden;min-height:6px"
+               style="height:${Math.max(pct,3)}%">
+            <div style="
+              width:100%;height:${Math.max(pct,3)}%;
+              background:linear-gradient(180deg,${fc},${fc}88);
+              border-radius:8px 8px 0 0;
+              box-shadow:0 0 20px ${fc}40;
+              transition:height .5s cubic-bezier(.4,0,.2,1);
+              min-height:6px;
+              position:relative">
+              <div style="position:absolute;inset:0;background:rgba(255,255,255,.06);border-radius:8px 8px 0 0"></div>
+            </div>
+          </div>
+          <div style="font-weight:700;color:${fc};font-size:13px">${f}</div>
+          <div style="font-size:10px;color:var(--t3);font-family:'DM Mono',monospace">${If.toFixed(1)} A</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="display:flex;justify-content:center;gap:20px;margin-top:16px;flex-wrap:wrap">
+      ${fases.map(f => {
+        const pct = totalW > 0 ? ((potPorFase[f]||0)/totalW*100) : 0;
+        return `<div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--t2)">
+          <div style="width:10px;height:10px;border-radius:3px;background:${COLORS[f]};box-shadow:0 0 6px ${COLORS[f]}60"></div>
+          <span style="font-weight:600;color:${COLORS[f]}">${f}</span>
+          <span>${pct.toFixed(1)}% del total</span>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
 }
 
 // Presets de cargas
