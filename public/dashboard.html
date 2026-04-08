@@ -539,6 +539,7 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
     <div class="nav-item" data-nav="nueva-cot" data-tip="Nueva Cotización" onclick="abrirNuevaCot()"><span class="nav-ico"><i data-lucide="zap"></i></span><span class="nav-txt">Nueva Cotización</span></div>
     <div class="nav-lbl"><span class="nav-lbl-txt">Gestión</span></div>
     <div class="nav-item" data-nav="materiales" data-tip="Materiales" onclick="ir('materiales')"><span class="nav-ico"><i data-lucide="package"></i></span><span class="nav-txt">Materiales</span></div>
+    <div class="nav-item" data-nav="calculadora" data-tip="Calculadora Eléctrica" onclick="ir('calculadora')"><span class="nav-ico"><i data-lucide="calculator"></i></span><span class="nav-txt">Calculadora NEC</span></div>
     <div class="nav-item" data-nav="clientes" data-tip="Clientes" onclick="ir('clientes')"><span class="nav-ico"><i data-lucide="users"></i></span><span class="nav-txt">Clientes</span></div>
     <div class="nav-item admin-only" data-nav="categorias" data-tip="Categorías" onclick="ir('categorias')" style="display:none"><span class="nav-ico"><i data-lucide="tag"></i></span><span class="nav-txt">Categorías</span></div>
     <div class="nav-item admin-only" data-nav="usuarios" data-tip="Usuarios" onclick="ir('usuarios')" style="display:none"><span class="nav-ico"><i data-lucide="shield"></i></span><span class="nav-txt">Usuarios</span></div>
@@ -898,6 +899,334 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
       </div>
     </div>
 
+    <!-- CALCULADORA ELÉCTRICA NEC -->
+    <div class="sec" id="sec-calculadora">
+      <!-- TABS de la calculadora -->
+      <div class="cot-tabs" role="tablist" style="margin-bottom:18px">
+        <button type="button" role="tab" class="cot-tab on" data-calctab="cables" onclick="irCalcTab('cables')" aria-selected="true"><i data-lucide="cable"></i> Sección de Cables</button>
+        <button type="button" role="tab" class="cot-tab" data-calctab="cargas" onclick="irCalcTab('cargas')" aria-selected="false"><i data-lucide="zap"></i> Balance de Cargas</button>
+        <button type="button" role="tab" class="cot-tab" data-calctab="cortocircuito" onclick="irCalcTab('cortocircuito')" aria-selected="false"><i data-lucide="shield-alert"></i> Protecciones</button>
+        <button type="button" role="tab" class="cot-tab" data-calctab="tuberia" onclick="irCalcTab('tuberia')" aria-selected="false"><i data-lucide="minus-circle"></i> Tuberías / Conduit</button>
+      </div>
+
+      <!-- ══════════ TAB 1: SECCIÓN DE CABLES ══════════ -->
+      <div id="calctab-cables" data-calctab="cables">
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-head">
+            <div class="card-title" style="display:flex;align-items:center;gap:8px"><i data-lucide="cable" style="width:18px;height:18px;stroke-width:2;color:var(--acc)"></i> Calibrador de Conductores AWG — NEC / NTE INEN</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;padding:16px">
+            <!-- Tipo de instalación -->
+            <div>
+              <label class="lbl">Tipo de instalación</label>
+              <select class="inp" id="cc-instalacion" onchange="calcCable()">
+                <option value="ducto">Ducto / Conduit (EMT, PVC)</option>
+                <option value="libre">Libre en aire</option>
+                <option value="directa">Enterrado directamente</option>
+                <option value="bandeja">Bandeja portacables</option>
+              </select>
+            </div>
+            <!-- Tensión -->
+            <div>
+              <label class="lbl">Tensión del sistema</label>
+              <select class="inp" id="cc-tension" onchange="calcCable()">
+                <option value="120">120 V monofásico</option>
+                <option value="220" selected>220 V monofásico</option>
+                <option value="240">240 V monofásico</option>
+                <option value="208">208 V trifásico</option>
+                <option value="380">380 V trifásico</option>
+                <option value="440">440 V trifásico</option>
+              </select>
+            </div>
+            <!-- Fases -->
+            <div>
+              <label class="lbl">Número de fases</label>
+              <select class="inp" id="cc-fases" onchange="calcCable()">
+                <option value="1" selected>Monofásico (1F)</option>
+                <option value="3">Trifásico (3F)</option>
+              </select>
+            </div>
+            <!-- Potencia o corriente -->
+            <div>
+              <label class="lbl">Ingresar por</label>
+              <select class="inp" id="cc-modo" onchange="toggleModoCable();calcCable()">
+                <option value="potencia">Potencia (W/kW/HP)</option>
+                <option value="corriente">Corriente (A)</option>
+              </select>
+            </div>
+            <!-- Potencia -->
+            <div id="cc-blk-potencia">
+              <label class="lbl">Potencia de la carga</label>
+              <div style="display:flex;gap:6px">
+                <input class="inp" id="cc-potencia" type="number" min="0" step="0.01" value="3000" oninput="calcCable()" style="flex:1"/>
+                <select class="inp" id="cc-pot-unit" onchange="calcCable()" style="width:80px">
+                  <option value="W">W</option>
+                  <option value="kW">kW</option>
+                  <option value="HP">HP</option>
+                  <option value="kVA">kVA</option>
+                </select>
+              </div>
+            </div>
+            <!-- Corriente directa -->
+            <div id="cc-blk-corriente" style="display:none">
+              <label class="lbl">Corriente (A)</label>
+              <input class="inp" id="cc-amperes" type="number" min="0" step="0.1" value="15" oninput="calcCable()"/>
+            </div>
+            <!-- Factor de potencia -->
+            <div>
+              <label class="lbl">Factor de potencia (FP)</label>
+              <input class="inp" id="cc-fp" type="number" min="0.5" max="1" step="0.01" value="0.9" oninput="calcCable()"/>
+            </div>
+            <!-- Eficiencia motor -->
+            <div>
+              <label class="lbl">Eficiencia (motores, 0.85 por defecto)</label>
+              <input class="inp" id="cc-eff" type="number" min="0.5" max="1" step="0.01" value="0.85" oninput="calcCable()"/>
+            </div>
+            <!-- Temperatura ambiente -->
+            <div>
+              <label class="lbl">Temperatura ambiente (°C)</label>
+              <select class="inp" id="cc-temp" onchange="calcCable()">
+                <option value="1.0" selected>≤ 30°C — Factor: 1.00</option>
+                <option value="0.91">31–35°C — Factor: 0.91</option>
+                <option value="0.82">36–40°C — Factor: 0.82</option>
+                <option value="0.71">41–45°C — Factor: 0.71</option>
+                <option value="0.58">46–50°C — Factor: 0.58</option>
+                <option value="0.41">51–60°C — Factor: 0.41</option>
+              </select>
+            </div>
+            <!-- Conductores en ducto -->
+            <div>
+              <label class="lbl">Conductores en el mismo ducto</label>
+              <select class="inp" id="cc-agrup" onchange="calcCable()">
+                <option value="1.0">1–3 conductores — Factor: 1.00</option>
+                <option value="0.8">4–6 conductores — Factor: 0.80</option>
+                <option value="0.7">7–9 conductores — Factor: 0.70</option>
+                <option value="0.5">10–20 conductores — Factor: 0.50</option>
+                <option value="0.45">21–30 conductores — Factor: 0.45</option>
+              </select>
+            </div>
+            <!-- Tipo de motor -->
+            <div>
+              <label class="lbl">¿Es carga tipo motor?</label>
+              <select class="inp" id="cc-motor" onchange="calcCable()">
+                <option value="0">No (carga resistiva/iluminación)</option>
+                <option value="1">Sí — aplicar factor 1.25 NEC 430.22</option>
+              </select>
+            </div>
+            <!-- Longitud del circuito -->
+            <div>
+              <label class="lbl">Longitud del circuito (m)</label>
+              <input class="inp" id="cc-long" type="number" min="0" step="1" value="30" oninput="calcCable()"/>
+            </div>
+            <!-- Material conductor -->
+            <div>
+              <label class="lbl">Material del conductor</label>
+              <select class="inp" id="cc-material" onchange="calcCable()">
+                <option value="Cu">Cobre (Cu)</option>
+                <option value="Al">Aluminio (Al)</option>
+              </select>
+            </div>
+            <!-- Caída de tensión máx -->
+            <div>
+              <label class="lbl">Caída de tensión máxima permitida (%)</label>
+              <input class="inp" id="cc-caida-max" type="number" min="1" max="10" step="0.5" value="3" oninput="calcCable()"/>
+            </div>
+          </div>
+
+          <!-- Resultado cables -->
+          <div id="cc-resultado" style="margin:0 16px 16px;background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:16px"></div>
+        </div>
+
+        <!-- Tabla de capacidades AWG (referencia) -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title" style="display:flex;align-items:center;gap:8px"><i data-lucide="table-2" style="width:18px;height:18px;stroke-width:2;color:var(--acc)"></i> Tabla de Conductores AWG — NEC Table 310.15(B)(16) — Cu/Al</div>
+          </div>
+          <div class="tbl-wrap" style="padding:12px">
+            <table>
+              <thead><tr><th>AWG / kcmil</th><th>Ø mm² aprox.</th><th>Cu — 60°C (A)</th><th>Cu — 75°C (A)</th><th>Cu — 90°C (A)</th><th>Al — 75°C (A)</th><th>Al — 90°C (A)</th><th>Resistencia Cu (Ω/km)</th></tr></thead>
+              <tbody id="tbl-awg-ref"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════ TAB 2: BALANCE DE CARGAS ══════════ -->
+      <div id="calctab-cargas" data-calctab="cargas" style="display:none">
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-head">
+            <div class="card-title" style="display:flex;align-items:center;gap:8px"><i data-lucide="zap" style="width:18px;height:18px;stroke-width:2;color:var(--acc)"></i> Balance de Cargas y Factor de Simultaneidad</div>
+            <div class="card-tools">
+              <select class="inp" id="bc-tension" onchange="recalcBalance()" style="width:160px">
+                <option value="120">120 V — 1F</option>
+                <option value="220" selected>220 V — 1F</option>
+                <option value="208">208 V — 3F</option>
+                <option value="380">380 V — 3F</option>
+              </select>
+              <button type="button" class="btn btn-acc" onclick="agregarCarga()"><i data-lucide="plus" style="width:16px;height:16px"></i> Agregar carga</button>
+            </div>
+          </div>
+          <div style="padding:12px">
+            <!-- Tabla de cargas -->
+            <div class="tbl-wrap" style="margin-bottom:12px">
+              <table id="tbl-cargas">
+                <thead>
+                  <tr>
+                    <th>Circuito / Descripción</th>
+                    <th>Tipo</th>
+                    <th>Potencia (W)</th>
+                    <th>Fase</th>
+                    <th>Fs (%)</th>
+                    <th>P. Demanda (W)</th>
+                    <th>Corriente (A)</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-cargas"></tbody>
+              </table>
+            </div>
+            <!-- Botones preset -->
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+              <span style="font-size:12px;color:var(--t2);align-self:center">Presets:</span>
+              <button type="button" class="btn" onclick="presetResidencial()" style="font-size:12px;padding:5px 12px">🏠 Residencial típico</button>
+              <button type="button" class="btn" onclick="presetComercial()" style="font-size:12px;padding:5px 12px">🏢 Comercial típico</button>
+              <button type="button" class="btn" onclick="presetIndustrial()" style="font-size:12px;padding:5px 12px">🏭 Industrial típico</button>
+              <button type="button" class="btn" onclick="limpiarCargas()" style="font-size:12px;padding:5px 12px;color:var(--err)">🗑 Limpiar todo</button>
+            </div>
+            <!-- Resumen balance -->
+            <div id="bc-resumen"></div>
+          </div>
+        </div>
+        <!-- Gráfica de barras por fase -->
+        <div class="card">
+          <div class="card-head"><div class="card-title" style="display:flex;align-items:center;gap:8px"><i data-lucide="bar-chart-2" style="width:18px;height:18px;stroke-width:2;color:var(--acc)"></i> Distribución por Fases</div></div>
+          <div id="bc-chart" style="padding:16px"></div>
+        </div>
+      </div>
+
+      <!-- ══════════ TAB 3: PROTECCIONES ══════════ -->
+      <div id="calctab-cortocircuito" data-calctab="cortocircuito" style="display:none">
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-head">
+            <div class="card-title" style="display:flex;align-items:center;gap:8px"><i data-lucide="shield-alert" style="width:18px;height:18px;stroke-width:2;color:var(--acc)"></i> Dimensionamiento de Protecciones — NEC Art. 240 / 430</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;padding:16px">
+            <div>
+              <label class="lbl">Corriente de carga (A)</label>
+              <input class="inp" id="pr-Ic" type="number" min="0" step="0.1" value="20" oninput="calcProtecciones()"/>
+            </div>
+            <div>
+              <label class="lbl">Tipo de carga</label>
+              <select class="inp" id="pr-tipo" onchange="calcProtecciones()">
+                <option value="gral">General (resistiva/iluminación)</option>
+                <option value="motor">Motor AC</option>
+                <option value="transformador">Transformador</option>
+                <option value="condensador">Banco de condensadores</option>
+              </select>
+            </div>
+            <div>
+              <label class="lbl">Tensión del sistema (V)</label>
+              <select class="inp" id="pr-v" onchange="calcProtecciones()">
+                <option value="120">120 V</option>
+                <option value="220" selected>220 V</option>
+                <option value="380">380 V</option>
+                <option value="440">440 V</option>
+              </select>
+            </div>
+            <div>
+              <label class="lbl">Fases</label>
+              <select class="inp" id="pr-fases" onchange="calcProtecciones()">
+                <option value="1" selected>Monofásico</option>
+                <option value="3">Trifásico</option>
+              </select>
+            </div>
+            <div>
+              <label class="lbl">Potencia cortocircuito disponible (kVA)</label>
+              <input class="inp" id="pr-kva-cc" type="number" min="0" step="1" value="150" oninput="calcProtecciones()" title="Potencia de cortocircuito del transformador de la red"/>
+            </div>
+            <div>
+              <label class="lbl">Impedancia transformador Z% (si conoce)</label>
+              <input class="inp" id="pr-z" type="number" min="0" step="0.01" value="5" oninput="calcProtecciones()"/>
+            </div>
+          </div>
+          <div id="pr-resultado" style="margin:0 16px 16px;background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:16px"></div>
+        </div>
+        <!-- Tabla de breakers estándar -->
+        <div class="card">
+          <div class="card-head"><div class="card-title" style="display:flex;align-items:center;gap:8px"><i data-lucide="toggle-left" style="width:18px;height:18px;stroke-width:2;color:var(--acc)"></i> Breakers estándar disponibles (ANSI/UL)</div></div>
+          <div style="padding:16px">
+            <div style="display:flex;flex-wrap:wrap;gap:8px">
+              <span id="breaker-tag" style=""></span>
+            </div>
+            <p style="margin-top:12px;font-size:12px;color:var(--t2)">Los valores en <span style="color:var(--acc);font-weight:700">amarillo</span> son los más cercanos a la corriente calculada.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════ TAB 4: TUBERÍAS / CONDUIT ══════════ -->
+      <div id="calctab-tuberia" data-calctab="tuberia" style="display:none">
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-head">
+            <div class="card-title" style="display:flex;align-items:center;gap:8px"><i data-lucide="minus-circle" style="width:18px;height:18px;stroke-width:2;color:var(--acc)"></i> Cálculo de Tuberías / Conduit — NEC Chapter 9</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;padding:16px">
+            <div>
+              <label class="lbl">Tipo de conduit</label>
+              <select class="inp" id="tb-tipo" onchange="calcTuberia()">
+                <option value="EMT">EMT (metálico liviano)</option>
+                <option value="PVC40">PVC cédula 40</option>
+                <option value="IMC">IMC (metálico intermedio)</option>
+                <option value="RMC">RMC (metálico rígido)</option>
+              </select>
+            </div>
+            <div>
+              <label class="lbl">Número de conductores</label>
+              <input class="inp" id="tb-ncond" type="number" min="1" max="50" step="1" value="3" oninput="calcTuberia()"/>
+            </div>
+            <div>
+              <label class="lbl">Calibre del conductor</label>
+              <select class="inp" id="tb-awg" onchange="calcTuberia()">
+                <option value="14">AWG #14</option>
+                <option value="12">AWG #12</option>
+                <option value="10">AWG #10</option>
+                <option value="8">AWG #8</option>
+                <option value="6">AWG #6</option>
+                <option value="4">AWG #4</option>
+                <option value="2">AWG #2</option>
+                <option value="1">AWG #1</option>
+                <option value="1/0">AWG 1/0</option>
+                <option value="2/0">AWG 2/0</option>
+                <option value="3/0">AWG 3/0</option>
+                <option value="4/0">AWG 4/0</option>
+                <option value="250">250 kcmil</option>
+                <option value="350">350 kcmil</option>
+                <option value="500">500 kcmil</option>
+              </select>
+            </div>
+            <div>
+              <label class="lbl">Aislamiento del conductor</label>
+              <select class="inp" id="tb-aislamiento" onchange="calcTuberia()">
+                <option value="THHN">THHN/THWN-2</option>
+                <option value="THW">THW</option>
+                <option value="XHHW">XHHW-2</option>
+              </select>
+            </div>
+          </div>
+          <div id="tb-resultado" style="margin:0 16px 16px;background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:16px"></div>
+        </div>
+        <!-- Tabla de conduits disponibles -->
+        <div class="card">
+          <div class="card-head"><div class="card-title" style="display:flex;align-items:center;gap:8px"><i data-lucide="table-2" style="width:18px;height:18px;stroke-width:2;color:var(--acc)"></i> Tabla de Conduits EMT — Área interna (NEC Chapter 9, Table 4)</div></div>
+          <div class="tbl-wrap" style="padding:12px">
+            <table>
+              <thead><tr><th>Diámetro nominal</th><th>Área interna (mm²)</th><th>Llenado 1 cond. (53%)</th><th>Llenado 2 cond. (31%)</th><th>Llenado 3+ cond. (40%)</th></tr></thead>
+              <tbody id="tbl-conduit-ref"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- CLIENTES -->
     <div class="sec" id="sec-clientes">
       <div class="card">
@@ -1144,10 +1473,11 @@ function ir(sec){
   document.querySelectorAll('.nav-item[data-nav]').forEach(n=>n.classList.toggle('on',n.dataset.nav===sec));
   const secEl=document.getElementById('sec-'+sec);
   if(secEl)secEl.classList.add('on');
-  const tit={inicio:'Inicio',cotizaciones:'Mis Cotizaciones','nueva-cot':'Nueva Cotizaci\u00f3n',materiales:'Cat\u00e1logo de Materiales',clientes:'Mis Clientes',categorias:'Categor\u00edas',usuarios:'Gesti\u00f3n de Usuarios',equipo:'Datos del Equipo'};
+  const tit={inicio:'Inicio',cotizaciones:'Mis Cotizaciones','nueva-cot':'Nueva Cotizaci\u00f3n',materiales:'Cat\u00e1logo de Materiales',calculadora:'Calculadora El\u00e9ctrica NEC',clientes:'Mis Clientes',categorias:'Categor\u00edas',usuarios:'Gesti\u00f3n de Usuarios',equipo:'Datos del Equipo'};
   document.getElementById('page-title').textContent=tit[sec]||sec;
   closeSidebar();
   if(sec==='materiales')renderMats(mats);
+  if(sec==='calculadora')initCalculadora();
   if(sec==='clientes')renderClis(clis);
   if(sec==='cotizaciones')renderCots(cots);
   if(sec==='categorias')renderCatsAdmin();
@@ -2276,7 +2606,595 @@ async function cargarEquipo(){
     refreshIcons();
   }
 }
-function _actualizarToggleCompartir(){
+// ═══════════════════════════════════════════════════════
+// CALCULADORA ELÉCTRICA NEC
+// ═══════════════════════════════════════════════════════
+
+// ── Tabla AWG NEC 310.15(B)(16) ─────────────────────────
+const AWG_TABLE = [
+  // [awgLabel, mm2, Cu60, Cu75, Cu90, Al75, Al90, RohmKm_Cu]
+  ['#14',   2.08,  15,  20,  25,  null, null, 8.45],
+  ['#12',   3.31,  20,  25,  30,  20,   25,   5.31],
+  ['#10',   5.26,  30,  35,  40,  30,   35,   3.33],
+  ['#8',    8.37,  40,  50,  55,  40,   45,   2.09],
+  ['#6',   13.30,  55,  65,  75,  50,   60,   1.32],
+  ['#4',   21.15,  70,  85,  95,  65,   75,   0.829],
+  ['#3',   26.67,  85, 100, 110,  75,   85,   0.657],
+  ['#2',   33.62, 95,  115, 130,  90,  100,   0.521],
+  ['#1',   42.41, 110, 130, 150, 100,  115,   0.413],
+  ['1/0',  53.49, 125, 150, 170, 120,  135,   0.327],
+  ['2/0',  67.43, 145, 175, 195, 135,  150,   0.259],
+  ['3/0',  85.01, 165, 200, 225, 155,  175,   0.206],
+  ['4/0', 107.2,  195, 230, 260, 180,  205,   0.163],
+  ['250', 126.7,  215, 255, 290, 205,  230,   0.138],
+  ['300', 152.0,  240, 285, 320, 230,  260,   0.115],
+  ['350', 177.3,  260, 310, 350, 250,  280,   0.0987],
+  ['400', 202.7,  280, 335, 380, 270,  305,   0.0865],
+  ['500', 253.3,  320, 380, 430, 310,  350,   0.0693],
+  ['600', 304.0,  350, 420, 475, 340,  385,   0.0579],
+  ['700', 354.7,  385, 460, 520, 375,  420,   0.0496],
+  ['750', 380.0,  400, 475, 535, 385,  435,   0.0463],
+];
+
+// mm² por AWG para cálculo de caída de tensión (usado en conduit)
+const AWG_AREA_MM2 = {
+  '14':2.08,'12':3.31,'10':5.26,'8':8.37,'6':13.30,'4':21.15,'2':33.62,
+  '1':42.41,'1/0':53.49,'2/0':67.43,'3/0':85.01,'4/0':107.2,
+  '250':126.7,'350':177.3,'500':253.3
+};
+
+// Área exterior del conductor THHN por AWG (mm²) para fill conduit
+const THHN_AREA = {
+  '14':8.97,'12':11.68,'10':16.77,'8':24.26,'6':32.71,'4':41.61,'2':53.87,
+  '1':61.29,'1/0':72.77,'2/0':87.1,'3/0':104.0,'4/0':125.1,
+  '250':154.8,'350':203.2,'500':271.6
+};
+
+// Área interna conduits (mm²) — NEC Chapter 9 Table 4
+const CONDUIT_AREA = {
+  EMT: [
+    ['1/2"',78.5],['3/4"',131.7],['1"',211.0],['1-1/4"',355.7],['1-1/2"',492.5],
+    ['2"',807.7],['2-1/2"',1307],['3"',1924],['3-1/2"',2601],['4"',3308]
+  ],
+  PVC40: [
+    ['1/2"',86.0],['3/4"',137.1],['1"',218.1],['1-1/4"',366.4],['1-1/2"',493.8],
+    ['2"',818.0],['2-1/2"',1321],['3"',1936],['3-1/2"',2594],['4"',3327]
+  ],
+  IMC: [
+    ['1/2"',84.9],['3/4"',140.5],['1"',221.9],['1-1/4"',372.8],['1-1/2"',508.0],
+    ['2"',828.3],['2-1/2"',1337],['3"',1944],['3-1/2"',2611],['4"',3325]
+  ],
+  RMC: [
+    ['1/2"',78.9],['3/4"',134.8],['1"',211.7],['1-1/4"',358.2],['1-1/2"',486.7],
+    ['2"',799.0],['2-1/2"',1295],['3"',1922],['3-1/2"',2593],['4"',3308]
+  ]
+};
+
+// Breakers estándar ANSI/UL
+const BREAKERS_STD = [1,2,3,5,6,10,15,20,25,30,35,40,45,50,60,70,80,90,100,
+  110,125,150,175,200,225,250,300,350,400,450,500,600,700,800,1000,1200,1600,2000];
+
+let calcInited = false;
+let cargas = [];
+
+function initCalculadora() {
+  if (!calcInited) {
+    calcInited = true;
+    renderAWGTable();
+    renderConduitTable();
+    toggleModoCable();
+    calcCable();
+    calcProtecciones();
+    calcTuberia();
+    // Cargas por defecto
+    presetResidencial();
+  }
+  refreshIcons();
+}
+
+function irCalcTab(tab) {
+  document.querySelectorAll('[data-calctab]').forEach(el => {
+    if (el.id.startsWith('calctab-')) el.style.display = el.id === 'calctab-' + tab ? '' : 'none';
+  });
+  document.querySelectorAll('.cot-tab[data-calctab]').forEach(btn => {
+    const on = btn.dataset.calctab === tab;
+    btn.classList.toggle('on', on);
+    btn.setAttribute('aria-selected', on);
+  });
+  if (tab === 'cargas') recalcBalance();
+  if (tab === 'cortocircuito') calcProtecciones();
+  if (tab === 'tuberia') calcTuberia();
+  refreshIcons();
+}
+
+// ─── RENDER TABLA AWG REFERENCIA ────────────────────────
+function renderAWGTable() {
+  const tb = document.getElementById('tbl-awg-ref');
+  if (!tb) return;
+  tb.innerHTML = AWG_TABLE.map(r => `<tr>
+    <td style="font-weight:700;font-family:'DM Mono',monospace">${r[0]}</td>
+    <td>${r[1].toFixed(2)}</td>
+    <td>${r[2]??'—'}</td>
+    <td>${r[3]??'—'}</td>
+    <td style="color:var(--acc);font-weight:600">${r[4]??'—'}</td>
+    <td>${r[5]??'—'}</td>
+    <td>${r[6]??'—'}</td>
+    <td style="font-family:'DM Mono',monospace;font-size:12px">${r[7].toFixed(4)}</td>
+  </tr>`).join('');
+}
+
+// ─── RENDER TABLA CONDUITS REFERENCIA ───────────────────
+function renderConduitTable() {
+  const tb = document.getElementById('tbl-conduit-ref');
+  if (!tb) return;
+  tb.innerHTML = CONDUIT_AREA.EMT.map(([nom, area]) => `<tr>
+    <td style="font-weight:700">${nom}</td>
+    <td style="font-family:'DM Mono',monospace">${area.toFixed(1)}</td>
+    <td>${(area*0.53).toFixed(1)}</td>
+    <td>${(area*0.31).toFixed(1)}</td>
+    <td style="color:var(--acc)">${(area*0.40).toFixed(1)}</td>
+  </tr>`).join('');
+}
+
+// ─── TOGGLE MODO CABLE (potencia vs corriente) ────────────
+function toggleModoCable() {
+  const modo = document.getElementById('cc-modo').value;
+  document.getElementById('cc-blk-potencia').style.display = modo === 'potencia' ? '' : 'none';
+  document.getElementById('cc-blk-corriente').style.display = modo === 'corriente' ? '' : 'none';
+}
+
+// ─── CÁLCULO PRINCIPAL DE CABLES ────────────────────────
+function calcCable() {
+  const el = document.getElementById('cc-resultado');
+  if (!el) return;
+
+  const tension   = parseFloat(document.getElementById('cc-tension').value);
+  const fases     = parseInt(document.getElementById('cc-fases').value);
+  const fp        = parseFloat(document.getElementById('cc-fp').value) || 0.9;
+  const eff       = parseFloat(document.getElementById('cc-eff').value) || 0.85;
+  const tempF     = parseFloat(document.getElementById('cc-temp').value);
+  const agrupF    = parseFloat(document.getElementById('cc-agrup').value);
+  const esMotor   = parseInt(document.getElementById('cc-motor').value);
+  const longitud  = parseFloat(document.getElementById('cc-long').value) || 1;
+  const material  = document.getElementById('cc-material').value;
+  const caidaMax  = parseFloat(document.getElementById('cc-caida-max').value) || 3;
+  const modo      = document.getElementById('cc-modo').value;
+
+  let Ic = 0;
+  if (modo === 'potencia') {
+    let W = parseFloat(document.getElementById('cc-potencia').value) || 0;
+    const pu = document.getElementById('cc-pot-unit').value;
+    if (pu === 'kW')  W *= 1000;
+    if (pu === 'HP')  W *= 746;
+    if (pu === 'kVA') W *= 1000;
+    const sqrt3 = fases === 3 ? Math.sqrt(3) : 1;
+    Ic = W / (tension * sqrt3 * fp * (pu === 'HP' ? eff : 1));
+  } else {
+    Ic = parseFloat(document.getElementById('cc-amperes').value) || 0;
+  }
+
+  if (Ic <= 0) { el.innerHTML = '<p style="color:var(--t3)">Ingresa los valores de la carga para calcular.</p>'; return; }
+
+  // Corriente de diseño con factor de motor NEC 430.22
+  const factorMotor = esMotor ? 1.25 : 1.0;
+  const IdDiseño = Ic * factorMotor;
+
+  // Corriente corregida por temperatura y agrupamiento
+  const factorTotal = tempF * agrupF;
+  const IdCorr = IdDiseño / factorTotal;
+
+  // Buscar AWG por capacidad de corriente (columna Cu90 o Al90)
+  const colIdx = material === 'Cu' ? 4 : 6; // 90°C THHN
+  let awgSel = null;
+  for (const row of AWG_TABLE) {
+    if (row[colIdx] != null && row[colIdx] >= IdCorr) {
+      awgSel = row;
+      break;
+    }
+  }
+
+  // Verificar caída de tensión y escalar si necesario
+  let awgFinal = awgSel;
+  let caidaReal = 0;
+  if (awgSel) {
+    // ρ Cu = 0.0172 Ω·mm²/m, Al = 0.0282
+    const rho = material === 'Cu' ? 0.0172 : 0.0282;
+    const area = awgSel[1];
+    const sqrt3 = fases === 3 ? Math.sqrt(3) : 1;
+    const R = rho * longitud / area;
+    const Vd = Ic * R * (fases === 3 ? 2 : 2); // 2*L para ida y vuelta mono; √3*L trifásico
+    caidaReal = (Vd / tension) * 100;
+
+    // Si caída supera el máximo, escalar conductor
+    if (caidaReal > caidaMax) {
+      // Área mínima requerida para caída aceptable
+      const areaMin = (rho * longitud * Ic * 2) / (tension * caidaMax / 100);
+      for (const row of AWG_TABLE) {
+        if (row[1] >= areaMin && row[colIdx] != null) {
+          awgFinal = row;
+          const R2 = rho * longitud / row[1];
+          const Vd2 = Ic * R2 * 2;
+          caidaReal = (Vd2 / tension) * 100;
+          break;
+        }
+      }
+    }
+  }
+
+  const colorCaida = caidaReal > caidaMax ? 'var(--err)' : 'var(--ok)';
+  const iconCaida  = caidaReal > caidaMax ? '⚠️' : '✅';
+
+  // Recomendación de breaker (125% para circuitos generales, 250% para motores)
+  const pctBreaker = esMotor ? 2.50 : 1.25;
+  const IbreakerMin = Ic * pctBreaker;
+  const IbreakerRec = BREAKERS_STD.find(b => b >= IbreakerMin) || BREAKERS_STD[BREAKERS_STD.length-1];
+
+  // Calibre neutro para trifásico balanceado (puede ser menor)
+  const neutroNote = fases === 3
+    ? '<br><span style="color:var(--t2);font-size:12px">⚡ Sistema trifásico: el neutro puede ser del mismo calibre o reducido si la carga es balanceada.</span>'
+    : '';
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:16px">
+      <div style="background:var(--s2);border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Corriente de carga</div>
+        <div style="font-size:24px;font-weight:700;font-family:'DM Mono',monospace;color:var(--acc)">${Ic.toFixed(2)} A</div>
+      </div>
+      <div style="background:var(--s2);border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Corriente de diseño</div>
+        <div style="font-size:24px;font-weight:700;font-family:'DM Mono',monospace;color:var(--t1)">${IdCorr.toFixed(2)} A</div>
+        <div style="font-size:11px;color:var(--t3)">×${factorMotor} motor / ÷${factorTotal.toFixed(2)} corr.</div>
+      </div>
+      <div style="background:var(--s2);border-radius:10px;padding:14px;${!awgFinal?'border:1px solid var(--err)':'border:1px solid rgba(245,200,0,.25)'}">
+        <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Calibre recomendado (${material} THHN 90°C)</div>
+        <div style="font-size:28px;font-weight:700;font-family:'DM Mono',monospace;color:var(--acc)">${awgFinal ? 'AWG ' + awgFinal[0] : '> 750 kcmil'}</div>
+        <div style="font-size:11px;color:var(--t2)">${awgFinal ? awgFinal[1].toFixed(2) + ' mm² — Cap. ' + awgFinal[colIdx] + ' A' : 'Usar conductores en paralelo'}</div>
+        ${neutroNote}
+      </div>
+      <div style="background:var(--s2);border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Caída de tensión ${iconCaida}</div>
+        <div style="font-size:24px;font-weight:700;font-family:'DM Mono',monospace;color:${colorCaida}">${caidaReal.toFixed(2)}%</div>
+        <div style="font-size:11px;color:var(--t3)">Máx. permitida: ${caidaMax}% — ${(tension * caidaReal / 100).toFixed(1)} V</div>
+      </div>
+      <div style="background:var(--s2);border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Breaker recomendado</div>
+        <div style="font-size:24px;font-weight:700;font-family:'DM Mono',monospace;color:var(--info)">${IbreakerRec} A</div>
+        <div style="font-size:11px;color:var(--t3)">Mín. ${IbreakerMin.toFixed(1)} A (${(pctBreaker*100).toFixed(0)}% Ic) — ${fases===3?'3 polos':'2 polos'}</div>
+      </div>
+      <div style="background:var(--s2);border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Resistencia tramo</div>
+        <div style="font-size:20px;font-weight:700;font-family:'DM Mono',monospace;color:var(--t1)">${awgFinal ? ((material==='Cu'?0.0172:0.0282)*longitud/awgFinal[1]).toFixed(4) : '—'} Ω</div>
+        <div style="font-size:11px;color:var(--t3)">${longitud} m — Material: ${material}</div>
+      </div>
+    </div>
+    <div style="background:rgba(245,200,0,.06);border:1px solid rgba(245,200,0,.2);border-radius:8px;padding:12px;font-size:12px;color:var(--t2)">
+      <strong style="color:var(--acc)">Norma aplicada:</strong> NEC Table 310.15(B)(16) · Factor temp.: ${(tempF*100).toFixed(0)}% · Agrupamiento: ${(agrupF*100).toFixed(0)}% 
+      · ${esMotor?'NEC 430.22 motor (×1.25)':'Carga general'} · ${fases===3?'Sistema trifásico √3':'Sistema monofásico'}
+    </div>
+  `;
+}
+
+// ─── BALANCE DE CARGAS ───────────────────────────────────
+function agregarCarga(desc='', tipo='iluminacion', potencia=1000, fase='L1', fs=100) {
+  cargas.push({ desc, tipo, potencia, fase, fs });
+  renderCargas();
+  recalcBalance();
+}
+
+function renderCargas() {
+  const tb = document.getElementById('tbody-cargas');
+  if (!tb) return;
+  const tipos = {iluminacion:'💡 Iluminación',tomacorriente:'🔌 Tomacorriente',motor:'⚙️ Motor',hvac:'❄️ HVAC/Clima',resistivo:'🔥 Resistivo',otro:'📦 Otro'};
+  if (!cargas.length) { tb.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--t3);padding:24px">Sin cargas. Agrega una carga o usa un preset.</td></tr>'; return; }
+  const tension = parseFloat(document.getElementById('bc-tension').value);
+  const esTri = [208,380].includes(tension);
+  tb.innerHTML = cargas.map((c,i) => {
+    const pd = c.potencia * c.fs / 100;
+    const sqrt3 = esTri ? Math.sqrt(3) : 1;
+    const Ic = pd / (tension * sqrt3 * 0.9);
+    return `<tr>
+      <td><input class="inp" value="${c.desc}" oninput="cargas[${i}].desc=this.value;recalcBalance()" style="min-width:130px"/></td>
+      <td><select class="inp" onchange="cargas[${i}].tipo=this.value;recalcBalance()" style="width:130px">
+        ${Object.entries(tipos).map(([k,v])=>`<option value="${k}"${c.tipo===k?' selected':''}>${v}</option>`).join('')}
+      </select></td>
+      <td><input class="inp" type="number" value="${c.potencia}" oninput="cargas[${i}].potencia=parseFloat(this.value)||0;recalcBalance()" style="width:90px"/></td>
+      <td><select class="inp" onchange="cargas[${i}].fase=this.value;recalcBalance()" style="width:70px">
+        <option${c.fase==='L1'?' selected':''}>L1</option>
+        <option${c.fase==='L2'?' selected':''}>L2</option>
+        ${esTri?`<option${c.fase==='L3'?' selected':''}>L3</option>`:''}
+      </select></td>
+      <td><input class="inp" type="number" min="1" max="100" value="${c.fs}" oninput="cargas[${i}].fs=parseFloat(this.value)||100;recalcBalance()" style="width:70px"/></td>
+      <td style="font-family:'DM Mono',monospace;font-weight:700;color:var(--acc)">${pd.toFixed(0)} W</td>
+      <td style="font-family:'DM Mono',monospace">${Ic.toFixed(2)} A</td>
+      <td><button type="button" class="btn" onclick="cargas.splice(${i},1);renderCargas();recalcBalance()" style="color:var(--err);padding:4px 8px;font-size:12px">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function recalcBalance() {
+  const tension = parseFloat(document.getElementById('bc-tension').value);
+  const esTri = [208,380].includes(tension);
+  const fases = esTri ? ['L1','L2','L3'] : ['L1','L2'];
+  const sqrt3 = esTri ? Math.sqrt(3) : 1;
+
+  const potPorFase = {};
+  fases.forEach(f => potPorFase[f] = 0);
+  let totalKW = 0, totalKWD = 0;
+
+  cargas.forEach(c => {
+    const pd = c.potencia * c.fs / 100;
+    if (potPorFase[c.fase] !== undefined) potPorFase[c.fase] += pd;
+    totalKW  += c.potencia;
+    totalKWD += pd;
+  });
+
+  const maxFase = Math.max(...Object.values(potPorFase));
+  const minFase = Math.min(...Object.values(potPorFase));
+  const desbalance = maxFase > 0 ? ((maxFase - minFase) / maxFase * 100) : 0;
+  const ITotal = totalKWD / (tension * sqrt3 * 0.9);
+  const colorDesBal = desbalance > 10 ? 'var(--err)' : desbalance > 5 ? 'var(--acc)' : 'var(--ok)';
+
+  const res = document.getElementById('bc-resumen');
+  if (!res) return;
+  res.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:16px">
+      <div style="background:var(--s2);border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Potencia instalada</div>
+        <div style="font-size:22px;font-weight:700;font-family:'DM Mono',monospace;color:var(--t1)">${(totalKW/1000).toFixed(2)} kW</div>
+      </div>
+      <div style="background:var(--s2);border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Demanda real (con Fs)</div>
+        <div style="font-size:22px;font-weight:700;font-family:'DM Mono',monospace;color:var(--acc)">${(totalKWD/1000).toFixed(2)} kW</div>
+      </div>
+      <div style="background:var(--s2);border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Corriente total estimada</div>
+        <div style="font-size:22px;font-weight:700;font-family:'DM Mono',monospace;color:var(--info)">${ITotal.toFixed(2)} A</div>
+      </div>
+      <div style="background:var(--s2);border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Desbalance entre fases</div>
+        <div style="font-size:22px;font-weight:700;font-family:'DM Mono',monospace;color:${colorDesBal}">${desbalance.toFixed(1)}%</div>
+        <div style="font-size:11px;color:var(--t3)">${desbalance>10?'⚠️ Excede 10% — redistribuir':desbalance>5?'⚠️ Revisar distribución':'✅ Balanceado'}</div>
+      </div>
+    </div>
+    <div style="margin-bottom:12px">
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr><th>Fase</th><th>P. Instalada (W)</th><th>P. Demanda (W)</th><th>Corriente (A)</th><th>% del total</th></tr></thead>
+        <tbody>${fases.map(f=>{
+          const pf = potPorFase[f]||0;
+          const pct = totalKWD>0?(pf/totalKWD*100):0;
+          const If = pf/(tension*0.9);
+          return `<tr>
+            <td style="font-weight:700;color:${f==='L1'?'#60a5fa':f==='L2'?'#f472b6':'#4ade80'}">${f}</td>
+            <td style="font-family:'DM Mono',monospace">${pf.toFixed(0)}</td>
+            <td style="font-family:'DM Mono',monospace;color:var(--acc);font-weight:600">${pf.toFixed(0)}</td>
+            <td style="font-family:'DM Mono',monospace">${If.toFixed(2)}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="flex:1;background:var(--s3);border-radius:4px;height:8px;overflow:hidden">
+                  <div style="width:${Math.min(pct,100)}%;height:100%;background:${f==='L1'?'#60a5fa':f==='L2'?'#f472b6':'#4ade80'};border-radius:4px;transition:width .3s"></div>
+                </div>
+                <span style="font-size:12px;font-family:'DM Mono',monospace;min-width:40px">${pct.toFixed(1)}%</span>
+              </div>
+            </td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+    </div>
+    <div style="background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:12px;font-size:12px;color:var(--t2)">
+      <strong style="color:var(--info)">Recomendación NEC:</strong> El desbalance entre fases no debe superar el 10% en instalaciones trifásicas. 
+      Factor de simultaneidad aplicado: promedio ${cargas.length>0?(cargas.reduce((a,c)=>a+c.fs,0)/cargas.length).toFixed(0):'—'}%. 
+      Acometida sugerida: <strong style="color:var(--acc)">${BREAKERS_STD.find(b=>b>=ITotal*1.25)||2000} A</strong>
+    </div>
+  `;
+  renderChartFases(potPorFase, esTri);
+}
+
+function renderChartFases(potPorFase, esTri) {
+  const cont = document.getElementById('bc-chart');
+  if (!cont) return;
+  const fases = esTri ? ['L1','L2','L3'] : ['L1','L2'];
+  const colors = { L1:'#60a5fa', L2:'#f472b6', L3:'#4ade80' };
+  const max = Math.max(...Object.values(potPorFase), 1);
+  cont.innerHTML = `<div style="display:flex;align-items:flex-end;gap:24px;height:180px;padding:0 16px 0 0">
+    ${fases.map(f => {
+      const v = potPorFase[f]||0;
+      const h = (v/max*100);
+      return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;gap:6px">
+        <div style="font-family:'DM Mono',monospace;font-size:13px;font-weight:700;color:${colors[f]}">${(v/1000).toFixed(2)} kW</div>
+        <div style="width:100%;height:${Math.max(h,2)}%;background:${colors[f]};border-radius:6px 6px 0 0;min-height:4px;transition:height .4s;position:relative">
+          <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,.08);border-radius:6px 6px 0 0"></div>
+        </div>
+        <div style="font-weight:700;color:${colors[f]};font-size:14px">${f}</div>
+      </div>`;
+    }).join('')}
+    <div style="position:absolute;left:0;right:0;border-top:1px dashed rgba(255,255,255,.1);top:0" title="Máximo"></div>
+  </div>
+  <p style="text-align:center;font-size:12px;color:var(--t3);margin-top:8px">Distribución de potencia por fase — Valor máximo: ${(max/1000).toFixed(2)} kW</p>`;
+}
+
+// Presets de cargas
+function presetResidencial() {
+  cargas = [
+    {desc:'Iluminación sala/comedor',tipo:'iluminacion',potencia:400,fase:'L1',fs:75},
+    {desc:'Iluminación dormitorios',tipo:'iluminacion',potencia:300,fase:'L2',fs:50},
+    {desc:'Tomacorrientes sala',tipo:'tomacorriente',potencia:1500,fase:'L1',fs:50},
+    {desc:'Tomacorrientes dormitorios',tipo:'tomacorriente',potencia:1000,fase:'L2',fs:40},
+    {desc:'Cocina eléctrica',tipo:'resistivo',potencia:4000,fase:'L1',fs:60},
+    {desc:'Ducha eléctrica',tipo:'resistivo',potencia:3500,fase:'L2',fs:30},
+    {desc:'Lavadora',tipo:'motor',potencia:1200,fase:'L1',fs:25},
+    {desc:'Refrigeradora',tipo:'motor',potencia:350,fase:'L2',fs:100},
+    {desc:'Aire acondicionado',tipo:'hvac',potencia:2200,fase:'L1',fs:70},
+  ];
+  renderCargas(); recalcBalance();
+}
+function presetComercial() {
+  cargas = [
+    {desc:'Iluminación general',tipo:'iluminacion',potencia:3000,fase:'L1',fs:100},
+    {desc:'Computadoras / equipos',tipo:'tomacorriente',potencia:4000,fase:'L2',fs:80},
+    {desc:'Aire acondicionado',tipo:'hvac',potencia:8000,fase:'L1',fs:80},
+    {desc:'Cocina / cafetería',tipo:'resistivo',potencia:3000,fase:'L2',fs:50},
+    {desc:'Servidores / UPS',tipo:'otro',potencia:2000,fase:'L1',fs:100},
+    {desc:'Tomacorrientes varios',tipo:'tomacorriente',potencia:2500,fase:'L2',fs:60},
+  ];
+  renderCargas(); recalcBalance();
+}
+function presetIndustrial() {
+  cargas = [
+    {desc:'Motor bomba 10HP',tipo:'motor',potencia:7460,fase:'L1',fs:80},
+    {desc:'Motor compresor 5HP',tipo:'motor',potencia:3730,fase:'L2',fs:70},
+    {desc:'Motor ventilador 3HP',tipo:'motor',potencia:2238,fase:'L1',fs:90},
+    {desc:'Iluminación planta',tipo:'iluminacion',potencia:5000,fase:'L2',fs:100},
+    {desc:'Soldadora',tipo:'resistivo',potencia:10000,fase:'L1',fs:40},
+    {desc:'Tomacorrientes industriales',tipo:'tomacorriente',potencia:3000,fase:'L2',fs:50},
+    {desc:'Sistema de control PLC',tipo:'otro',potencia:500,fase:'L1',fs:100},
+  ];
+  renderCargas(); recalcBalance();
+}
+function limpiarCargas() { cargas = []; renderCargas(); recalcBalance(); }
+
+// ─── CÁLCULO DE PROTECCIONES ─────────────────────────────
+function calcProtecciones() {
+  const el = document.getElementById('pr-resultado');
+  if (!el) return;
+  const Ic     = parseFloat(document.getElementById('pr-Ic').value) || 0;
+  const tipo   = document.getElementById('pr-tipo').value;
+  const V      = parseFloat(document.getElementById('pr-v').value);
+  const fases  = parseInt(document.getElementById('pr-fases').value);
+  const kvaCC  = parseFloat(document.getElementById('pr-kva-cc').value) || 150;
+  const Zpct   = parseFloat(document.getElementById('pr-z').value) || 5;
+
+  if (Ic <= 0) { el.innerHTML = '<p style="color:var(--t3)">Ingresa la corriente de carga.</p>'; return; }
+
+  // Factor de breaker según tipo de carga — NEC Art. 430 / 240
+  const factores = {
+    gral: { cb: 1.25, fusible: 1.50, label: 'Carga general — NEC 240.4', nota: 'El breaker no debe superar el 125% de la corriente del conductor.' },
+    motor: { cb: 2.50, fusible: 4.00, label: 'Motor AC — NEC 430.52 Tabla', nota: 'Breaker térmico magnético 250% Ic. Fusible de retardo (dual element) 400% Ic.' },
+    transformador: { cb: 1.25, fusible: 1.25, label: 'Transformador — NEC 450.3(B)', nota: 'Protección al 125% de la corriente nominal primaria.' },
+    condensador: { cb: 1.35, fusible: 1.65, label: 'Condensadores — NEC 460.8', nota: 'Breaker al 135%, fusible al 165% de Ic.' },
+  };
+  const f = factores[tipo];
+  const IbCB  = Ic * f.cb;
+  const IbFus = Ic * f.fusible;
+  const cbRec  = BREAKERS_STD.find(b => b >= IbCB)  || 2000;
+  const fusRec = BREAKERS_STD.find(b => b >= IbFus) || 2000;
+
+  // Corriente de cortocircuito (Icc) — método simplificado
+  const sqrt3 = fases === 3 ? Math.sqrt(3) : 1;
+  const Sb = kvaCC * 1000; // VA del transformador
+  const InomTx = Sb / (V * sqrt3);
+  const Icc = InomTx / (Zpct / 100);
+  const IccKA = Icc / 1000;
+
+  // Poder de ruptura mínimo recomendado
+  let prKA = 6; // estándar residencial
+  if (IccKA > 6) prKA = 10;
+  if (IccKA > 10) prKA = 25;
+  if (IccKA > 25) prKA = 50;
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:16px">
+      <div style="background:var(--s2);border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Corriente de carga</div>
+        <div style="font-size:24px;font-weight:700;font-family:'DM Mono',monospace;color:var(--t1)">${Ic.toFixed(2)} A</div>
+      </div>
+      <div style="background:var(--s2);border-radius:10px;padding:14px;border:1px solid rgba(245,200,0,.3)">
+        <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Breaker recomendado</div>
+        <div style="font-size:28px;font-weight:700;font-family:'DM Mono',monospace;color:var(--acc)">${cbRec} A</div>
+        <div style="font-size:11px;color:var(--t3)">Mín. ${IbCB.toFixed(1)} A — ${fases===3?'3 polos':'2 polos'}</div>
+      </div>
+      <div style="background:var(--s2);border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Fusible recomendado</div>
+        <div style="font-size:28px;font-weight:700;font-family:'DM Mono',monospace;color:var(--info)">${fusRec} A</div>
+        <div style="font-size:11px;color:var(--t3)">Mín. ${IbFus.toFixed(1)} A</div>
+      </div>
+      <div style="background:var(--s2);border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Corriente de cc. estimada</div>
+        <div style="font-size:22px;font-weight:700;font-family:'DM Mono',monospace;color:var(--err)">${IccKA.toFixed(2)} kA</div>
+        <div style="font-size:11px;color:var(--t3)">Tx: ${kvaCC} kVA · Z: ${Zpct}%</div>
+      </div>
+      <div style="background:var(--s2);border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Poder de ruptura mínimo</div>
+        <div style="font-size:22px;font-weight:700;font-family:'DM Mono',monospace;color:var(--ok)">${prKA} kA</div>
+        <div style="font-size:11px;color:var(--t3)">Según Icc calculada</div>
+      </div>
+    </div>
+    <div style="background:rgba(245,200,0,.06);border:1px solid rgba(245,200,0,.2);border-radius:8px;padding:12px;font-size:12px;color:var(--t2);margin-bottom:12px">
+      <strong style="color:var(--acc)">${f.label}:</strong> ${f.nota}
+    </div>
+  `;
+
+  // Render tags de breakers
+  const tagEl = document.getElementById('breaker-tag');
+  if (tagEl) {
+    tagEl.innerHTML = BREAKERS_STD.map(b => {
+      const esRec = b === cbRec;
+      const cercano = Math.abs(b - IbCB) < 10;
+      return `<span style="display:inline-block;padding:5px 12px;border-radius:6px;font-family:'DM Mono',monospace;font-size:13px;font-weight:${esRec?'700':'500'};
+        background:${esRec?'var(--acc)':cercano?'rgba(245,200,0,.15)':'var(--s2)'};
+        color:${esRec?'#000':cercano?'var(--acc)':'var(--t2)'};
+        border:1px solid ${esRec?'var(--acc)':cercano?'rgba(245,200,0,.3)':'var(--bd)'};
+        margin:3px">${b}A</span>`;
+    }).join('');
+  }
+}
+
+// ─── CÁLCULO DE TUBERÍAS ─────────────────────────────────
+function calcTuberia() {
+  const el = document.getElementById('tb-resultado');
+  if (!el) return;
+  const tipo   = document.getElementById('tb-tipo').value;
+  const nCond  = parseInt(document.getElementById('tb-ncond').value) || 1;
+  const awg    = document.getElementById('tb-awg').value;
+  const aisl   = document.getElementById('tb-aislamiento').value;
+
+  const areaCond = THHN_AREA[awg];
+  if (!areaCond) { el.innerHTML = '<p style="color:var(--t3)">Selecciona un calibre válido.</p>'; return; }
+
+  const totalArea = areaCond * nCond;
+  // Factor de llenado NEC: 1 cond=53%, 2=31%, 3+=40%
+  const factor = nCond === 1 ? 0.53 : nCond === 2 ? 0.31 : 0.40;
+  const areaConduitMin = totalArea / factor;
+
+  // Buscar conduit adecuado
+  const tabla = CONDUIT_AREA[tipo] || CONDUIT_AREA.EMT;
+  let conduitSel = tabla.find(([nom, area]) => area * factor >= totalArea);
+  if (!conduitSel) conduitSel = tabla[tabla.length - 1];
+
+  const [nomSel, areaSel] = conduitSel;
+  const pctLlenado = (totalArea / areaSel * 100);
+  const colorFill = pctLlenado > factor*100 ? 'var(--err)' : 'var(--ok)';
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:16px">
+      <div style="background:var(--s2);border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Conductores</div>
+        <div style="font-size:24px;font-weight:700;font-family:'DM Mono',monospace;color:var(--t1)">${nCond} × AWG ${awg}</div>
+        <div style="font-size:11px;color:var(--t3)">${aisl} — ${areaCond} mm² c/u</div>
+      </div>
+      <div style="background:var(--s2);border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Área total conductores</div>
+        <div style="font-size:24px;font-weight:700;font-family:'DM Mono',monospace;color:var(--acc)">${totalArea.toFixed(1)} mm²</div>
+      </div>
+      <div style="background:var(--s2);border-radius:10px;padding:14px;border:1px solid rgba(245,200,0,.3)">
+        <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Conduit recomendado (${tipo})</div>
+        <div style="font-size:28px;font-weight:700;font-family:'DM Mono',monospace;color:var(--acc)">${nomSel}</div>
+        <div style="font-size:11px;color:var(--t3)">Área interna: ${areaSel.toFixed(1)} mm² — Llenado máx: ${(factor*100).toFixed(0)}%</div>
+      </div>
+      <div style="background:var(--s2);border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">% de llenado real</div>
+        <div style="font-size:24px;font-weight:700;font-family:'DM Mono',monospace;color:${colorFill}">${pctLlenado.toFixed(1)}%</div>
+        <div style="height:8px;background:var(--s3);border-radius:4px;margin-top:6px;overflow:hidden">
+          <div style="width:${Math.min(pctLlenado,100)}%;height:100%;background:${colorFill};border-radius:4px;transition:width .4s"></div>
+        </div>
+      </div>
+    </div>
+    <div style="background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:12px;font-size:12px;color:var(--t2)">
+      <strong style="color:var(--info)">NEC Chapter 9 Table 1:</strong> Con ${nCond} conductor${nCond>1?'es':''}, el llenado máximo permitido es <strong>${(factor*100).toFixed(0)}%</strong> del área interna del conduit.
+      Área mínima requerida: <strong style="color:var(--acc)">${areaConduitMin.toFixed(1)} mm²</strong>
+    </div>
+  `;
+}
+
   const tog=document.getElementById('eq-share-toggle');
   const knob=document.getElementById('eq-share-knob');
   const lbl=document.getElementById('eq-share-lbl');
