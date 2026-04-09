@@ -399,6 +399,42 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
   font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;
 }
 .bc-preset-btn:hover{background:var(--s3);color:var(--t1);border-color:var(--bd2)}
+
+/* Action bar buttons — mejorados */
+.bc-actions-bar{
+  display:flex;flex-wrap:wrap;gap:8px;padding:14px 16px;
+  border-top:1px solid var(--bd);align-items:center;
+  background:linear-gradient(180deg,transparent,rgba(0,0,0,.2));
+}
+.bc-action-btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:9px 18px;border-radius:10px;border:none;
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;
+  cursor:pointer;transition:all .18s;letter-spacing:.2px;
+  box-shadow:0 2px 8px rgba(0,0,0,.25);
+}
+.bc-action-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,.35)}
+.bc-action-btn:active{transform:translateY(0)}
+.bc-action-primary{
+  background:linear-gradient(135deg,var(--acc),#e6b800);
+  color:#000;box-shadow:0 2px 12px rgba(245,200,0,.35);
+}
+.bc-action-primary:hover{box-shadow:0 4px 20px rgba(245,200,0,.5)}
+.bc-action-secondary{
+  background:var(--s3);color:var(--t1);
+  border:1.5px solid var(--bd2);
+}
+.bc-action-secondary:hover{background:var(--s4);border-color:var(--acc);color:var(--acc)}
+.bc-action-balance{
+  background:linear-gradient(135deg,rgba(59,130,246,.2),rgba(59,130,246,.1));
+  color:#60a5fa;border:1.5px solid rgba(59,130,246,.35);
+}
+.bc-action-balance:hover{background:rgba(59,130,246,.25);border-color:#60a5fa;box-shadow:0 4px 16px rgba(59,130,246,.25)}
+.bc-action-pdf{
+  background:linear-gradient(135deg,rgba(239,68,68,.15),rgba(239,68,68,.08));
+  color:#f87171;border:1.5px solid rgba(239,68,68,.3);
+}
+.bc-action-pdf:hover{background:rgba(239,68,68,.22);border-color:#f87171;box-shadow:0 4px 16px rgba(239,68,68,.2)}
 /* Tabla de cargas — inputs inline modernos */
 .bc-inp{
   background:var(--s3);border:1.5px solid transparent;color:var(--t1);
@@ -1328,13 +1364,22 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
             </div>
           </div>
 
-          <!-- PRESETS -->
-          <div style="padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;border-bottom:1px solid var(--bd)">
-            <span style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--t3)">Presets:</span>
+          <!-- PRESETS (ocultos por defecto) -->
+          <div style="padding:8px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:8px">
+            <button type="button" id="btn-toggle-presets" onclick="togglePresets()" style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:8px;border:1.5px solid var(--bd2);background:var(--s2);color:var(--t3);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;letter-spacing:.5px">
+              <i data-lucide="layout-template" style="width:12px;height:12px"></i>
+              <span>Plantillas de carga</span>
+              <i data-lucide="chevron-down" id="preset-chevron" style="width:11px;height:11px;transition:transform .2s"></i>
+            </button>
+            <button type="button" class="bc-preset-btn" onclick="limpiarCargas()" style="color:var(--err);border-color:rgba(239,68,68,.2);background:rgba(239,68,68,.06)">
+              <i data-lucide="trash-2" style="width:12px;height:12px"></i><span>Limpiar todo</span>
+            </button>
+          </div>
+          <div id="bc-presets-panel" style="display:none;padding:10px 16px;flex-wrap:wrap;gap:8px;align-items:center;border-bottom:1px solid var(--bd);background:rgba(245,200,0,.02)">
+            <span style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--t3)">Plantillas:</span>
             <button type="button" class="bc-preset-btn" onclick="presetResidencial()"><span>&#127968;</span><span>Residencial</span></button>
             <button type="button" class="bc-preset-btn" onclick="presetComercial()"><span>&#127970;</span><span>Comercial</span></button>
             <button type="button" class="bc-preset-btn" onclick="presetIndustrial()"><span>&#127981;</span><span>Industrial</span></button>
-            <button type="button" class="bc-preset-btn" onclick="limpiarCargas()" style="color:var(--err);border-color:rgba(239,68,68,.25)"><span>&#128465;</span><span>Limpiar</span></button>
           </div>
 
           <!-- TABLA DE CARGAS MEJORADA -->
@@ -1365,14 +1410,21 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
 
           <!-- BARRA DE ACCIONES -->
           <div class="bc-actions-bar">
-            <button type="button" class="btn-save-bc primary" onclick="guardarBalance()">
-              <i data-lucide="save" style="width:14px;height:14px"></i> Guardar proyecto
+            <button type="button" class="bc-action-btn bc-action-primary" onclick="guardarBalance()">
+              <i data-lucide="save" style="width:15px;height:15px"></i>
+              <span>Guardar proyecto</span>
             </button>
-            <button type="button" class="btn-save-bc" onclick="abrirModalBalances()">
-              <i data-lucide="folder-open" style="width:14px;height:14px"></i> Mis proyectos
+            <button type="button" class="bc-action-btn bc-action-secondary" onclick="abrirModalBalances()">
+              <i data-lucide="folder-open" style="width:15px;height:15px"></i>
+              <span>Mis proyectos</span>
             </button>
-            <button type="button" class="bc-pdf-btn" onclick="generarInformePDF()">
-              <i data-lucide="file-text" style="width:14px;height:14px"></i> Informe T&#233;cnico PDF
+            <button type="button" class="bc-action-btn bc-action-balance" onclick="autoBalancearCargas()">
+              <i data-lucide="git-branch" style="width:15px;height:15px"></i>
+              <span>Balancear cargas</span>
+            </button>
+            <button type="button" class="bc-action-btn bc-action-pdf" onclick="generarInformePDF()">
+              <i data-lucide="file-text" style="width:15px;height:15px"></i>
+              <span>Informe PDF</span>
             </button>
             <div style="flex:1"></div>
             <span id="bc-save-status" style="font-size:11px;color:var(--t3)"></span>
@@ -3113,7 +3165,7 @@ function initCalculadora() {
     calcCable();
     calcProtecciones();
     calcTuberia();
-    presetResidencial();
+    // No carga preset automático — el usuario elige desde "Plantillas de carga"
   }
   refreshIcons();
 }
@@ -3823,6 +3875,71 @@ function presetIndustrial() {
 }
 function limpiarCargas() { cargas = []; renderCargas(); recalcBalance(); }
 
+// ── Toggle panel de presets ──────────────────────────────
+function togglePresets() {
+  const panel = document.getElementById('bc-presets-panel');
+  const chevron = document.getElementById('preset-chevron');
+  const btn = document.getElementById('btn-toggle-presets');
+  if (!panel) return;
+  const visible = panel.style.display === 'flex';
+  panel.style.display = visible ? 'none' : 'flex';
+  if (chevron) chevron.style.transform = visible ? '' : 'rotate(180deg)';
+  if (btn) btn.style.borderColor = visible ? '' : 'rgba(245,200,0,.4)';
+  if (btn) btn.style.color = visible ? '' : 'var(--acc)';
+}
+
+// ── Auto-balanceo de cargas entre fases ─────────────────
+function autoBalancearCargas() {
+  if (!cargas.length) { toast('Agrega cargas antes de balancear','err'); return; }
+
+  // Separar cargas bifásicas (no se pueden mover) de monofásicas
+  const bifasicas = cargas.filter(c => c.sistema === 'tri' || c.voltaje >= 380);
+  const mono = cargas.filter(c => c.sistema !== 'tri' && c.voltaje < 380);
+
+  if (!mono.length) { toast('No hay cargas monofásicas para balancear','info'); return; }
+
+  // Calcular demanda de cada carga monofásica
+  const conDemanda = mono.map(c => ({
+    ...c,
+    demanda: (c.potencia || 0) * (c.cantidad || 1) * ((c.fs || 100) / 100)
+  })).sort((a, b) => b.demanda - a.demanda); // mayor a menor
+
+  // Determinar fases disponibles según sistema
+  const fases = _bcSistema === '120/240' ? ['L1','L2'] :
+                _bcSistema === '380'    ? ['L1','L2','L3'] : ['L1'];
+
+  if (fases.length < 2) { toast('El sistema actual no requiere balanceo','info'); return; }
+
+  // Algoritmo greedy: asignar cada carga a la fase con menor carga acumulada
+  const totales = {};
+  fases.forEach(f => totales[f] = 0);
+
+  const balanceadas = conDemanda.map(c => {
+    const faseMenor = fases.reduce((a, b) => totales[a] <= totales[b] ? a : b);
+    totales[faseMenor] += c.demanda;
+    return { ...c, fase: faseMenor };
+  });
+
+  // Reconstruir array de cargas manteniendo el orden original
+  const monoIds = new Set(mono.map((_, i) => i));
+  let monoIdx = 0;
+  cargas = cargas.map(c => {
+    if (c.sistema === 'tri' || c.voltaje >= 380) return c;
+    return balanceadas[monoIdx++];
+  });
+
+  renderCargas();
+  recalcBalance();
+
+  // Mostrar resumen del balance
+  const pcts = fases.map(f => {
+    const total = Object.values(totales).reduce((a,b)=>a+b,0);
+    return total > 0 ? ((totales[f]/total)*100).toFixed(1) : '0.0';
+  });
+  const resumen = fases.map((f,i) => `${f}: ${pcts[i]}%`).join(' · ');
+  toast(`⚡ Cargas balanceadas — ${resumen}`, 'ok');
+}
+
 // ─── CÁLCULO DE PROTECCIONES ────────────────────────────
 function calcProtecciones() {
   const el = document.getElementById('pr-resultado');
@@ -4409,15 +4526,16 @@ function abrirModalBalances() {
 }
 
 function cargarBalance(id) {
+  // Comparar como string para que funcione con IDs numéricos de PostgreSQL
   const balances = _getBalancesCache();
-  const b = balances.find(x => x.id === id);
-  if (!b) { toast('Proyecto no encontrado','err'); return; }
+  const b = balances.find(x => String(x.id) === String(id));
+  if (!b) { toast('Proyecto no encontrado — intenta recargar la lista','err'); return; }
   cargas = JSON.parse(JSON.stringify(b.cargas || []));
   _bcSistema = b.sistema || '120';
-  _bcProyectoId = id;
+  _bcProyectoId = b.id; // Guardar el ID real (puede ser número) para edición
   setBcSistema(_bcSistema);
   // Restaurar campos del formulario
-  const setV = (id, v) => { const el=document.getElementById(id); if(el) el.value=v||''; };
+  const setV = (elId, v) => { const el=document.getElementById(elId); if(el) el.value=v||''; };
   setV('bc-proyecto-nombre', b.nombre);
   setV('bc-proyecto-cliente', b.cliente);
   setV('bc-proyecto-ubicacion', b.ubicacion);
@@ -4426,9 +4544,10 @@ function cargarBalance(id) {
   renderCargas();
   recalcBalance();
   _actualizarBadgeProyecto(b.nombre);
-  document.getElementById('bc-save-status').textContent = 'Cargado: ' + b.nombre;
+  const stEl = document.getElementById('bc-save-status');
+  if(stEl) stEl.textContent = '✏️ Editando: ' + b.nombre;
   closeModal('m-balances');
-  toast(`📂 Proyecto "${b.nombre}" cargado`, 'ok');
+  toast(`✏️ Proyecto "${b.nombre}" cargado para edición`, 'ok');
 }
 
 function eliminarBalance(id) {
