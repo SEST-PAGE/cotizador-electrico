@@ -1170,7 +1170,7 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
             <div class="calc-field" id="cc-blk-potencia">
               <label class="calc-lbl"><i data-lucide="zap" style="width:13px;height:13px"></i> Potencia de la carga</label>
               <div style="display:flex;gap:0">
-                <input class="calc-inp" id="cc-potencia" type="number" min="0" step="0.01" value="3000" oninput="calcCable()" style="border-radius:10px 0 0 10px;border-right:none;flex:1"/>
+                <input class="calc-inp" id="cc-potencia" type="number" min="0" step="0.01" placeholder="Ej: 1500" oninput="calcCable()" style="border-radius:10px 0 0 10px;border-right:none;flex:1"/>
                 <select class="calc-inp-unit-sel" id="cc-pot-unit" onchange="calcCable()">
                   <option value="W">W</option><option value="kW">kW</option><option value="HP">HP</option><option value="kVA">kVA</option>
                 </select>
@@ -1182,7 +1182,7 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
               <label class="calc-lbl"><i data-lucide="gauge" style="width:13px;height:13px"></i> Corriente (A)</label>
               <div class="calc-inp-wrap">
                 <span class="calc-inp-icon"><i data-lucide="activity" style="width:14px;height:14px"></i></span>
-                <input class="calc-inp" id="cc-amperes" type="number" min="0" step="0.1" value="15" oninput="calcCable()"/>
+                <input class="calc-inp" id="cc-amperes" type="number" min="0" step="0.1" placeholder="Ej: 15" oninput="calcCable()"/>
                 <span class="calc-inp-unit">A</span>
               </div>
             </div>
@@ -1192,7 +1192,7 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
               <label class="calc-lbl"><i data-lucide="percent" style="width:13px;height:13px"></i> Factor de potencia (FP)</label>
               <div class="calc-inp-wrap">
                 <span class="calc-inp-icon"><i data-lucide="percent" style="width:14px;height:14px"></i></span>
-                <input class="calc-inp" id="cc-fp" type="number" min="0.5" max="1" step="0.01" value="0.9" oninput="calcCable()"/>
+                <input class="calc-inp" id="cc-fp" type="number" min="0.5" max="1" step="0.01" placeholder="0.85" oninput="calcCable()"/>
                 <span class="calc-inp-unit">cos φ</span>
               </div>
             </div>
@@ -1213,7 +1213,7 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
               <label class="calc-lbl"><i data-lucide="gauge" style="width:13px;height:13px"></i> Eficiencia del motor (η)</label>
               <div class="calc-inp-wrap">
                 <span class="calc-inp-icon"><i data-lucide="settings-2" style="width:14px;height:14px"></i></span>
-                <input class="calc-inp" id="cc-eff" type="number" min="0.5" max="1" step="0.01" value="0.85" oninput="calcCable()"/>
+                <input class="calc-inp" id="cc-eff" type="number" min="0.5" max="1" step="0.01" placeholder="0.85" oninput="calcCable()"/>
                 <span class="calc-inp-unit">η</span>
               </div>
             </div>
@@ -1248,7 +1248,7 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
               <label class="calc-lbl"><i data-lucide="ruler" style="width:13px;height:13px"></i> Longitud del circuito</label>
               <div class="calc-inp-wrap">
                 <span class="calc-inp-icon"><i data-lucide="move-horizontal" style="width:14px;height:14px"></i></span>
-                <input class="calc-inp" id="cc-long" type="number" min="0" step="1" value="30" oninput="calcCable()"/>
+                <input class="calc-inp" id="cc-long" type="number" min="0" step="1" placeholder="Ej: 30" oninput="calcCable()"/>
                 <span class="calc-inp-unit">m</span>
               </div>
             </div>
@@ -1262,6 +1262,21 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
               </div>
             </div>
 
+            <!-- Temperatura del aislamiento (columna de ampacidad) -->
+            <div class="calc-field">
+              <label class="calc-lbl"><i data-lucide="thermometer" style="width:13px;height:13px"></i> Temperatura del aislamiento</label>
+              <div class="calc-radio-group" id="cc-tempcol-grp" style="flex-wrap:wrap;gap:5px">
+                <button type="button" class="calc-radio-btn" id="tempcol-cu60" onclick="setTempCol('cu60')">Cu 60°C</button>
+                <button type="button" class="calc-radio-btn" id="tempcol-cu75" onclick="setTempCol('cu75')">Cu 75°C</button>
+                <button type="button" class="calc-radio-btn on" id="tempcol-cu90" onclick="setTempCol('cu90')">Cu 90°C</button>
+                <button type="button" class="calc-radio-btn" id="tempcol-al75" onclick="setTempCol('al75')">Al 75°C</button>
+                <button type="button" class="calc-radio-btn" id="tempcol-al90" onclick="setTempCol('al90')">Al 90°C</button>
+              </div>
+              <div id="cc-tempcol-desc" style="font-size:10px;color:var(--t3);margin-top:4px;padding:0 2px">
+                THHN/THWN-2 — Columna 90°C NEC 310.15(B)(16)
+              </div>
+            </div>
+
             <!-- Caída de tensión -->
             <div class="calc-field">
               <label class="calc-lbl"><i data-lucide="trending-down" style="width:13px;height:13px"></i> Caída de tensión máx. permitida</label>
@@ -1272,7 +1287,7 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
               </div>
               <div class="calc-inp-wrap">
                 <span class="calc-inp-icon"><i data-lucide="percent" style="width:14px;height:14px"></i></span>
-                <input class="calc-inp" id="cc-caida-max" type="number" min="1" max="10" step="0.5" value="3" oninput="onCaidaInput()"/>
+                <input class="calc-inp" id="cc-caida-max" type="number" min="1" max="10" step="0.5" placeholder="3" oninput="onCaidaInput()"/>
                 <span class="calc-inp-unit">%</span>
               </div>
             </div>
@@ -3141,9 +3156,9 @@ const CONDUIT_AREA = {
   ]
 };
 
-// Breakers estándar ANSI/UL
-const BREAKERS_STD = [1,2,3,5,6,10,15,20,25,30,35,40,45,50,60,70,80,90,100,
-  110,125,150,175,200,225,250,300,350,400,450,500,600,700,800,1000,1200,1600,2000];
+// Breakers estándar Ecuador (IEC/NTE INEN)
+const BREAKERS_STD = [1,2,3,4,6,10,16,20,25,32,40,50,63,80,100,125,160,200,
+  250,315,400,500,630,800,1000,1250,1600,2000];
 
 let calcInited = false;
 let cargas = [];
@@ -3158,6 +3173,12 @@ function initCalculadora() {
     }).catch(()=>_updateDbBadge('err'));
     window._ccSistema = '120/240';
     window._ccMaterial = 'Cu';
+    window._ccTempCol = 'cu90';
+    // Hide Al temp buttons initially (Cu selected by default)
+    ['al75','al90'].forEach(k => {
+      const b = document.getElementById('tempcol-' + k);
+      if (b) b.style.display = 'none';
+    });
     _bcSistema = '120';
     renderAWGTable();
     renderConduitTable();
@@ -3232,6 +3253,40 @@ function setMaterial(mat) {
   document.getElementById('mat-btn-al')?.classList.toggle('on', mat === 'Al');
   // Store in hidden state
   window._ccMaterial = mat;
+  // Sync temp col buttons visibility based on material
+  const isCu = mat === 'Cu';
+  ['cu60','cu75','cu90'].forEach(k => {
+    const b = document.getElementById('tempcol-' + k);
+    if (b) b.style.display = isCu ? '' : 'none';
+  });
+  ['al75','al90'].forEach(k => {
+    const b = document.getElementById('tempcol-' + k);
+    if (b) b.style.display = !isCu ? '' : 'none';
+  });
+  // Reset to sensible default
+  if (isCu && !['cu60','cu75','cu90'].includes(window._ccTempCol)) setTempCol('cu90');
+  else if (!isCu && !['al75','al90'].includes(window._ccTempCol)) setTempCol('al90');
+  else calcCable();
+}
+
+// Columna de ampacidad según aislamiento
+// AWG_TABLE cols: 0=AWG, 1=mm², 2=Cu60, 3=Cu75, 4=Cu90, 5=Al75, 6=Al90, 7=rho
+const TEMPCOL_MAP = {
+  cu60: { idx: 2, label: 'Cu 60°C', desc: 'THW, TW — Columna 60°C NEC 310.15(B)(16)' },
+  cu75: { idx: 3, label: 'Cu 75°C', desc: 'THWN, RHW — Columna 75°C NEC 310.15(B)(16)' },
+  cu90: { idx: 4, label: 'Cu 90°C', desc: 'THHN/THWN-2, XHHW-2 — Columna 90°C NEC 310.15(B)(16)' },
+  al75: { idx: 5, label: 'Al 75°C', desc: 'XHHW (Al) 75°C — Columna Al 75°C NEC 310.15(B)(16)' },
+  al90: { idx: 6, label: 'Al 90°C', desc: 'XHHW-2 (Al) 90°C — Columna Al 90°C NEC 310.15(B)(16)' },
+};
+
+function setTempCol(key) {
+  window._ccTempCol = key;
+  Object.keys(TEMPCOL_MAP).forEach(k => {
+    document.getElementById('tempcol-' + k)?.classList.toggle('on', k === key);
+  });
+  const info = TEMPCOL_MAP[key];
+  const descEl = document.getElementById('cc-tempcol-desc');
+  if (descEl && info) descEl.textContent = info.desc;
   calcCable();
 }
 function setCaida(val) {
@@ -3382,7 +3437,8 @@ function calcCable() {
   // CÁLCULO A — Límite por Ampacidad (NEC 310.15 / NTE INEN 2345)
   // Mínimo absoluto de seguridad: el cable DEBE soportar IdCorr A
   // ══════════════════════════════════════════════════════════════
-  const colIdx = material === 'Cu' ? 4 : 6;
+  const tempColKey = window._ccTempCol || 'cu90';
+  const colIdx = (TEMPCOL_MAP[tempColKey] || TEMPCOL_MAP['cu90']).idx;
   const awgPorAmpacidad = AWG_TABLE.find(r => r[colIdx] != null && r[colIdx] >= IdCorr) || AWG_TABLE[AWG_TABLE.length - 1];
 
   // ══════════════════════════════════════════════════════════════
@@ -3470,7 +3526,7 @@ function calcCable() {
       <div class="calc-card highlight">
         <div class="calc-card-lbl"><i data-lucide="cable" style="width:12px;height:12px"></i> Calibre final — MAX(Amp., C.T.)</div>
         <div class="calc-card-val" style="color:var(--acc)">${awgFinal ? 'AWG ' + awgFinal[0] : '> 750 kcmil'}</div>
-        <div class="calc-card-sub">${awgFinal ? awgFinal[1].toFixed(2) + ' mm² · Cap. ' + awgFinal[colIdx] + ' A' : 'Usar conductores en paralelo'}
+        <div class="calc-card-sub">${awgFinal ? awgFinal[1].toFixed(2) + ' mm² · Cap. ' + awgFinal[colIdx] + ' A (' + (TEMPCOL_MAP[window._ccTempCol||'cu90']||TEMPCOL_MAP['cu90']).label + ')' : 'Usar conductores en paralelo'}
           <span style="margin-left:4px;padding:1px 5px;border-radius:4px;font-size:10px;font-weight:700;
             background:${limitadoPorVD?'rgba(239,68,68,.15)':'rgba(34,197,94,.12)'};
             color:${limitadoPorVD?'#f87171':'var(--ok)'}">
@@ -3497,7 +3553,7 @@ function calcCable() {
     <!-- Detalle de los dos criterios independientes -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
       <div style="background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:10px 14px">
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--ok);margin-bottom:4px">⚡ Criterio A — Ampacidad NEC 310.15</div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--ok);margin-bottom:4px">⚡ Criterio A — Ampacidad NEC 310.15 · ${(TEMPCOL_MAP[window._ccTempCol||'cu90']||TEMPCOL_MAP['cu90']).label}</div>
         <div style="font-family:'DM Mono',monospace;font-weight:700;color:var(--t1)">AWG ${awgPorAmpacidad ? awgPorAmpacidad[0] : '—'}</div>
         <div style="font-size:11px;color:var(--t3);margin-top:2px">Cap. ${awgPorAmpacidad ? awgPorAmpacidad[colIdx] : '—'} A ≥ ${IdCorr.toFixed(1)} A requeridos — <strong style="color:var(--ok)">Seguridad térmica garantizada</strong></div>
       </div>
@@ -3508,7 +3564,7 @@ function calcCable() {
       </div>
     </div>
     <div style="background:rgba(245,200,0,.06);border:1px solid rgba(245,200,0,.18);border-radius:10px;padding:12px;font-size:12px;color:var(--t2);margin-top:10px">
-      <strong style="color:var(--acc)">Norma aplicada:</strong> NEC 310.15(B)(16) · NTE INEN 2345 · Factor temp: ${(tempF*100).toFixed(0)}% · Agrupamiento: ${(agrupF*100).toFixed(0)}%
+      <strong style="color:var(--acc)">Norma aplicada:</strong> NEC 310.15(B)(16) · NTE INEN 2345 · Aislamiento: <strong style="color:var(--t1)">${(TEMPCOL_MAP[window._ccTempCol||'cu90']||TEMPCOL_MAP['cu90']).label}</strong> · Factor temp: ${(tempF*100).toFixed(0)}% · Agrupamiento: ${(agrupF*100).toFixed(0)}%
       · ${(tipoMotor===1||tipoMotor===2)?'NEC 430.22 motor (×1.25)':'Carga general'} · Sistema: <strong style="color:var(--t1)">${SISTEMAS_EC[sys]?.label || sys}</strong>
       · <strong style="color:var(--acc)">Calibre = MAX(Criterio A, Criterio B)</strong>
     </div>
