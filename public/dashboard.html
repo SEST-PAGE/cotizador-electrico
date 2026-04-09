@@ -1497,14 +1497,6 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
               <div class="calc-panel-sub">Breakers termomagnéticos · Fusibles · Poder de ruptura</div>
             </div>
             <span class="calc-panel-norm">NEC Art. 240 / 430</span>
-            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-              <button type="button" class="btn btn-ghost btn-sm" onclick="abrirHistorialProteccion()" title="Ver protecciones guardadas">
-                <i data-lucide="folder-open" style="width:14px;height:14px"></i> Mis cálculos
-              </button>
-              <button type="button" class="btn btn-ok btn-sm" onclick="guardarCalcProteccion()">
-                <i data-lucide="save" style="width:14px;height:14px"></i> Guardar
-              </button>
-            </div>
           </div>
           <div class="calc-panel-body">
 
@@ -1626,14 +1618,6 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
               <div class="calc-panel-sub">Dimensionamiento de canalizaciones eléctricas por llenado</div>
             </div>
             <span class="calc-panel-norm">NEC Chapter 9</span>
-            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-              <button type="button" class="btn btn-ghost btn-sm" onclick="abrirHistorialTuberia()" title="Ver tuberías guardadas">
-                <i data-lucide="folder-open" style="width:14px;height:14px"></i> Mis cálculos
-              </button>
-              <button type="button" class="btn btn-ok btn-sm" onclick="guardarCalcTuberia()">
-                <i data-lucide="save" style="width:14px;height:14px"></i> Guardar
-              </button>
-            </div>
           </div>
           <div class="calc-panel-body">
 
@@ -2925,7 +2909,7 @@ const html2pdfOptsPdf={
   margin:[8,8,8,8],
   image:{type:'png',quality:1},
   html2canvas:{
-    scale:3,
+    scale:2,
     useCORS:true,
     allowTaint:true,
     logging:false,
@@ -2934,11 +2918,11 @@ const html2pdfOptsPdf={
     scrollY:0,
     letterRendering:true,
     imageTimeout:15000,
-    windowWidth:PDF_WIDTH_PX,   // 🔑 fuerza ancho A4 aunque la pantalla sea pequeña
-    windowHeight:1123            // A4 altura
+    windowWidth:PDF_WIDTH_PX,   // fuerza ancho A4 aunque la pantalla sea pequeña
+    // windowHeight se calcula dinámicamente por contenido real
   },
   jsPDF:{unit:'mm',format:'a4',orientation:'portrait',compress:false},
-  pagebreak:{mode:['avoid-all','css','legacy']}
+  pagebreak:{mode:['css','legacy']}
 };
 
 // ── Overlay moderno de carga PDF ─────────────────────────────────
@@ -3054,11 +3038,20 @@ async function htmlAPdfDesdeNodoFuente(sourceEl,filename){
     _actualizarLoadingPdf('Cargando fuentes e imágenes…', 25);
     if(document.fonts&&document.fonts.ready) await document.fonts.ready.catch(()=>{});
     await esperarImagenesEn(clone);
-    await delayPdf(80);
-    for(let i=0;i<6;i++) await new Promise(r=>requestAnimationFrame(r));
+    // Espera extra para que el layout termine de renderizar
+    await delayPdf(200);
+    for(let i=0;i<12;i++) await new Promise(r=>requestAnimationFrame(r));
+
+    // Calcular altura REAL del contenido para capturar TODO sin truncar
+    const contentH = Math.max(
+      clone.scrollHeight  || 0,
+      clone.offsetHeight  || 0,
+      host.scrollHeight   || 0,
+      1300
+    ) + 150; // margen extra inferior de seguridad
 
     _actualizarLoadingPdf('Renderizando páginas…', 55);
-    await delayPdf(60);
+    await delayPdf(80);
 
     _actualizarLoadingPdf('Construyendo el PDF…', 78);
     await html2pdf().set({
@@ -3066,9 +3059,9 @@ async function htmlAPdfDesdeNodoFuente(sourceEl,filename){
       filename,
       html2canvas:{
         ...html2pdfOptsPdf.html2canvas,
-        scale:3,
+        scale:2,
         windowWidth:PDF_WIDTH_PX,
-        windowHeight:1123
+        windowHeight:contentH,   // altura dinámica: captura TODO el documento
       }
     }).from(clone).save();
 
@@ -5054,7 +5047,7 @@ async function exportarPDFCable(){
 
   // Construir HTML del PDF
   const htmlPDF=`
-  <div style="font-family:'Helvetica Neue',Arial,sans-serif;color:#111827;background:#fff;padding:40px;max-width:750px;margin:0 auto">
+  <div style="font-family:'Helvetica Neue',Arial,sans-serif;color:#111827;background:#fff;padding:40px;width:750px;margin:0 auto;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
     <!-- ENCABEZADO -->
     <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #f5c800;padding-bottom:16px;margin-bottom:20px">
       <div>
@@ -5215,234 +5208,7 @@ async function exportarPDFCable(){
   tpl.innerHTML='';
 }
 
-// ═══════════════════════════════════════════════════════════════
-// PROTECCIONES — GUARDAR / CARGAR
-// ═══════════════════════════════════════════════════════════════
-function _prSnapshot() {
-  return {
-    Ic:    document.getElementById('pr-Ic')?.value || '20',
-    tipo:  document.getElementById('pr-tipo')?.value || 'gral',
-    V:     document.getElementById('pr-v')?.value || '220',
-    fases: document.getElementById('pr-fases')?.value || '1',
-    kvaCC: document.getElementById('pr-kva-cc')?.value || '150',
-    Z:     document.getElementById('pr-z')?.value || '5',
-  };
-}
-function _prRestore(s) {
-  if (!s) return;
-  const sv = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
-  sv('pr-Ic', s.Ic || '20');
-  sv('pr-tipo', s.tipo || 'gral');
-  sv('pr-v', s.V || '220');
-  sv('pr-kva-cc', s.kvaCC || '150');
-  sv('pr-z', s.Z || '5');
-  // Restaurar botones de fases
-  const fVal = String(s.fases || '1');
-  sv('pr-fases', fVal);
-  document.querySelectorAll('#calctab-cortocircuito .pf-radio-group .pf-radio-btn').forEach(b => {
-    const isTri = b.textContent.includes('Trifásico') || b.textContent.includes('Tri');
-    b.classList.toggle('on', (fVal === '3') === isTri);
-  });
-  calcProtecciones();
-}
-function _prResumen(s) {
-  if (!s) return '—';
-  return `Ic ${s.Ic || '—'} A · ${s.tipo || '—'} · ${s.V || '—'}V · ${s.fases === '3' ? 'Trifásico' : 'Monofásico'}`;
-}
-async function guardarCalcProteccion() {
-  const nombre = prompt('Nombre para este cálculo de protecciones:');
-  if (!nombre || !nombre.trim()) return;
-  const snap = _prSnapshot();
-  const payload = {
-    nombre: nombre.trim(),
-    tipo: 'proteccion_calc',
-    sistema: snap.V + 'V',
-    cargas: [snap],
-  };
-  try {
-    const r = await api('electrical-projects/index', { method: 'POST', body: JSON.stringify(payload) });
-    if (isErr(r)) { toast(r?.msg || 'Error al guardar', 'err'); return; }
-    toast('✅ Protección guardada en BD', 'ok');
-  } catch(e) { toast('Error de conexión', 'err'); }
-}
-let _prCalcsCache = [];
-async function abrirHistorialProteccion() {
-  openModal('m-pr-historial');
-  const listEl = document.getElementById('pr-historial-list');
-  if (listEl) listEl.innerHTML = '<div class="loading"><div class="spin"></div><p>Cargando…</p></div>';
-  try {
-    const r = await api('electrical-projects/index');
-    if (isErr(r)) { if(listEl) listEl.innerHTML = `<div style="text-align:center;padding:24px;color:var(--err)">${r?.msg||'Error'}</div>`; return; }
-    const todos = Array.isArray(r) ? r : (r?.data || []);
-    _prCalcsCache = todos.filter(p => p.tipo === 'proteccion_calc');
-    if (!_prCalcsCache.length) {
-      if(listEl) listEl.innerHTML = `<div style="text-align:center;padding:32px;color:var(--t3)">
-        <i data-lucide="inbox" style="width:36px;height:36px;display:block;margin:0 auto 10px"></i>
-        <p>No hay cálculos de protecciones guardados.</p>
-        <p style="font-size:12px;margin-top:4px">Usa el botón <strong style="color:var(--acc)">Guardar</strong> después de calcular.</p>
-      </div>`;
-      refreshIcons(); return;
-    }
-    _prCalcsCache.sort((a,b) => new Date(b.created_at||b.creado_en||0) - new Date(a.created_at||a.creado_en||0));
-    if(listEl) listEl.innerHTML = `<div style="display:flex;flex-direction:column;gap:10px">
-      ${_prCalcsCache.map(c => {
-        const snap = (_parseCargasField(c.cargas)||[])[0] || {};
-        const fecha = c.created_at||c.creado_en ? new Date(c.created_at||c.creado_en).toLocaleDateString('es-EC',{day:'2-digit',month:'short',year:'numeric'}) : '—';
-        return `<div style="background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:14px 16px;display:flex;align-items:flex-start;gap:12px">
-          <div style="width:36px;height:36px;border-radius:9px;background:rgba(239,68,68,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--err)">
-            <i data-lucide="shield-alert" style="width:18px;height:18px"></i>
-          </div>
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:700;font-size:13px;color:var(--t1);margin-bottom:2px">${c.nombre}</div>
-            <div style="font-size:11px;color:var(--t3);font-family:'DM Mono',monospace">${_prResumen(snap)}</div>
-            <div style="font-size:10px;color:var(--t3);margin-top:4px">🕒 ${fecha}</div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
-            <button type="button" class="btn btn-acc btn-sm" onclick="cargarCalcProteccion(${c.id})">
-              <i data-lucide="upload" style="width:13px;height:13px"></i> Cargar
-            </button>
-            <button type="button" class="btn btn-danger btn-sm" onclick="eliminarCalcProteccion(${c.id},this)">
-              <i data-lucide="trash-2" style="width:13px;height:13px"></i>
-            </button>
-          </div>
-        </div>`;
-      }).join('')}
-    </div>`;
-    refreshIcons();
-  } catch(e) { if(listEl) listEl.innerHTML = `<div style="text-align:center;padding:24px;color:var(--err)">Error de conexión</div>`; }
-}
-async function cargarCalcProteccion(id) {
-  closeModal('m-pr-historial');
-  let rec = _prCalcsCache.find(c => String(c.id) === String(id));
-  if (!rec) { toast('No encontrado','err'); return; }
-  const snap = (_parseCargasField(rec.cargas)||[])[0];
-  if (!snap) { toast('Sin datos en este registro','err'); return; }
-  _prRestore(snap);
-  irCalcTab('cortocircuito');
-  toast(`✅ "${rec.nombre}" cargado`, 'ok');
-}
-async function eliminarCalcProteccion(id, btnEl) {
-  if (!confirm('¿Eliminar este cálculo?')) return;
-  if (btnEl) { btnEl.disabled = true; btnEl.textContent = '…'; }
-  const r = await api(`electrical-projects/index?id=${id}`, { method: 'DELETE' });
-  if (isErr(r)) { toast(r?.msg||'Error','err'); if(btnEl){btnEl.disabled=false;btnEl.innerHTML='<i data-lucide="trash-2" style="width:13px;height:13px"></i>';refreshIcons();} return; }
-  toast('Eliminado', 'ok');
-  abrirHistorialProteccion();
-}
-
-// ═══════════════════════════════════════════════════════════════
-// TUBERÍAS / CONDUIT — GUARDAR / CARGAR
-// ═══════════════════════════════════════════════════════════════
-function _tbSnapshot() {
-  return {
-    tipo:       document.getElementById('tb-tipo')?.value || 'EMT',
-    ncond:      document.getElementById('tb-ncond')?.value || '3',
-    awg:        document.getElementById('tb-awg')?.value || '12',
-    aislamiento:document.getElementById('tb-aislamiento')?.value || 'THHN',
-  };
-}
-function _tbRestore(s) {
-  if (!s) return;
-  const sv = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
-  sv('tb-tipo', s.tipo || 'EMT');
-  sv('tb-ncond', s.ncond || '3');
-  sv('tb-awg', s.awg || '12');
-  sv('tb-aislamiento', s.aislamiento || 'THHN');
-  // Restaurar botones radio de tipo conduit
-  const tipoVal = s.tipo || 'EMT';
-  const tipoMap = { EMT:'EMT (metálico liviano)', PVC40:'PVC Cédula 40', IMC:'IMC (intermedio)', RMC:'RMC (rígido)' };
-  document.querySelectorAll('#calctab-tuberia .pf-radio-group .pf-radio-btn').forEach(b => {
-    const lbl = Object.entries(tipoMap).find(([k,v]) => b.textContent.includes(v.split(' ')[0]));
-    if (lbl) b.classList.toggle('on', lbl[0] === tipoVal);
-  });
-  calcTuberia();
-}
-function _tbResumen(s) {
-  if (!s) return '—';
-  return `${s.tipo||'EMT'} · AWG #${s.awg||'—'} · ${s.ncond||'—'} conductores · ${s.aislamiento||'THHN'}`;
-}
-async function guardarCalcTuberia() {
-  const nombre = prompt('Nombre para este cálculo de tubería/conduit:');
-  if (!nombre || !nombre.trim()) return;
-  const snap = _tbSnapshot();
-  const payload = {
-    nombre: nombre.trim(),
-    tipo: 'tuberia_calc',
-    sistema: snap.tipo,
-    cargas: [snap],
-  };
-  try {
-    const r = await api('electrical-projects/index', { method: 'POST', body: JSON.stringify(payload) });
-    if (isErr(r)) { toast(r?.msg || 'Error al guardar', 'err'); return; }
-    toast('✅ Tubería guardada en BD', 'ok');
-  } catch(e) { toast('Error de conexión', 'err'); }
-}
-let _tbCalcsCache = [];
-async function abrirHistorialTuberia() {
-  openModal('m-tb-historial');
-  const listEl = document.getElementById('tb-historial-list');
-  if (listEl) listEl.innerHTML = '<div class="loading"><div class="spin"></div><p>Cargando…</p></div>';
-  try {
-    const r = await api('electrical-projects/index');
-    if (isErr(r)) { if(listEl) listEl.innerHTML = `<div style="text-align:center;padding:24px;color:var(--err)">${r?.msg||'Error'}</div>`; return; }
-    const todos = Array.isArray(r) ? r : (r?.data || []);
-    _tbCalcsCache = todos.filter(p => p.tipo === 'tuberia_calc');
-    if (!_tbCalcsCache.length) {
-      if(listEl) listEl.innerHTML = `<div style="text-align:center;padding:32px;color:var(--t3)">
-        <i data-lucide="inbox" style="width:36px;height:36px;display:block;margin:0 auto 10px"></i>
-        <p>No hay cálculos de tubería guardados.</p>
-        <p style="font-size:12px;margin-top:4px">Usa el botón <strong style="color:var(--acc)">Guardar</strong> después de calcular.</p>
-      </div>`;
-      refreshIcons(); return;
-    }
-    _tbCalcsCache.sort((a,b) => new Date(b.created_at||b.creado_en||0) - new Date(a.created_at||a.creado_en||0));
-    if(listEl) listEl.innerHTML = `<div style="display:flex;flex-direction:column;gap:10px">
-      ${_tbCalcsCache.map(c => {
-        const snap = (_parseCargasField(c.cargas)||[])[0] || {};
-        const fecha = c.created_at||c.creado_en ? new Date(c.created_at||c.creado_en).toLocaleDateString('es-EC',{day:'2-digit',month:'short',year:'numeric'}) : '—';
-        return `<div style="background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:14px 16px;display:flex;align-items:flex-start;gap:12px">
-          <div style="width:36px;height:36px;border-radius:9px;background:rgba(34,197,94,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--ok)">
-            <i data-lucide="minus-circle" style="width:18px;height:18px"></i>
-          </div>
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:700;font-size:13px;color:var(--t1);margin-bottom:2px">${c.nombre}</div>
-            <div style="font-size:11px;color:var(--t3);font-family:'DM Mono',monospace">${_tbResumen(snap)}</div>
-            <div style="font-size:10px;color:var(--t3);margin-top:4px">🕒 ${fecha}</div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
-            <button type="button" class="btn btn-acc btn-sm" onclick="cargarCalcTuberia(${c.id})">
-              <i data-lucide="upload" style="width:13px;height:13px"></i> Cargar
-            </button>
-            <button type="button" class="btn btn-danger btn-sm" onclick="eliminarCalcTuberia(${c.id},this)">
-              <i data-lucide="trash-2" style="width:13px;height:13px"></i>
-            </button>
-          </div>
-        </div>`;
-      }).join('')}
-    </div>`;
-    refreshIcons();
-  } catch(e) { if(listEl) listEl.innerHTML = `<div style="text-align:center;padding:24px;color:var(--err)">Error de conexión</div>`; }
-}
-async function cargarCalcTuberia(id) {
-  closeModal('m-tb-historial');
-  let rec = _tbCalcsCache.find(c => String(c.id) === String(id));
-  if (!rec) { toast('No encontrado','err'); return; }
-  const snap = (_parseCargasField(rec.cargas)||[])[0];
-  if (!snap) { toast('Sin datos en este registro','err'); return; }
-  _tbRestore(snap);
-  irCalcTab('tuberia');
-  toast(`✅ "${rec.nombre}" cargado`, 'ok');
-}
-async function eliminarCalcTuberia(id, btnEl) {
-  if (!confirm('¿Eliminar este cálculo?')) return;
-  if (btnEl) { btnEl.disabled = true; btnEl.textContent = '…'; }
-  const r = await api(`electrical-projects/index?id=${id}`, { method: 'DELETE' });
-  if (isErr(r)) { toast(r?.msg||'Error','err'); if(btnEl){btnEl.disabled=false;btnEl.innerHTML='<i data-lucide="trash-2" style="width:13px;height:13px"></i>';refreshIcons();} return; }
-  toast('Eliminado', 'ok');
-  abrirHistorialTuberia();
-}
-
-
+// ═══ ALIASES — conectan los botones del calibrador con sus funciones ═══
 function guardarCalcCable()      { abrirGuardarCalcCable(); }
 function abrirModalCableCalcs()  { abrirHistorialCalcCable(); }
 function exportarPDFCableCalc()  { exportarPDFCable(); }
@@ -5500,11 +5266,7 @@ function abrirModalBalances() {
   const cont = document.getElementById('bc-saved-list-container');
   if(cont) cont.innerHTML='<div style="text-align:center;padding:20px;color:var(--t3)"><div class="spin" style="margin:0 auto 8px"></div><p>Cargando proyectos…</p></div>';
   openModal('m-balances');
-  _loadBalancesFromDB().then(allRecords => {
-  // Mostrar SOLO proyectos de Balance de Cargas (excluir otros tipos de la calculadora)
-  const balances = allRecords.filter(b =>
-    b.tipo !== 'cable_calc' && b.tipo !== 'proteccion_calc' && b.tipo !== 'tuberia_calc'
-  );
+  _loadBalancesFromDB().then(balances => {
   const cont = document.getElementById('bc-saved-list-container');
   if (!cont) return;
     if (!balances.length) {
@@ -5942,46 +5704,6 @@ async function generarInformePDF() {
           <i data-lucide="inbox" style="width:32px;height:32px;margin-bottom:8px;display:block;margin-left:auto;margin-right:auto"></i>
           <p>Sin cálculos guardados</p>
         </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL: Historial de Protecciones -->
-<div class="modal-bg" id="m-pr-historial" onclick="if(event.target===this)closeModal('m-pr-historial')">
-  <div class="modal" style="max-width:680px">
-    <div class="modal-head">
-      <span style="font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px">
-        <i data-lucide="shield-alert" style="width:18px;height:18px;color:var(--err)"></i>
-        Historial de Cálculos de Protecciones
-      </span>
-      <button type="button" onclick="closeModal('m-pr-historial')" class="btn btn-ghost btn-sm">
-        <i data-lucide="x" style="width:14px;height:14px"></i>
-      </button>
-    </div>
-    <div style="padding:16px">
-      <div id="pr-historial-list" style="min-height:80px">
-        <div class="loading"><div class="spin"></div><p>Cargando…</p></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL: Historial de Tuberías / Conduit -->
-<div class="modal-bg" id="m-tb-historial" onclick="if(event.target===this)closeModal('m-tb-historial')">
-  <div class="modal" style="max-width:680px">
-    <div class="modal-head">
-      <span style="font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px">
-        <i data-lucide="minus-circle" style="width:18px;height:18px;color:var(--ok)"></i>
-        Historial de Cálculos de Tuberías / Conduit
-      </span>
-      <button type="button" onclick="closeModal('m-tb-historial')" class="btn btn-ghost btn-sm">
-        <i data-lucide="x" style="width:14px;height:14px"></i>
-      </button>
-    </div>
-    <div style="padding:16px">
-      <div id="tb-historial-list" style="min-height:80px">
-        <div class="loading"><div class="spin"></div><p>Cargando…</p></div>
       </div>
     </div>
   </div>
