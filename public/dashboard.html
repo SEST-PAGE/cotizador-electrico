@@ -2905,6 +2905,7 @@ function escalaCanvasPdf(){ return 3; }
 
 // ── Opciones base de html2pdf (A4, retina, sin compresión) ───────
 const PDF_WIDTH_PX = 794; // ancho A4 a 96 dpi — tamaño constante en móvil y desktop
+// Opciones heredadas (usadas por cotizaciones — el calibrador usa su propio canvas)
 const html2pdfOptsPdf={
   margin:[8,8,8,8],
   image:{type:'png',quality:1},
@@ -2919,7 +2920,7 @@ const html2pdfOptsPdf={
     letterRendering:true,
     imageTimeout:15000,
     windowWidth:PDF_WIDTH_PX,
-    windowHeight:99999           // suficientemente grande para cualquier documento
+    windowHeight:99999,          // nunca truncar por altura
   },
   jsPDF:{unit:'mm',format:'a4',orientation:'portrait',compress:false},
   pagebreak:{mode:['css','legacy']}
@@ -3024,77 +3025,116 @@ async function htmlAPdfDesdeNodoFuente(sourceEl,filename){
 
   _mostrarLoadingPdf('Preparando documento…');
 
-  // Clonar el nodo y colocarlo en el DOM con posición absoluta
-  // (NO fixed — fixed hace que scrollHeight sea 0 y el contenido se corte)
-  const host = document.createElement('div');
-  host.id = 'pdf-capture-host';
-  host.style.cssText = [
-    'position:absolute',
-    'left:-9999px',
-    'top:0',
-    'width:794px',
-    'overflow:visible',
-    'z-index:-999',
-    'pointer-events:none',
-    'visibility:hidden',
-  ].join(';') + ';';
+  // ── Clonar el contenido y colocarlo en el DOM como elemento ESTÁTICO
+  // Importante: NO usar position:fixed ni visibility:hidden —
+  // ambos impiden que scrollHeight reporte la altura real del contenido.
+  // Lo ocultamos detrás del overlay de carga (z-index 9999999).
   const clone = sourceEl.cloneNode(true);
   clone.removeAttribute('id');
+  clone.setAttribute('id','pdf-render-clone');
   clone.style.cssText = [
     'display:block',
+    'position:fixed',
+    'top:0',
+    'left:0',
     'width:794px',
     'max-width:794px',
     'box-sizing:border-box',
     'background:#ffffff',
     'color:#111827',
     'overflow:visible',
+    'z-index:1',                       // detrás del overlay (z=9999999)
     '-webkit-print-color-adjust:exact',
     'print-color-adjust:exact',
   ].join(';') + ';';
-  host.appendChild(clone);
-  document.body.appendChild(host);
+  document.body.appendChild(clone);
 
   try{
     _actualizarLoadingPdf('Cargando fuentes e imágenes…', 25);
     if(document.fonts&&document.fonts.ready) await document.fonts.ready.catch(()=>{});
     await esperarImagenesEn(clone);
-    // Esperar a que el layout termine — crítico para grids y elementos flex
-    await delayPdf(300);
-    for(let i=0;i<16;i++) await new Promise(r=>requestAnimationFrame(r));
 
-    // Medir la altura REAL del contenido ya renderizado
-    const realHeight = Math.max(
-      clone.scrollHeight  || 0,
-      clone.offsetHeight  || 0,
-      clone.getBoundingClientRect().height || 0,
+    // Esperar a que grids/flex terminen de calcular su altura
+    await delayPdf(400);
+    for(let i=0;i<20;i++) await new Promise(r=>requestAnimationFrame(r));
+
+    // ── Medir la altura REAL usando el canvas temporal de html2canvas
+    // position:fixed con top:0 sí permite medir scrollHeight correctamente
+    const totalH = Math.max(
+      clone.scrollHeight || 0,
+      clone.offsetHeight || 0,
       1400
-    ) + 200; // margen de seguridad inferior
+    );
 
-    _actualizarLoadingPdf('Renderizando páginas…', 55);
-    await delayPdf(80);
+    _actualizarLoadingPdf('Renderizando páginas…', 50);
+    await delayPdf(100);
 
-    _actualizarLoadingPdf('Construyendo el PDF…', 78);
-    await html2pdf().set({
-      ...html2pdfOptsPdf,
-      filename,
-      html2canvas:{
-        ...html2pdfOptsPdf.html2canvas,
-        scale:2,
-        windowWidth: PDF_WIDTH_PX,
-        windowHeight: realHeight,   // altura real — nunca trunca el contenido
-      }
-    }).from(clone).save();
+    // ── Capturar TODO el contenido con html2canvas directamente
+    _actualizarLoadingPdf('Construyendo el PDF…', 70);
+    const canvas = await html2canvas(clone, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      backgroundColor: '#ffffff',
+      scrollX: 0,
+      scrollY: 0,
+      windowWidth: 794,
+      windowHeight: totalH + 100,
+      width: 794,
+      height: totalH,           // ← clave: captura todos los px sin truncar
+      letterRendering: true,
+      imageTimeout: 15000,
+    });
+
+    _actualizarLoadingPdf('Paginando documento…', 85);
+    await delayPdf(60);
+
+    // ── Dividir el canvas en páginas A4 y generar el PDF manualmente
+    // Esto evita el bug de html2pdf que limita a 1 página en algunos browsers.
+    const pdf = new html2pdf.jsPDF('p','mm','a4');
+    const pageW  = pdf.internal.pageSize.getWidth();   // 210 mm
+    const pageH  = pdf.internal.pageSize.getHeight();  // 297 mm
+    const margin = 8; // mm
+
+    // Escala: canvas.width = 794*2 = 1588 px → 210 mm
+    const imgW = pageW - margin * 2;
+    const imgH = (canvas.height / canvas.width) * imgW;
+
+    // Altura de página en px del canvas
+    const pageHeightPx = Math.floor(canvas.width * ((pageH - margin * 2) / imgW));
+    const totalPages   = Math.ceil(canvas.height / pageHeightPx);
+
+    for(let page = 0; page < totalPages; page++){
+      if(page > 0) pdf.addPage();
+
+      const srcY  = page * pageHeightPx;
+      const srcH  = Math.min(pageHeightPx, canvas.height - srcY);
+      const dstH  = (srcH / canvas.width) * imgW;
+
+      // Recortar el trozo de esta página
+      const slice = document.createElement('canvas');
+      slice.width  = canvas.width;
+      slice.height = srcH;
+      slice.getContext('2d').drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
+
+      pdf.addImage(slice.toDataURL('image/png','1.0'), 'PNG', margin, margin, imgW, dstH);
+    }
+
+    pdf.save(filename);
 
     _actualizarLoadingPdf('¡Listo! Descargando…', 100);
-    await delayPdf(500);
+    await delayPdf(400);
     _ocultarLoadingPdf();
     toast('PDF descargado ✓','ok');
+
   }catch(err){
-    console.error(err);
+    console.error('[PDF]', err);
     _ocultarLoadingPdf();
-    toast('Error al generar PDF','err');
+    toast('Error al generar PDF: ' + (err.message||err),'err');
   }finally{
-    host.remove();
+    const el = document.getElementById('pdf-render-clone');
+    if(el) el.remove();
   }
 }
 
