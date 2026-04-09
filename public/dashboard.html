@@ -2909,7 +2909,7 @@ const html2pdfOptsPdf={
   margin:[8,8,8,8],
   image:{type:'png',quality:1},
   html2canvas:{
-    scale:2,
+    scale:3,
     useCORS:true,
     allowTaint:true,
     logging:false,
@@ -2918,11 +2918,11 @@ const html2pdfOptsPdf={
     scrollY:0,
     letterRendering:true,
     imageTimeout:15000,
-    windowWidth:PDF_WIDTH_PX,
-    windowHeight:99999           // suficientemente grande para cualquier documento
+    windowWidth:PDF_WIDTH_PX,   // 🔑 fuerza ancho A4 aunque la pantalla sea pequeña
+    windowHeight:1123            // A4 altura
   },
   jsPDF:{unit:'mm',format:'a4',orientation:'portrait',compress:false},
-  pagebreak:{mode:['css','legacy']}
+  pagebreak:{mode:['avoid-all','css','legacy']}
 };
 
 // ── Overlay moderno de carga PDF ─────────────────────────────────
@@ -3024,33 +3024,13 @@ async function htmlAPdfDesdeNodoFuente(sourceEl,filename){
 
   _mostrarLoadingPdf('Preparando documento…');
 
-  // Clonar el nodo y colocarlo en el DOM con posición absoluta
-  // (NO fixed — fixed hace que scrollHeight sea 0 y el contenido se corte)
+  // Contenedor oculto fuera del viewport — 794px fijo siempre
   const host = document.createElement('div');
   host.id = 'pdf-capture-host';
-  host.style.cssText = [
-    'position:absolute',
-    'left:-9999px',
-    'top:0',
-    'width:794px',
-    'overflow:visible',
-    'z-index:-999',
-    'pointer-events:none',
-    'visibility:hidden',
-  ].join(';') + ';';
+  host.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;overflow:visible;z-index:-1;';
   const clone = sourceEl.cloneNode(true);
   clone.removeAttribute('id');
-  clone.style.cssText = [
-    'display:block',
-    'width:794px',
-    'max-width:794px',
-    'box-sizing:border-box',
-    'background:#ffffff',
-    'color:#111827',
-    'overflow:visible',
-    '-webkit-print-color-adjust:exact',
-    'print-color-adjust:exact',
-  ].join(';') + ';';
+  clone.style.cssText = 'display:block;width:794px;box-sizing:border-box;background:#ffffff;color:#111827;overflow:visible;';
   host.appendChild(clone);
   document.body.appendChild(host);
 
@@ -3058,20 +3038,11 @@ async function htmlAPdfDesdeNodoFuente(sourceEl,filename){
     _actualizarLoadingPdf('Cargando fuentes e imágenes…', 25);
     if(document.fonts&&document.fonts.ready) await document.fonts.ready.catch(()=>{});
     await esperarImagenesEn(clone);
-    // Esperar a que el layout termine — crítico para grids y elementos flex
-    await delayPdf(300);
-    for(let i=0;i<16;i++) await new Promise(r=>requestAnimationFrame(r));
-
-    // Medir la altura REAL del contenido ya renderizado
-    const realHeight = Math.max(
-      clone.scrollHeight  || 0,
-      clone.offsetHeight  || 0,
-      clone.getBoundingClientRect().height || 0,
-      1400
-    ) + 200; // margen de seguridad inferior
+    await delayPdf(80);
+    for(let i=0;i<6;i++) await new Promise(r=>requestAnimationFrame(r));
 
     _actualizarLoadingPdf('Renderizando páginas…', 55);
-    await delayPdf(80);
+    await delayPdf(60);
 
     _actualizarLoadingPdf('Construyendo el PDF…', 78);
     await html2pdf().set({
@@ -3079,9 +3050,9 @@ async function htmlAPdfDesdeNodoFuente(sourceEl,filename){
       filename,
       html2canvas:{
         ...html2pdfOptsPdf.html2canvas,
-        scale:2,
-        windowWidth: PDF_WIDTH_PX,
-        windowHeight: realHeight,   // altura real — nunca trunca el contenido
+        scale:3,
+        windowWidth:PDF_WIDTH_PX,
+        windowHeight:1123
       }
     }).from(clone).save();
 
