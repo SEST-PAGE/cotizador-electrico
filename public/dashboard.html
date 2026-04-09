@@ -618,6 +618,64 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
 @media(max-width:1100px){.dash-kpi-grid{grid-template-columns:repeat(2,1fr)}.dash-quick-actions{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:768px){.dash-kpi-grid{grid-template-columns:repeat(2,1fr);gap:10px}.dash-estados-row{padding:10px}.dash-estados-divider{display:none}.estado-pill{min-width:calc(50% - 8px);padding:6px 8px}.ep-count{font-size:18px}.dash-quick-actions{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:480px){.dash-kpi-grid{grid-template-columns:1fr 1fr;gap:8px}.kpi-val{font-size:26px}.kpi-card{padding:14px}.dash-quick-actions{grid-template-columns:1fr 1fr;gap:8px}.qa-btn{padding:14px 8px;font-size:12px}}
+
+/* ═══════════════════ PREMIUM INPUT DESIGN SYSTEM ═══════════════════ */
+.pf-wrap{display:flex;flex-direction:column;gap:6px;position:relative}
+.pf-label{font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--t3);display:flex;align-items:center;gap:5px}
+.pf-label svg,.pf-label [data-lucide]{width:11px;height:11px;color:var(--acc);flex-shrink:0}
+.pf-label .pf-norm{font-size:10px;font-weight:500;color:var(--t3);text-transform:none;letter-spacing:0;margin-left:auto;font-style:italic}
+.pf-inp-wrap{position:relative;display:flex;align-items:stretch}
+.pf-inp-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none;transition:color .2s;z-index:1;display:flex;align-items:center}
+.pf-inp-icon svg,.pf-inp-icon [data-lucide]{width:15px;height:15px}
+.pf-inp-unit{position:absolute;right:0;top:0;bottom:0;display:flex;align-items:center;padding:0 11px;font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:var(--acc);background:rgba(245,200,0,.07);border-left:1px solid rgba(245,200,0,.15);border-radius:0 9px 9px 0;pointer-events:none;white-space:nowrap}
+.pf-inp{width:100%;background:var(--s2);border:1.5px solid rgba(255,255,255,.09);border-radius:10px;color:var(--t1);font-family:'DM Sans',sans-serif;font-size:13px;padding:10px 14px;outline:none;transition:border-color .2s,box-shadow .2s,background .2s;-webkit-appearance:none;appearance:none}
+.pf-inp:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(245,200,0,.12);background:var(--s3)}
+.pf-inp:hover:not(:focus){border-color:rgba(255,255,255,.18)}
+.pf-inp option{background:var(--s2)}
+.pf-inp::placeholder{color:var(--t3)}
+.pf-inp-wrap .pf-inp{padding-left:38px}
+.pf-inp-wrap .pf-inp.has-unit{padding-right:68px}
+.pf-inp-wrap.is-select::after{content:'';position:absolute;right:12px;top:50%;transform:translateY(-50%) rotate(0deg);width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--t3);pointer-events:none;z-index:2}
+.pf-inp-wrap.is-select .pf-inp{padding-right:30px}
+.pf-inp-wrap.is-select.has-icon .pf-inp{padding-right:30px;padding-left:38px}
+.pf-radio-group{display:flex;gap:2px;background:var(--s3);border:1.5px solid rgba(255,255,255,.09);border-radius:10px;padding:3px;overflow:hidden}
+.pf-radio-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:7px 6px;border-radius:7px;border:none;cursor:pointer;background:transparent;color:var(--t2);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;transition:all .18s;white-space:nowrap}
+.pf-radio-btn svg,.pf-radio-btn [data-lucide]{width:12px;height:12px}
+.pf-radio-btn:hover{color:var(--t1);background:rgba(255,255,255,.06)}
+.pf-radio-btn.on{background:rgba(245,200,0,.16);color:var(--acc);box-shadow:inset 0 0 0 1px rgba(245,200,0,.28)}
+.calc-panel{background:var(--s1);border:1px solid var(--bd);border-radius:16px;overflow:hidden;margin-bottom:16px}
+.calc-panel-head{padding:16px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,rgba(245,200,0,.05),transparent 60%)}
+.calc-panel-icon{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.calc-panel-icon svg,.calc-panel-icon [data-lucide]{width:19px;height:19px}
+.calc-panel-title{font-size:14px;font-weight:800;flex:1}
+.calc-panel-sub{font-size:11px;color:var(--t3);margin-top:1px}
+.calc-panel-norm{background:rgba(245,200,0,.1);border:1px solid rgba(245,200,0,.2);color:var(--acc);font-size:10px;font-weight:700;letter-spacing:.8px;padding:4px 10px;border-radius:6px;white-space:nowrap;flex-shrink:0}
+.calc-panel-body{padding:20px}
+.pf-grid{display:grid;gap:14px}
+.pf-grid-2{grid-template-columns:1fr 1fr}
+.pf-grid-3{grid-template-columns:1fr 1fr 1fr}
+.pf-grid-4{grid-template-columns:1fr 1fr 1fr 1fr}
+@media(max-width:900px){.pf-grid-4,.pf-grid-3{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.pf-grid-4,.pf-grid-3,.pf-grid-2{grid-template-columns:1fr}}
+.pf-sep{display:flex;align-items:center;gap:10px;margin:6px 0 2px}
+.pf-sep-line{flex:1;height:1px;background:var(--bd)}
+.pf-sep-txt{font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--t3);white-space:nowrap}
+.r-chip{display:inline-flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-weight:700;font-size:11px;padding:3px 9px;border-radius:6px}
+.r-chip-acc{background:rgba(245,200,0,.12);color:var(--acc);border:1px solid rgba(245,200,0,.22)}
+.r-chip-info{background:var(--info-d);color:var(--info);border:1px solid rgba(59,130,246,.22)}
+.r-chip-ok{background:var(--ok-d);color:var(--ok);border:1px solid rgba(34,197,94,.22)}
+.r-chip-err{background:var(--err-d);color:var(--err);border:1px solid rgba(239,68,68,.22)}
+.r-chip-pur{background:rgba(168,85,247,.1);color:#c084fc;border:1px solid rgba(168,85,247,.22)}
+.db-status-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;border:1px solid}
+.db-ok{background:var(--ok-d);color:var(--ok);border-color:rgba(34,197,94,.3)}
+.db-err{background:var(--err-d);color:var(--err);border-color:rgba(239,68,68,.3)}
+.db-loading{background:var(--info-d);color:var(--info);border-color:rgba(59,130,246,.3)}
+.db-pulse{width:7px;height:7px;border-radius:50%;background:currentColor;animation:dbpulse 1.5s ease-in-out infinite}
+@keyframes dbpulse{0%,100%{opacity:1}50%{opacity:.3}}
+/* bc enhanced header uses pf-inp */
+.bc-enhanced-header .pf-inp,.bc-enhanced-header .bc-config-inp{background:var(--s2);border:1.5px solid rgba(255,255,255,.09);border-radius:10px;color:var(--t1);font-family:'DM Sans',sans-serif;font-size:12px;padding:8px 12px;outline:none;transition:border-color .2s,box-shadow .2s}
+.bc-enhanced-header .pf-inp:focus,.bc-enhanced-header .bc-config-inp:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(245,200,0,.12)}
+
 </style>
 </head>
 <body>
@@ -1230,7 +1288,7 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
           <!-- CONFIGURACI&#211;N GLOBAL DEL TABLERO -->
           <div class="bc-enhanced-header">
             <div class="bc-config-field">
-              <label class="bc-config-lbl"><i data-lucide="zap" style="width:11px;height:11px"></i> Sistema / Voltaje</label>
+              <label class="pf-label"><i data-lucide="zap" style="width:11px;height:11px"></i> Sistema / Voltaje</label>
               <div class="calc-radio-group" id="bc-sistema-grp" style="height:34px">
                 <button type="button" class="calc-radio-btn" data-bcsys="120/240" onclick="setBcSistema('120/240')"><i data-lucide="home" style="width:11px;height:11px"></i> 120/240V</button>
                 <button type="button" class="calc-radio-btn on" data-bcsys="120" onclick="setBcSistema('120')"><i data-lucide="plug" style="width:11px;height:11px"></i> 120V</button>
@@ -1239,20 +1297,20 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
               </div>
             </div>
             <div class="bc-config-field">
-              <label class="bc-config-lbl"><i data-lucide="building" style="width:11px;height:11px"></i> Nombre del proyecto</label>
-              <input class="bc-config-inp" id="bc-proyecto-nombre" placeholder="Ej: Tablero Residencial Casa 1" style="width:100%"/>
+              <label class="pf-label"><i data-lucide="building" style="width:11px;height:11px"></i> Nombre del proyecto</label>
+              <input class="pf-inp" id="bc-proyecto-nombre" placeholder="Ej: Tablero Residencial Casa 1" style="width:100%"/>
             </div>
             <div class="bc-config-field">
-              <label class="bc-config-lbl"><i data-lucide="user" style="width:11px;height:11px"></i> Cliente / Propietario</label>
-              <input class="bc-config-inp" id="bc-proyecto-cliente" placeholder="Nombre del cliente" style="width:100%"/>
+              <label class="pf-label"><i data-lucide="user" style="width:11px;height:11px"></i> Cliente / Propietario</label>
+              <input class="pf-inp" id="bc-proyecto-cliente" placeholder="Nombre del cliente" style="width:100%"/>
             </div>
             <div class="bc-config-field">
-              <label class="bc-config-lbl"><i data-lucide="map-pin" style="width:11px;height:11px"></i> Ubicaci&#243;n / Direcci&#243;n</label>
-              <input class="bc-config-inp" id="bc-proyecto-ubicacion" placeholder="Direcci&#243;n de la instalaci&#243;n" style="width:100%"/>
+              <label class="pf-label"><i data-lucide="map-pin" style="width:11px;height:11px"></i> Ubicaci&#243;n / Direcci&#243;n</label>
+              <input class="pf-inp" id="bc-proyecto-ubicacion" placeholder="Direcci&#243;n de la instalaci&#243;n" style="width:100%"/>
             </div>
             <div class="bc-config-field">
-              <label class="bc-config-lbl"><i data-lucide="cpu" style="width:11px;height:11px"></i> Tipo de tablero</label>
-              <select class="bc-config-inp" id="bc-tipo-tablero">
+              <label class="pf-label"><i data-lucide="cpu" style="width:11px;height:11px"></i> Tipo de tablero</label>
+              <select class="pf-inp" id="bc-tipo-tablero">
                 <option value="residencial">&#127968; Residencial</option>
                 <option value="comercial">&#127970; Comercial</option>
                 <option value="industrial">&#127981; Industrial</option>
@@ -1260,8 +1318,8 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
               </select>
             </div>
             <div class="bc-config-field">
-              <label class="bc-config-lbl"><i data-lucide="thermometer" style="width:11px;height:11px"></i> Temperatura ambiente</label>
-              <select class="bc-config-inp" id="bc-temperatura-global">
+              <label class="pf-label"><i data-lucide="thermometer" style="width:11px;height:11px"></i> Temperatura ambiente</label>
+              <select class="pf-inp" id="bc-temperatura-global">
                 <option value="1.0" selected>&#8804;30&#176;C &#8212; Factor 1.00 (Sierra)</option>
                 <option value="0.91">31&#8211;35&#176;C &#8212; Factor 0.91 (Costa)</option>
                 <option value="0.82">36&#8211;40&#176;C &#8212; Factor 0.82 (Oriente)</option>
@@ -1335,120 +1393,252 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
 
       <!-- ══════════ TAB 3: PROTECCIONES ══════════ -->
       <div id="calctab-cortocircuito" data-calctab="cortocircuito" style="display:none">
-        <div class="card" style="margin-bottom:16px">
-          <div class="card-head">
-            <div class="card-title" style="display:flex;align-items:center;gap:8px"><i data-lucide="shield-alert" style="width:18px;height:18px;stroke-width:2;color:var(--acc)"></i> Dimensionamiento de Protecciones — NEC Art. 240 / 430</div>
+
+        <!-- Panel principal -->
+        <div class="calc-panel">
+          <div class="calc-panel-head">
+            <div class="calc-panel-icon" style="background:rgba(239,68,68,.12);color:var(--err)">
+              <i data-lucide="shield-alert"></i>
+            </div>
+            <div>
+              <div class="calc-panel-title">Dimensionamiento de Protecciones</div>
+              <div class="calc-panel-sub">Breakers termomagnéticos · Fusibles · Poder de ruptura</div>
+            </div>
+            <span class="calc-panel-norm">NEC Art. 240 / 430</span>
           </div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;padding:16px">
-            <div>
-              <label class="lbl">Corriente de carga (A)</label>
-              <input class="inp" id="pr-Ic" type="number" min="0" step="0.1" value="20" oninput="calcProtecciones()"/>
+          <div class="calc-panel-body">
+
+            <!-- Grupo 1: Carga -->
+            <div class="pf-sep"><div class="pf-sep-line"></div><span class="pf-sep-txt"><i data-lucide="zap" style="width:10px;height:10px;display:inline;vertical-align:middle;margin-right:3px"></i> Datos de la carga</span><div class="pf-sep-line"></div></div>
+            <div class="pf-grid pf-grid-3" style="margin-bottom:18px">
+
+              <div class="pf-wrap">
+                <label class="pf-label"><i data-lucide="gauge"></i> Corriente de carga <span class="pf-norm">Ic</span></label>
+                <div class="pf-inp-wrap">
+                  <span class="pf-inp-icon"><i data-lucide="activity"></i></span>
+                  <input class="pf-inp has-unit" id="pr-Ic" type="number" min="0" step="0.1" value="20" oninput="calcProtecciones()" placeholder="0.00"/>
+                  <span class="pf-inp-unit">A</span>
+                </div>
+              </div>
+
+              <div class="pf-wrap">
+                <label class="pf-label"><i data-lucide="settings-2"></i> Tipo de carga</label>
+                <div class="pf-inp-wrap is-select has-icon">
+                  <span class="pf-inp-icon"><i data-lucide="cpu"></i></span>
+                  <select class="pf-inp" id="pr-tipo" onchange="calcProtecciones()">
+                    <option value="gral">⚡ General (resistiva / iluminación)</option>
+                    <option value="motor">⚙️ Motor AC — NEC 430.52</option>
+                    <option value="transformador">🔄 Transformador — NEC 450.3</option>
+                    <option value="condensador">🔋 Banco de condensadores</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="pf-wrap">
+                <label class="pf-label"><i data-lucide="hash"></i> Sistema de fases</label>
+                <div class="pf-radio-group" style="height:42px">
+                  <button type="button" class="pf-radio-btn on" onclick="document.getElementById('pr-fases').value=1;calcProtecciones();this.parentElement.querySelectorAll('.pf-radio-btn').forEach(b=>b.classList.remove('on'));this.classList.add('on')">
+                    <i data-lucide="plug"></i> Monofásico
+                  </button>
+                  <button type="button" class="pf-radio-btn" onclick="document.getElementById('pr-fases').value=3;calcProtecciones();this.parentElement.querySelectorAll('.pf-radio-btn').forEach(b=>b.classList.remove('on'));this.classList.add('on')">
+                    <i data-lucide="activity"></i> Trifásico
+                  </button>
+                  <input type="hidden" id="pr-fases" value="1"/>
+                </div>
+              </div>
+
             </div>
-            <div>
-              <label class="lbl">Tipo de carga</label>
-              <select class="inp" id="pr-tipo" onchange="calcProtecciones()">
-                <option value="gral">General (resistiva/iluminación)</option>
-                <option value="motor">Motor AC</option>
-                <option value="transformador">Transformador</option>
-                <option value="condensador">Banco de condensadores</option>
-              </select>
+
+            <!-- Grupo 2: Sistema -->
+            <div class="pf-sep"><div class="pf-sep-line"></div><span class="pf-sep-txt"><i data-lucide="settings" style="width:10px;height:10px;display:inline;vertical-align:middle;margin-right:3px"></i> Parámetros del sistema</span><div class="pf-sep-line"></div></div>
+            <div class="pf-grid pf-grid-3">
+
+              <div class="pf-wrap">
+                <label class="pf-label"><i data-lucide="zap"></i> Tensión del sistema <span class="pf-norm">V nominal</span></label>
+                <div class="pf-inp-wrap is-select has-icon">
+                  <span class="pf-inp-icon"><i data-lucide="radio"></i></span>
+                  <select class="pf-inp" id="pr-v" onchange="calcProtecciones()">
+                    <option value="120">120 V — L–N Ecuador</option>
+                    <option value="220" selected>220 V — L–L / Industrial</option>
+                    <option value="240">240 V — Bifásico</option>
+                    <option value="380">380 V — Trifásico</option>
+                    <option value="440">440 V — Industrial</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="pf-wrap">
+                <label class="pf-label"><i data-lucide="database"></i> Potencia transformador <span class="pf-norm">kVA red</span></label>
+                <div class="pf-inp-wrap">
+                  <span class="pf-inp-icon"><i data-lucide="box"></i></span>
+                  <input class="pf-inp has-unit" id="pr-kva-cc" type="number" min="0" step="1" value="150" oninput="calcProtecciones()" placeholder="150"/>
+                  <span class="pf-inp-unit">kVA</span>
+                </div>
+              </div>
+
+              <div class="pf-wrap">
+                <label class="pf-label"><i data-lucide="percent"></i> Impedancia transformador <span class="pf-norm">Z%</span></label>
+                <div class="pf-inp-wrap">
+                  <span class="pf-inp-icon"><i data-lucide="git-branch"></i></span>
+                  <input class="pf-inp has-unit" id="pr-z" type="number" min="0" step="0.01" value="5" oninput="calcProtecciones()" placeholder="5"/>
+                  <span class="pf-inp-unit">%</span>
+                </div>
+              </div>
+
             </div>
-            <div>
-              <label class="lbl">Tensión del sistema (V)</label>
-              <select class="inp" id="pr-v" onchange="calcProtecciones()">
-                <option value="120">120 V</option>
-                <option value="220" selected>220 V</option>
-                <option value="380">380 V</option>
-                <option value="440">440 V</option>
-              </select>
-            </div>
-            <div>
-              <label class="lbl">Fases</label>
-              <select class="inp" id="pr-fases" onchange="calcProtecciones()">
-                <option value="1" selected>Monofásico</option>
-                <option value="3">Trifásico</option>
-              </select>
-            </div>
-            <div>
-              <label class="lbl">Potencia cortocircuito disponible (kVA)</label>
-              <input class="inp" id="pr-kva-cc" type="number" min="0" step="1" value="150" oninput="calcProtecciones()" title="Potencia de cortocircuito del transformador de la red"/>
-            </div>
-            <div>
-              <label class="lbl">Impedancia transformador Z% (si conoce)</label>
-              <input class="inp" id="pr-z" type="number" min="0" step="0.01" value="5" oninput="calcProtecciones()"/>
-            </div>
+
           </div>
-          <div id="pr-resultado" style="margin:0 16px 16px;background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:16px"></div>
         </div>
+
+        <!-- Resultado protecciones -->
+        <div id="pr-resultado" style="margin-bottom:16px"></div>
+
         <!-- Tabla de breakers estándar -->
-        <div class="card">
-          <div class="card-head"><div class="card-title" style="display:flex;align-items:center;gap:8px"><i data-lucide="toggle-left" style="width:18px;height:18px;stroke-width:2;color:var(--acc)"></i> Breakers estándar disponibles (ANSI/UL)</div></div>
-          <div style="padding:16px">
-            <div style="display:flex;flex-wrap:wrap;gap:8px">
-              <span id="breaker-tag" style=""></span>
+        <div class="calc-panel">
+          <div class="calc-panel-head">
+            <div class="calc-panel-icon" style="background:rgba(245,200,0,.12);color:var(--acc)">
+              <i data-lucide="toggle-left"></i>
             </div>
-            <p style="margin-top:12px;font-size:12px;color:var(--t2)">Los valores en <span style="color:var(--acc);font-weight:700">amarillo</span> son los más cercanos a la corriente calculada.</p>
+            <div>
+              <div class="calc-panel-title">Breakers estándar disponibles</div>
+              <div class="calc-panel-sub">Valores normalizados ANSI / UL — los resaltados son los recomendados</div>
+            </div>
+            <span class="calc-panel-norm">ANSI / UL</span>
+          </div>
+          <div style="padding:16px">
+            <div style="display:flex;flex-wrap:wrap;gap:6px" id="breaker-tag"></div>
+            <p style="margin-top:14px;font-size:11px;color:var(--t3)">El valor en <span style="color:var(--acc);font-weight:700">amarillo</span> es el breaker comercial recomendado para la corriente calculada.</p>
           </div>
         </div>
       </div>
 
-      <!-- ══════════ TAB 4: TUBERÍAS / CONDUIT ══════════ -->
+<!-- ══════════ TAB 4: TUBERÍAS / CONDUIT ══════════ -->
       <div id="calctab-tuberia" data-calctab="tuberia" style="display:none">
-        <div class="card" style="margin-bottom:16px">
-          <div class="card-head">
-            <div class="card-title" style="display:flex;align-items:center;gap:8px"><i data-lucide="minus-circle" style="width:18px;height:18px;stroke-width:2;color:var(--acc)"></i> Cálculo de Tuberías / Conduit — NEC Chapter 9</div>
+
+        <!-- Panel de configuración -->
+        <div class="calc-panel">
+          <div class="calc-panel-head">
+            <div class="calc-panel-icon" style="background:rgba(34,197,94,.12);color:var(--ok)">
+              <i data-lucide="circle-dashed"></i>
+            </div>
+            <div>
+              <div class="calc-panel-title">Cálculo de Tuberías / Conduit</div>
+              <div class="calc-panel-sub">Dimensionamiento de canalizaciones eléctricas por llenado</div>
+            </div>
+            <span class="calc-panel-norm">NEC Chapter 9</span>
           </div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;padding:16px">
-            <div>
-              <label class="lbl">Tipo de conduit</label>
-              <select class="inp" id="tb-tipo" onchange="calcTuberia()">
-                <option value="EMT">EMT (metálico liviano)</option>
-                <option value="PVC40">PVC cédula 40</option>
-                <option value="IMC">IMC (metálico intermedio)</option>
-                <option value="RMC">RMC (metálico rígido)</option>
-              </select>
+          <div class="calc-panel-body">
+
+            <!-- Grupo 1: Tipo de conduit -->
+            <div class="pf-sep"><div class="pf-sep-line"></div><span class="pf-sep-txt"><i data-lucide="layers" style="width:10px;height:10px;display:inline;vertical-align:middle;margin-right:3px"></i> Tipo de canalización</span><div class="pf-sep-line"></div></div>
+            <div style="margin-bottom:18px">
+              <div class="pf-radio-group" style="height:44px;max-width:620px">
+                <button type="button" class="pf-radio-btn on" onclick="document.getElementById('tb-tipo').value='EMT';calcTuberia();this.parentElement.querySelectorAll('.pf-radio-btn').forEach(b=>b.classList.remove('on'));this.classList.add('on')">
+                  <i data-lucide="minus-circle"></i> EMT (metálico liviano)
+                </button>
+                <button type="button" class="pf-radio-btn" onclick="document.getElementById('tb-tipo').value='PVC40';calcTuberia();this.parentElement.querySelectorAll('.pf-radio-btn').forEach(b=>b.classList.remove('on'));this.classList.add('on')">
+                  <i data-lucide="circle"></i> PVC Cédula 40
+                </button>
+                <button type="button" class="pf-radio-btn" onclick="document.getElementById('tb-tipo').value='IMC';calcTuberia();this.parentElement.querySelectorAll('.pf-radio-btn').forEach(b=>b.classList.remove('on'));this.classList.add('on')">
+                  <i data-lucide="disc"></i> IMC (intermedio)
+                </button>
+                <button type="button" class="pf-radio-btn" onclick="document.getElementById('tb-tipo').value='RMC';calcTuberia();this.parentElement.querySelectorAll('.pf-radio-btn').forEach(b=>b.classList.remove('on'));this.classList.add('on')">
+                  <i data-lucide="circle-dot"></i> RMC (rígido)
+                </button>
+              </div>
+              <input type="hidden" id="tb-tipo" value="EMT"/>
             </div>
-            <div>
-              <label class="lbl">Número de conductores</label>
-              <input class="inp" id="tb-ncond" type="number" min="1" max="50" step="1" value="3" oninput="calcTuberia()"/>
-            </div>
-            <div>
-              <label class="lbl">Calibre del conductor</label>
-              <select class="inp" id="tb-awg" onchange="calcTuberia()">
-                <option value="14">AWG #14</option>
-                <option value="12">AWG #12</option>
-                <option value="10">AWG #10</option>
-                <option value="8">AWG #8</option>
-                <option value="6">AWG #6</option>
-                <option value="4">AWG #4</option>
-                <option value="2">AWG #2</option>
-                <option value="1">AWG #1</option>
-                <option value="1/0">AWG 1/0</option>
-                <option value="2/0">AWG 2/0</option>
-                <option value="3/0">AWG 3/0</option>
-                <option value="4/0">AWG 4/0</option>
-                <option value="250">250 kcmil</option>
-                <option value="350">350 kcmil</option>
-                <option value="500">500 kcmil</option>
-              </select>
-            </div>
-            <div>
-              <label class="lbl">Aislamiento del conductor</label>
-              <select class="inp" id="tb-aislamiento" onchange="calcTuberia()">
-                <option value="THHN">THHN/THWN-2</option>
-                <option value="THW">THW</option>
-                <option value="XHHW">XHHW-2</option>
-              </select>
+
+            <!-- Grupo 2: Conductores -->
+            <div class="pf-sep"><div class="pf-sep-line"></div><span class="pf-sep-txt"><i data-lucide="cable" style="width:10px;height:10px;display:inline;vertical-align:middle;margin-right:3px"></i> Datos del conductor</span><div class="pf-sep-line"></div></div>
+            <div class="pf-grid pf-grid-4">
+
+              <div class="pf-wrap">
+                <label class="pf-label"><i data-lucide="hash"></i> N.º de conductores</label>
+                <div class="pf-inp-wrap">
+                  <span class="pf-inp-icon"><i data-lucide="list"></i></span>
+                  <input class="pf-inp" id="tb-ncond" type="number" min="1" max="50" step="1" value="3" oninput="calcTuberia()" style="padding-left:38px"/>
+                </div>
+              </div>
+
+              <div class="pf-wrap">
+                <label class="pf-label"><i data-lucide="ruler"></i> Calibre del conductor</label>
+                <div class="pf-inp-wrap is-select has-icon">
+                  <span class="pf-inp-icon"><i data-lucide="align-center"></i></span>
+                  <select class="pf-inp" id="tb-awg" onchange="calcTuberia()">
+                    <option value="14">AWG #14 — 2.08 mm²</option>
+                    <option value="12">AWG #12 — 3.31 mm²</option>
+                    <option value="10">AWG #10 — 5.26 mm²</option>
+                    <option value="8">AWG #8 — 8.37 mm²</option>
+                    <option value="6">AWG #6 — 13.3 mm²</option>
+                    <option value="4">AWG #4 — 21.2 mm²</option>
+                    <option value="2">AWG #2 — 33.6 mm²</option>
+                    <option value="1">AWG #1 — 42.4 mm²</option>
+                    <option value="1/0">AWG 1/0 — 53.5 mm²</option>
+                    <option value="2/0">AWG 2/0 — 67.4 mm²</option>
+                    <option value="3/0">AWG 3/0 — 85.0 mm²</option>
+                    <option value="4/0">AWG 4/0 — 107 mm²</option>
+                    <option value="250">250 kcmil — 127 mm²</option>
+                    <option value="350">350 kcmil — 177 mm²</option>
+                    <option value="500">500 kcmil — 253 mm²</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="pf-wrap">
+                <label class="pf-label"><i data-lucide="shield-check"></i> Aislamiento</label>
+                <div class="pf-inp-wrap is-select has-icon">
+                  <span class="pf-inp-icon"><i data-lucide="thermometer"></i></span>
+                  <select class="pf-inp" id="tb-aislamiento" onchange="calcTuberia()">
+                    <option value="THHN">THHN/THWN-2 — 90°C</option>
+                    <option value="THW">THW — 75°C</option>
+                    <option value="XHHW">XHHW-2 — 90°C</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Info fill -->
+              <div class="pf-wrap">
+                <label class="pf-label"><i data-lucide="info"></i> Factor de llenado</label>
+                <div style="display:flex;gap:6px;height:42px;align-items:center">
+                  <div style="flex:1;background:var(--s2);border:1.5px solid rgba(255,255,255,.09);border-radius:10px;padding:8px 12px;display:flex;align-items:center;gap:8px;height:100%">
+                    <span id="tb-fill-factor-lbl" style="font-family:'DM Mono',monospace;font-weight:800;font-size:18px;color:var(--acc)">40%</span>
+                    <div>
+                      <div style="font-size:10px;color:var(--t3);font-weight:600">NEC Table 1</div>
+                      <div id="tb-fill-rule-lbl" style="font-size:10px;color:var(--t3)">3+ conductores</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
-          <div id="tb-resultado" style="margin:0 16px 16px;background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:16px"></div>
         </div>
-        <!-- Tabla de conduits disponibles -->
-        <div class="card">
-          <div class="card-head"><div class="card-title" style="display:flex;align-items:center;gap:8px"><i data-lucide="table-2" style="width:18px;height:18px;stroke-width:2;color:var(--acc)"></i> Tabla de Conduits EMT — Área interna (NEC Chapter 9, Table 4)</div></div>
+
+        <!-- Resultado tubería -->
+        <div id="tb-resultado" style="margin-bottom:16px"></div>
+
+        <!-- Tabla de referencia conduits -->
+        <div class="calc-panel">
+          <div class="calc-panel-head">
+            <div class="calc-panel-icon" style="background:rgba(59,130,246,.12);color:var(--info)">
+              <i data-lucide="table-2"></i>
+            </div>
+            <div>
+              <div class="calc-panel-title">Tabla de Conduits EMT</div>
+              <div class="calc-panel-sub">Áreas internas y capacidades de llenado máximo</div>
+            </div>
+            <span class="calc-panel-norm">NEC Ch.9 Table 4</span>
+          </div>
           <div class="tbl-wrap" style="padding:12px">
             <table>
-              <thead><tr><th>Diámetro nominal</th><th>Área interna (mm²)</th><th>Llenado 1 cond. (53%)</th><th>Llenado 2 cond. (31%)</th><th>Llenado 3+ cond. (40%)</th></tr></thead>
+              <thead><tr>
+                <th>Diámetro nominal</th>
+                <th>Área interna (mm²)</th>
+                <th>1 conductor (53%)</th>
+                <th>2 conductores (31%)</th>
+                <th>3+ conductores (40%)</th>
+              </tr></thead>
               <tbody id="tbl-conduit-ref"></tbody>
             </table>
           </div>
@@ -2909,6 +3099,11 @@ let cargas = [];
 function initCalculadora() {
   if (!calcInited) {
     calcInited = true;
+    // Check DB connection status
+    _updateDbBadge('loading');
+    api('electrical-projects/index').then(r=>{
+      _updateDbBadge(isErr(r)?'err':'ok');
+    }).catch(()=>_updateDbBadge('err'));
     window._ccSistema = '120/240';
     window._ccMaterial = 'Cu';
     _bcSistema = '120';
@@ -3717,6 +3912,13 @@ function calcProtecciones() {
 // ─── CÁLCULO DE TUBERÍAS ─────────────────────────────────
 function calcTuberia() {
   const el = document.getElementById('tb-resultado');
+  // Update fill factor label
+  const nCond_lbl = parseInt(document.getElementById('tb-ncond')?.value)||1;
+  const factorLbl = nCond_lbl===1?0.53:nCond_lbl===2?0.31:0.40;
+  const ruleEl = document.getElementById('tb-fill-rule-lbl');
+  const factEl = document.getElementById('tb-fill-factor-lbl');
+  if(ruleEl) ruleEl.textContent = nCond_lbl===1?'1 conductor':nCond_lbl===2?'2 conductores':'3+ conductores';
+  if(factEl) factEl.textContent = (factorLbl*100).toFixed(0)+'%';
   if (!el) return;
   const tipo   = document.getElementById('tb-tipo').value;
   const nCond  = parseInt(document.getElementById('tb-ncond').value) || 1;
@@ -3789,6 +3991,26 @@ async function toggleCompartirDatos(){
 }
 
 
+// ═══════════════════════════════════════════════════════════════
+// BACKEND REQUIRED ENDPOINT: /api/electrical-projects/index
+// PostgreSQL (Neon): neondb  → table: electrical_projects
+// CREATE TABLE electrical_projects (
+//   id SERIAL PRIMARY KEY,
+//   user_id INTEGER REFERENCES users(id),
+//   nombre TEXT NOT NULL,
+//   cliente TEXT,
+//   ubicacion TEXT,
+//   tipo TEXT DEFAULT 'residencial',
+//   temp_f TEXT DEFAULT '1.0',
+//   sistema TEXT DEFAULT '120',
+//   cargas JSONB NOT NULL DEFAULT '[]',
+//   created_at TIMESTAMPTZ DEFAULT NOW(),
+//   updated_at TIMESTAMPTZ DEFAULT NOW()
+// );
+// GET    → SELECT * FROM electrical_projects WHERE user_id=?
+// POST   → INSERT INTO electrical_projects ...
+// PUT?id → UPDATE electrical_projects SET ... WHERE id=?
+// DELETE?id → DELETE FROM electrical_projects WHERE id=?
 // ═══════════════════════════════════════════════════════════════
 // BALANCE DE CARGAS — TABLERO / CIRCUITOS
 // ═══════════════════════════════════════════════════════════════
@@ -4044,12 +4266,72 @@ function calcTablero() {
 // GUARDAR / CARGAR PROYECTOS (localStorage)
 // ═══════════════════════════════════════════════════════════════
 
-function _getBalances() {
-  try { return JSON.parse(localStorage.getItem('sest_balances') || '[]'); }
-  catch { return []; }
+// ── Database helpers (API + localStorage cache) ────────────────
+function _getBalancesCache(){try{return JSON.parse(localStorage.getItem('sest_balances_cache')||'[]')}catch{return[]}}
+function _setBalancesCache(arr){localStorage.setItem('sest_balances_cache',JSON.stringify(arr))}
+
+async function _loadBalancesFromDB(){
+  try{
+    const r=await api('electrical-projects/index');
+    if(!isErr(r)&&Array.isArray(r)){
+      _setBalancesCache(r);
+      _updateDbBadge('ok');
+      return r;
+    }
+  }catch(e){}
+  _updateDbBadge('err');
+  return _getBalancesCache();
 }
-function _setBalances(arr) {
-  localStorage.setItem('sest_balances', JSON.stringify(arr));
+
+async function _saveBalanceToDB(data){
+  try{
+    const r=data.id
+      ? await api(`electrical-projects/index?id=${data.id}`,{method:'PUT',body:JSON.stringify(data)})
+      : await api('electrical-projects/index',{method:'POST',body:JSON.stringify(data)});
+    if(!isErr(r)){
+      // Refresh cache
+      const all=await _loadBalancesFromDB();
+      _updateDbBadge('ok');
+      return r;
+    }
+  }catch(e){}
+  // Fallback to localStorage
+  const arr=_getBalancesCache();
+  const idx=arr.findIndex(b=>b.id===data.id);
+  if(idx>=0) arr[idx]={...arr[idx],...data};
+  else arr.push(data);
+  _setBalancesCache(arr);
+  _updateDbBadge('err');
+  return data;
+}
+
+async function _deleteBalanceFromDB(id){
+  try{
+    const r=await api(`electrical-projects/index?id=${id}`,{method:'DELETE'});
+    if(!isErr(r)){
+      const all=await _loadBalancesFromDB();
+      return true;
+    }
+  }catch(e){}
+  // Fallback
+  const arr=_getBalancesCache().filter(b=>b.id!==id);
+  _setBalancesCache(arr);
+  return true;
+}
+
+function _updateDbBadge(status){
+  const badge=document.getElementById('bc-db-badge');
+  if(!badge)return;
+  if(status==='ok'){
+    badge.className='db-status-badge db-ok';
+    badge.innerHTML='<span class="db-pulse"></span> PostgreSQL conectado';
+  }else if(status==='err'){
+    badge.className='db-status-badge db-err';
+    badge.innerHTML='<span class="db-pulse"></span> Sin BD · Caché local';
+  }else{
+    badge.className='db-status-badge db-loading';
+    badge.innerHTML='<span class="db-pulse"></span> Conectando…';
+  }
 }
 
 function guardarBalance() {
@@ -4065,27 +4347,27 @@ function guardarBalance() {
   const balances = _getBalances();
   const ahora = new Date().toISOString();
 
-  if (_bcProyectoId) {
-    // Actualizar existente
-    const idx = balances.findIndex(b => b.id === _bcProyectoId);
-    if (idx >= 0) {
-      balances[idx] = { ...balances[idx], nombre, cliente, ubicacion, tipo, tempF, sistema: _bcSistema, cargas: JSON.parse(JSON.stringify(cargas)), updatedAt: ahora };
-      _setBalances(balances);
-      toast(`✅ Proyecto "${nombre}" actualizado`, 'ok');
-      _actualizarBadgeProyecto(nombre);
-      document.getElementById('bc-save-status').textContent = 'Guardado ' + new Date().toLocaleTimeString();
-      return;
-    }
-  }
+  const stEl = document.getElementById('bc-save-status');
+  if(stEl) stEl.textContent = 'Guardando en PostgreSQL…';
 
-  // Nuevo
-  const id = 'bc_' + Date.now();
-  balances.push({ id, nombre, cliente, ubicacion, tipo, tempF, sistema: _bcSistema, cargas: JSON.parse(JSON.stringify(cargas)), createdAt: ahora, updatedAt: ahora });
-  _setBalances(balances);
-  _bcProyectoId = id;
-  toast(`✅ Proyecto "${nombre}" guardado`, 'ok');
-  _actualizarBadgeProyecto(nombre);
-  document.getElementById('bc-save-status').textContent = 'Guardado ' + new Date().toLocaleTimeString();
+  const data = {
+    id: _bcProyectoId || undefined,
+    nombre, cliente, ubicacion, tipo, tempF,
+    sistema: _bcSistema,
+    cargas: JSON.parse(JSON.stringify(cargas)),
+    createdAt: ahora, updatedAt: ahora
+  };
+
+  _saveBalanceToDB(data).then(saved => {
+    if(saved?.id) _bcProyectoId = saved.id;
+    const msg = data.id ? `✅ Proyecto "${nombre}" actualizado en DB` : `✅ Proyecto "${nombre}" guardado en DB`;
+    toast(msg, 'ok');
+    _actualizarBadgeProyecto(nombre);
+    if(stEl) stEl.textContent = 'Guardado en PostgreSQL · ' + new Date().toLocaleTimeString();
+  }).catch(()=>{
+    toast('Guardado en caché local (sin conexión)', 'info');
+    if(stEl) stEl.textContent = 'Guardado local · ' + new Date().toLocaleTimeString();
+  });
 }
 
 function _actualizarBadgeProyecto(nombre) {
@@ -4094,38 +4376,41 @@ function _actualizarBadgeProyecto(nombre) {
 }
 
 function abrirModalBalances() {
-  const balances = _getBalances();
+  const cont = document.getElementById('bc-saved-list-container');
+  if(cont) cont.innerHTML='<div style="text-align:center;padding:20px;color:var(--t3)"><div class="spin" style="margin:0 auto 8px"></div><p>Cargando proyectos…</p></div>';
+  openModal('m-balances');
+  _loadBalancesFromDB().then(balances => {
   const cont = document.getElementById('bc-saved-list-container');
   if (!cont) return;
-  if (!balances.length) {
-    cont.innerHTML = `<div style="text-align:center;padding:28px;color:var(--t3)">
-      <i data-lucide="inbox" style="width:32px;height:32px;margin-bottom:8px;display:block;margin:0 auto 8px"></i>
-      <p>No hay proyectos guardados todavía.</p>
-      <p style="font-size:11px;margin-top:4px">Completa el formulario y presiona "Guardar proyecto".</p>
-    </div>`;
-  } else {
-    cont.innerHTML = `<div class="bc-saved-list">` +
-      balances.slice().reverse().map(b => {
-        const d = new Date(b.updatedAt || b.createdAt);
-        const dStr = d.toLocaleDateString('es-EC', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
-        const activo = b.id === _bcProyectoId;
-        return `<div class="bc-saved-item" style="${activo?'border-color:var(--acc);background:var(--acc-d)':''}" onclick="cargarBalance('${b.id}')">
-          <i data-lucide="${activo?'folder-open':'folder'}" style="width:18px;height:18px;color:${activo?'var(--acc)':'var(--t3)'};flex-shrink:0"></i>
-          <div style="flex:1;min-width:0">
-            <div class="bc-saved-item-name">${b.nombre}</div>
-            <div class="bc-saved-item-date">${b.cliente?b.cliente+' · ':''}${b.sistema||'120'}V · ${dStr}</div>
-          </div>
-          <span class="bc-saved-item-cnt">${b.cargas?.length||0} cargas</span>
-          <button type="button" onclick="event.stopPropagation();eliminarBalance('${b.id}')" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--err);border-radius:5px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;flex-shrink:0;line-height:1" title="Eliminar" onmouseover="this.style.background='rgba(239,68,68,.2)'" onmouseout="this.style.background='rgba(239,68,68,.1)'">×</button>
-        </div>`;
-      }).join('') + `</div>`;
-  }
-  openModal('m-balances');
-  refreshIcons();
+    if (!balances.length) {
+      cont.innerHTML = `<div style="text-align:center;padding:28px;color:var(--t3)">
+        <i data-lucide="inbox" style="width:32px;height:32px;margin-bottom:8px;display:block;margin:0 auto 8px"></i>
+        <p>No hay proyectos en la base de datos.</p>
+        <p style="font-size:11px;margin-top:4px">Completa el formulario y presiona "Guardar proyecto".</p>
+      </div>`;
+    } else {
+      cont.innerHTML = `<div class="bc-saved-list">` +
+        balances.slice().reverse().map(b => {
+          const d = new Date(b.updatedAt || b.createdAt || Date.now());
+          const dStr = d.toLocaleDateString('es-EC', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+          const activo = b.id === _bcProyectoId;
+          return `<div class="bc-saved-item" style="${activo?'border-color:var(--acc);background:var(--acc-d)':''}" onclick="cargarBalance('${b.id}')">
+            <i data-lucide="${activo?'folder-open':'folder'}" style="width:18px;height:18px;color:${activo?'var(--acc)':'var(--t3)'};flex-shrink:0"></i>
+            <div style="flex:1;min-width:0">
+              <div class="bc-saved-item-name">${b.nombre}</div>
+              <div class="bc-saved-item-date">${b.cliente?b.cliente+' · ':''}${b.sistema||'120'}V · ${dStr}</div>
+            </div>
+            <span class="bc-saved-item-cnt">${(b.cargas||[]).length} cargas</span>
+            <button type="button" onclick="event.stopPropagation();eliminarBalance('${b.id}')" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--err);border-radius:5px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;flex-shrink:0;line-height:1" title="Eliminar" onmouseover="this.style.background='rgba(239,68,68,.2)'" onmouseout="this.style.background='rgba(239,68,68,.1)'">×</button>
+          </div>`;
+        }).join('') + `</div>`;
+    }
+    refreshIcons();
+  });
 }
 
 function cargarBalance(id) {
-  const balances = _getBalances();
+  const balances = _getBalancesCache();
   const b = balances.find(x => x.id === id);
   if (!b) { toast('Proyecto no encontrado','err'); return; }
   cargas = JSON.parse(JSON.stringify(b.cargas || []));
@@ -4148,17 +4433,16 @@ function cargarBalance(id) {
 }
 
 function eliminarBalance(id) {
-  if (!confirm('¿Eliminar este proyecto?')) return;
-  let balances = _getBalances();
-  balances = balances.filter(b => b.id !== id);
-  _setBalances(balances);
-  if (_bcProyectoId === id) {
-    _bcProyectoId = null;
-    _actualizarBadgeProyecto('Sin proyecto');
-    document.getElementById('bc-save-status').textContent = '';
-  }
-  abrirModalBalances();
-  toast('Proyecto eliminado', 'ok');
+  if (!confirm('¿Eliminar este proyecto de la base de datos?')) return;
+  _deleteBalanceFromDB(id).then(()=>{
+    if (_bcProyectoId === id) {
+      _bcProyectoId = null;
+      _actualizarBadgeProyecto('Sin proyecto');
+      document.getElementById('bc-save-status').textContent = '';
+    }
+    abrirModalBalances();
+    toast('Proyecto eliminado de la DB', 'ok');
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════
