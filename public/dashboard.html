@@ -3113,7 +3113,7 @@ let logoBase64 = null;
 async function cargarLogoBase64() {
   if (logoBase64) return logoBase64;
   try {
-    const response = await fetch('logo.jpg');
+    const response = await fetch('logo_Pantalla.jpg');
     const blob = await response.blob();
     return new Promise((resolve) => {
       const reader = new FileReader();
