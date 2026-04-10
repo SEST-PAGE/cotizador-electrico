@@ -1501,7 +1501,10 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
               <button type="button" class="btn btn-ghost btn-sm" onclick="abrirHistorialProtecciones()" title="Ver protecciones guardadas">
                 <i data-lucide="folder-open" style="width:14px;height:14px"></i> Mis cálculos
               </button>
-              <button type="button" class="btn btn-ok btn-sm" onclick="guardarProteccion()" id="btn-save-prot">
+              <button type="button" class="btn btn-info btn-sm" onclick="exportarPDFProteccion()" id="btn-pdf-prot">
+                <i data-lucide="file-down" style="width:14px;height:14px"></i> PDF
+              </button>
+              <button type="button" class="btn btn-ok btn-sm" onclick="abrirGuardarProteccion()" id="btn-save-prot">
                 <i data-lucide="save" style="width:14px;height:14px"></i> Guardar
               </button>
             </div>
@@ -1630,7 +1633,10 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
               <button type="button" class="btn btn-ghost btn-sm" onclick="abrirHistorialTuberias()" title="Ver tuberías guardadas">
                 <i data-lucide="folder-open" style="width:14px;height:14px"></i> Mis cálculos
               </button>
-              <button type="button" class="btn btn-ok btn-sm" onclick="guardarTuberia()" id="btn-save-tub">
+              <button type="button" class="btn btn-info btn-sm" onclick="exportarPDFTuberia()" id="btn-pdf-tub">
+                <i data-lucide="file-down" style="width:14px;height:14px"></i> PDF
+              </button>
+              <button type="button" class="btn btn-ok btn-sm" onclick="abrirGuardarTuberia()" id="btn-save-tub">
                 <i data-lucide="save" style="width:14px;height:14px"></i> Guardar
               </button>
             </div>
@@ -5221,7 +5227,133 @@ function abrirModalCableCalcs()  { abrirHistorialCalcCable(); }
 function exportarPDFCableCalc()  { exportarPDFCable(); }
 
 // ═══════════════════════════════════════════════════════════════
-// PROTECCIONES — GUARDAR / CARGAR / ELIMINAR
+// BALANCE DE CARGAS — HISTORIAL CON PDF (reemplaza abrirModalBalances)
+// ═══════════════════════════════════════════════════════════════
+async function exportarPDFBalanceFromRecord(id){
+  const todos = _getBalancesCache();
+  let record = todos.find(x=>String(x.id)===String(id));
+  if(!record){
+    const r=await api('electrical-projects/index');
+    if(!isErr(r)){_setBalancesCache(Array.isArray(r)?r:[]);record=_getBalancesCache().find(x=>String(x.id)===String(id));}
+  }
+  if(!record){toast('No se encontró el registro','err');return;}
+  const nombre   = record.nombre||'Sin nombre';
+  const cliente  = record.cliente||'—';
+  const ubicacion= record.ubicacion||'—';
+  const tipoTab  = record.tipo||'residencial';
+  const tempFactor=parseFloat(record.tempF||record.temp_f||1.0);
+  const cargasRec= JSON.parse(JSON.stringify(record.cargas||[]));
+  const sistemaRec= record.sistema||'120';
+  const fecha=new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'});
+  const cfg=BC_SISTEMAS[sistemaRec]||BC_SISTEMAS['120'];
+  const {tension,esTri,fases,label}=cfg;
+  const sqrt3=esTri?Math.sqrt(3):1;
+  const TIPO_LABEL={iluminacion:'Iluminación',tomacorriente:'Tomacorriente',motor:'Motor',hvac:'HVAC/Clima',resistivo:'Resistivo',otro:'Especial'};
+  const potPorFase={};fases.forEach(f=>potPorFase[f]=0);
+  let totalW=0,totalWD=0;
+  cargasRec.forEach(c=>{
+    const cant=c.cantidad||1;const potTotal=(c.potencia||0)*cant;const pd=potTotal*(c.fs||100)/100;
+    if(c.sistema==='mono2f'){if(potPorFase['L1']!==undefined)potPorFase['L1']+=pd/2;if(potPorFase['L2']!==undefined)potPorFase['L2']+=pd/2;}
+    else{if(potPorFase[c.fase]!==undefined)potPorFase[c.fase]+=pd;}
+    totalW+=potTotal;totalWD+=pd;
+  });
+  const ITotal=totalWD/(tension*sqrt3*0.9);
+  const brkAco=BREAKERS_STD.find(b=>b>=ITotal*1.25)||2000;
+  const vals=Object.values(potPorFase);
+  const maxF=Math.max(...vals);const minF=Math.min(...vals);
+  const desbalance=maxF>0?((maxF-minF)/maxF*100):0;
+  const filasCargas=cargasRec.map((c,i)=>{
+    const cant=c.cantidad||1;const fp=c.fp||0.9;const vC=c.voltaje||tension;
+    const esTri_c=c.sistema==='tri';const sqrt3_c=esTri_c?Math.sqrt(3):1;
+    const potTotal=(c.potencia||0)*cant;const pd=potTotal*(c.fs||100)/100;
+    const Ic=pd>0?pd/(vC*sqrt3_c*fp):0;
+    const factorM=(c.tipo==='motor'||c.tipo==='hvac')?1.25:1.0;
+    const IdD=Ic*factorM/tempFactor;
+    const awgRow=AWG_TABLE.find(r=>r[4]!=null&&r[4]>=IdD)||AWG_TABLE[AWG_TABLE.length-1];
+    const IbMin=Ic*(factorM>1?2.5:1.25);const brkRec=BREAKERS_STD.find(b=>b>=IbMin)||2000;
+    const polos=esTri_c?'3P':'2P';
+    const areaC=THHN_AREA[awgRow?awgRow[0]:'12']||THHN_AREA['12'];
+    const nCond=esTri_c?4:3;const totArea=areaC*nCond;
+    let conduitSel=CONDUIT_AREA.EMT.find(([n,a])=>a*0.40>=totArea);
+    if(!conduitSel)conduitSel=CONDUIT_AREA.EMT[CONDUIT_AREA.EMT.length-1];
+    return`<tr style="${i%2===0?'background:#fafafa':''}">
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;font-weight:600">${String(i+1).padStart(2,'0')}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee">${c.desc||'—'}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee">${TIPO_LABEL[c.tipo]||c.tipo}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center">${cant}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center">${vC}V</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center">${c.fase}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center">${c.fs||100}%</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:right;font-weight:700">${(pd/1000).toFixed(3)}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:right;color:#3b82f6;font-weight:600">${Ic.toFixed(2)}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center;color:#1d4ed8;font-weight:700">AWG #${awgRow?awgRow[0]:'—'}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center;color:#b45309;font-weight:700">${brkRec}A ${polos}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center;color:#166534;font-weight:700">EMT ${conduitSel?conduitSel[0]:'—'}</td>
+    </tr>`;
+  }).join('');
+  const filasFase=fases.map(f=>{
+    const pf=potPorFase[f]||0;const pct=totalWD>0?(pf/totalWD*100):0;const If=pf/(tension*0.9);
+    return`<tr><td style="padding:5px 8px;border-bottom:1px solid #eee;font-weight:700">${f}</td>
+      <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right;font-weight:700">${(pf/1000).toFixed(3)} kW</td>
+      <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right">${If.toFixed(2)} A</td>
+      <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right">${pct.toFixed(1)}%</td></tr>`;
+  }).join('');
+  const htmlInforme=`<div style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#111;line-height:1.5">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;border-bottom:3px solid #f5c800;margin-bottom:20px">
+      <div><div style="font-size:22px;font-weight:900;color:#0c0c12">INFORME TÉCNICO ELÉCTRICO</div>
+        <div style="font-size:13px;font-weight:700;color:#555;margin-top:2px">Balance de Cargas · Dimensionamiento de Tablero</div>
+        <div style="font-size:11px;color:#888;margin-top:6px">NEC / NTE INEN 2345 / ARCONEL Ecuador</div></div>
+      <div style="text-align:right"><div style="font-size:11px;color:#888">Fecha</div>
+        <div style="font-size:14px;font-weight:700">${fecha}</div>
+        <div style="font-size:11px;color:#888">SEST · Ingeniería Eléctrica</div></div></div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #f5c800;padding-bottom:4px;margin-bottom:10px">1. DATOS DEL PROYECTO</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div style="background:#f8f8f8;border-radius:6px;padding:9px 11px;border-left:3px solid #f5c800"><div style="font-size:9px;font-weight:700;color:#888;text-transform:uppercase">Proyecto</div><div style="font-size:13px;font-weight:800">${nombre}</div></div>
+        <div style="background:#f8f8f8;border-radius:6px;padding:9px 11px;border-left:3px solid #3b82f6"><div style="font-size:9px;font-weight:700;color:#888;text-transform:uppercase">Cliente</div><div style="font-size:13px;font-weight:700">${cliente}</div></div>
+        <div style="background:#f8f8f8;border-radius:6px;padding:9px 11px;border-left:3px solid #22c55e"><div style="font-size:9px;font-weight:700;color:#888;text-transform:uppercase">Ubicación</div><div style="font-size:13px;font-weight:700">${ubicacion}</div></div>
+      </div></div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #f5c800;padding-bottom:4px;margin-bottom:10px">2. RESUMEN EJECUTIVO</div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
+        <div style="background:#0c0c12;color:#fff;border-radius:8px;padding:10px;text-align:center"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:3px">Pot. Instalada</div><div style="font-size:16px;font-weight:900;color:#f5c800;font-family:monospace">${(totalW/1000).toFixed(2)}</div><div style="font-size:9px;color:#888">kW</div></div>
+        <div style="background:#0c0c12;color:#fff;border-radius:8px;padding:10px;text-align:center"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:3px">Demanda</div><div style="font-size:16px;font-weight:900;color:#22c55e;font-family:monospace">${(totalWD/1000).toFixed(2)}</div><div style="font-size:9px;color:#888">kW</div></div>
+        <div style="background:#0c0c12;color:#fff;border-radius:8px;padding:10px;text-align:center"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:3px">I. Total</div><div style="font-size:16px;font-weight:900;color:#60a5fa;font-family:monospace">${ITotal.toFixed(2)}</div><div style="font-size:9px;color:#888">A</div></div>
+        <div style="background:#0c0c12;color:#fff;border-radius:8px;padding:10px;text-align:center"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:3px">Desbalance</div><div style="font-size:16px;font-weight:900;color:${desbalance>10?'#ef4444':'#22c55e'};font-family:monospace">${desbalance.toFixed(1)}%</div><div style="font-size:9px;color:#888">${desbalance>10?'⚠️ Excede':'✅ OK'}</div></div>
+        <div style="background:#0c0c12;color:#fff;border-radius:8px;padding:10px;text-align:center"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:3px">Breaker Ppal</div><div style="font-size:16px;font-weight:900;color:#f5c800;font-family:monospace">${brkAco}A</div><div style="font-size:9px;color:#888">${esTri?'3P':'2P'}</div></div>
+      </div></div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #f5c800;padding-bottom:4px;margin-bottom:10px">3. TABLA DE CIRCUITOS</div>
+      <table style="width:100%;border-collapse:collapse;font-size:10px">
+        <thead><tr style="background:#0c0c12;color:#fff">
+          <th style="padding:6px 5px;text-align:left">N°</th><th style="padding:6px 5px;text-align:left">Descripción</th><th style="padding:6px 5px;text-align:left">Tipo</th>
+          <th style="padding:6px 5px;text-align:center">Cant.</th><th style="padding:6px 5px;text-align:center">V</th><th style="padding:6px 5px;text-align:center">Fase</th>
+          <th style="padding:6px 5px;text-align:center">Fs%</th><th style="padding:6px 5px;text-align:right">P.Dem(kW)</th><th style="padding:6px 5px;text-align:right">I(A)</th>
+          <th style="padding:6px 5px;text-align:center">Cable</th><th style="padding:6px 5px;text-align:center">Breaker</th><th style="padding:6px 5px;text-align:center">Conduit</th>
+        </tr></thead>
+        <tbody>${filasCargas}</tbody>
+      </table></div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #f5c800;padding-bottom:4px;margin-bottom:10px">4. BALANCE DE FASES</div>
+      <table style="width:50%;border-collapse:collapse;font-size:11px">
+        <thead><tr style="background:#0c0c12;color:#fff">
+          <th style="padding:6px 8px;text-align:left">Fase</th><th style="padding:6px 8px;text-align:right">Potencia</th><th style="padding:6px 8px;text-align:right">Corriente</th><th style="padding:6px 8px;text-align:right">% Total</th>
+        </tr></thead>
+        <tbody>${filasFase}</tbody>
+      </table></div>
+    <div style="text-align:center;font-size:9px;color:#999;padding-top:10px;border-top:1px solid #eee;margin-top:14px">
+      <p>Documento generado por SEST · Sistema de Ingeniería Eléctrica · ${fecha}</p>
+      ${usuario?.nombre?`<p>Elaborado por: <strong>${usuario.nombre}</strong></p>`:''}
+    </div></div>`;
+  const cont=document.getElementById('pdf-informe');
+  if(!cont){toast('Error: contenedor PDF no encontrado','err');return;}
+  cont.innerHTML=htmlInforme;
+  await htmlAPdfDesdeNodoFuente(cont,`Informe_Balance_${nombre.replace(/[^a-zA-Z0-9]/g,'_')}.pdf`);
+  cont.innerHTML='';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PROTECCIONES — GUARDAR / CARGAR / ELIMINAR / PDF
 // tipo = 'proteccion_calc' en la tabla electrical_projects
 // ═══════════════════════════════════════════════════════════════
 let _prCalcsCache = [];
@@ -5236,58 +5368,56 @@ function _prSnapshot(){
     z:     document.getElementById('pr-z')?.value||'5',
   };
 }
-
 function _prRestore(snap){
   if(!snap)return;
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
-  set('pr-Ic', snap.Ic);
-  set('pr-tipo', snap.tipo);
-  set('pr-v', snap.v);
-  set('pr-kva-cc', snap.kvaCC);
-  set('pr-z', snap.z);
-  // Restaurar fases (radio)
-  const fasesVal = snap.fases||'1';
-  set('pr-fases', fasesVal);
-  document.querySelectorAll('#calctab-cortocircuito .pf-radio-btn').forEach(btn=>{
-    btn.classList.remove('on');
-  });
-  const faseBtns = document.querySelectorAll('#calctab-cortocircuito .pf-radio-group .pf-radio-btn');
-  if(fasesVal==='1'&&faseBtns[0]) faseBtns[0].classList.add('on');
-  if(fasesVal==='3'&&faseBtns[1]) faseBtns[1].classList.add('on');
+  set('pr-Ic',snap.Ic);set('pr-tipo',snap.tipo);set('pr-v',snap.v);set('pr-kva-cc',snap.kvaCC);set('pr-z',snap.z);
+  const fasesVal=snap.fases||'1';set('pr-fases',fasesVal);
+  const faseBtns=document.querySelectorAll('#calctab-cortocircuito .pf-radio-group .pf-radio-btn');
+  faseBtns.forEach(b=>b.classList.remove('on'));
+  if(fasesVal==='1'&&faseBtns[0])faseBtns[0].classList.add('on');
+  if(fasesVal==='3'&&faseBtns[1])faseBtns[1].classList.add('on');
   calcProtecciones();
 }
-
 function _prResumen(snap){
   if(!snap)return '—';
-  return `Ic: ${snap.Ic||'—'} A · ${snap.tipo||'gral'} · ${snap.fases==='3'?'Trifásico':'Monofásico'} · ${snap.v||'—'} V`;
+  const TIPO_PR={gral:'Carga General',motor:'Motor AC',transformador:'Transformador',condensador:'Condensadores'};
+  return `Ic: ${snap.Ic||'—'} A · ${TIPO_PR[snap.tipo]||snap.tipo} · ${snap.fases==='3'?'Trifásico':'Monofásico'} · ${snap.v||'—'} V`;
 }
 
-async function guardarProteccion(){
+// ── Modal guardar protección ──────────────────────────────────
+function abrirGuardarProteccion(){
   const snap=_prSnapshot();
   if(!snap.Ic||parseFloat(snap.Ic)<=0){toast('Ingresa una corriente de carga válida antes de guardar','err');return;}
-  const nombre=prompt('Nombre para este cálculo de protección:','Protección circuito');
-  if(!nombre)return;
-  const cliente=prompt('Proyecto / Cliente (opcional):','')||'';
-  setBL('btn-save-prot',true);
-  const payload={
-    nombre,cliente,ubicacion:'',
-    tipo:'proteccion_calc',
-    temp_f:'1.0',
-    sistema: snap.v||'220',
-    cargas:[snap],
-  };
+  document.getElementById('pr-guardar-nombre').value='';
+  document.getElementById('pr-guardar-cliente').value='';
+  document.getElementById('pr-guardar-notas').value='';
+  document.getElementById('pr-guardar-err').className='alert err';
+  document.getElementById('pr-guardar-preview-body').textContent=_prResumen(snap);
+  openModal('m-pr-guardar');
+}
+async function confirmarGuardarProteccion(){
+  const nombre=(document.getElementById('pr-guardar-nombre')?.value||'').trim();
+  const cliente=(document.getElementById('pr-guardar-cliente')?.value||'').trim();
+  const notas=(document.getElementById('pr-guardar-notas')?.value||'').trim();
+  const errEl=document.getElementById('pr-guardar-err');
+  if(!nombre){errEl.textContent='El nombre es obligatorio';errEl.classList.add('show');document.getElementById('pr-guardar-nombre').focus();return;}
+  errEl.classList.remove('show');setBL('btn-pr-guardar-ok',true);
+  const snap=_prSnapshot();
+  const payload={nombre,cliente,ubicacion:notas,tipo:'proteccion_calc',temp_f:'1.0',sistema:snap.v||'220',cargas:[snap]};
   try{
     const r=await api('electrical-projects/index',{method:'POST',body:JSON.stringify(payload)});
-    if(isErr(r)){toast(r?.msg||'Error al guardar','err');}
-    else{toast('✅ Protección guardada correctamente','ok');}
-  }catch(e){toast('Error de conexión','err');}
-  setBL('btn-save-prot',false,'Guardar');
+    if(isErr(r)){errEl.textContent=r?.msg||'Error al guardar';errEl.classList.add('show');}
+    else{closeModal('m-pr-guardar');toast('✅ Protección guardada en PostgreSQL','ok');}
+  }catch(e){errEl.textContent='Error de conexión';errEl.classList.add('show');}
+  setBL('btn-pr-guardar-ok',false,'Guardar en BD');
 }
 
+// ── Historial protecciones ────────────────────────────────────
 async function abrirHistorialProtecciones(){
   openModal('m-protecciones');
   const listEl=document.getElementById('pr-historial-list');
-  listEl.innerHTML='<div class="loading"><div class="spin"></div><p>Cargando…</p></div>';
+  listEl.innerHTML='<div class="loading"><div class="spin"></div><p>Cargando desde PostgreSQL…</p></div>';
   try{
     const r=await api('electrical-projects/index');
     if(isErr(r)){listEl.innerHTML=`<div style="text-align:center;padding:24px;color:var(--err)">${r?.msg||'Error al cargar'}</div>`;return;}
@@ -5297,15 +5427,14 @@ async function abrirHistorialProtecciones(){
     if(!calcs.length){
       listEl.innerHTML=`<div style="text-align:center;padding:32px;color:var(--t3)">
         <i data-lucide="inbox" style="width:36px;height:36px;display:block;margin:0 auto 10px"></i>
-        <p>No hay cálculos guardados.</p>
+        <p style="font-size:13px">No hay cálculos guardados.</p>
         <p style="font-size:12px;margin-top:4px">Usa el botón <strong style="color:var(--acc)">Guardar</strong> después de calcular.</p>
       </div>`;refreshIcons();return;
     }
     calcs.sort((a,b)=>new Date(b.created_at||b.creado_en||0)-new Date(a.created_at||a.creado_en||0));
     listEl.innerHTML=`<div style="display:flex;flex-direction:column;gap:10px">
       ${calcs.map(c=>{
-        const cargasArr=_parseCargasField(c.cargas);
-        const snap=cargasArr[0]||{};
+        const cargasArr=_parseCargasField(c.cargas);const snap=cargasArr[0]||{};
         const fecha=c.created_at||c.creado_en?new Date(c.created_at||c.creado_en).toLocaleDateString('es-EC',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
         return`<div style="background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:14px 16px;display:flex;align-items:flex-start;gap:12px">
           <div style="width:36px;height:36px;border-radius:9px;background:rgba(239,68,68,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--err)">
@@ -5314,14 +5443,18 @@ async function abrirHistorialProtecciones(){
           <div style="flex:1;min-width:0">
             <div style="font-weight:700;font-size:13px;color:var(--t1);margin-bottom:2px">${c.nombre}</div>
             ${c.cliente?`<div style="font-size:12px;color:var(--t3);margin-bottom:2px">📁 ${c.cliente}</div>`:''}
+            ${c.ubicacion?`<div style="font-size:11px;color:var(--t3);margin-bottom:4px">📝 ${c.ubicacion}</div>`:''}
             <div style="font-size:11px;color:var(--t3);font-family:'DM Mono',monospace">${_prResumen(snap)}</div>
             <div style="font-size:10px;color:var(--t3);margin-top:4px">🕒 ${fecha}</div>
           </div>
           <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
-            <button type="button" class="btn btn-acc btn-sm" onclick="cargarProteccion(${c.id})">
+            <button type="button" class="btn btn-acc btn-sm" onclick="cargarProteccion(${c.id})" title="Cargar este cálculo">
               <i data-lucide="upload" style="width:13px;height:13px"></i> Cargar
             </button>
-            <button type="button" class="btn btn-danger btn-sm" onclick="eliminarProteccion(${c.id},this)">
+            <button type="button" class="btn btn-info btn-sm" onclick="exportarPDFProteccionFromRecord(${c.id})" title="Exportar PDF">
+              <i data-lucide="file-down" style="width:13px;height:13px"></i> PDF
+            </button>
+            <button type="button" class="btn btn-danger btn-sm" onclick="eliminarProteccion(${c.id},this)" title="Eliminar">
               <i data-lucide="trash-2" style="width:13px;height:13px"></i>
             </button>
           </div>
@@ -5331,36 +5464,119 @@ async function abrirHistorialProtecciones(){
     refreshIcons();
   }catch(e){listEl.innerHTML=`<div style="text-align:center;padding:24px;color:var(--err)">Error de conexión</div>`;}
 }
-
 async function cargarProteccion(id){
   closeModal('m-protecciones');
   let record=_prCalcsCache.find(c=>String(c.id)===String(id));
-  if(!record){
-    const r=await api('electrical-projects/index');
-    if(isErr(r)){toast('Error al cargar','err');return;}
-    const todos=Array.isArray(r)?r:(r?.data?r.data:[]);
-    _prCalcsCache=todos.filter(p=>p.tipo==='proteccion_calc');
-    record=_prCalcsCache.find(c=>String(c.id)===String(id));
-  }
+  if(!record){const r=await api('electrical-projects/index');if(isErr(r)){toast('Error al cargar','err');return;}const todos=Array.isArray(r)?r:(r?.data?r.data:[]);_prCalcsCache=todos.filter(p=>p.tipo==='proteccion_calc');record=_prCalcsCache.find(c=>String(c.id)===String(id));}
   if(!record){toast('No se encontró el registro','err');return;}
   const snap=_parseCargasField(record.cargas)[0]||null;
   if(!snap){toast('Sin datos de cálculo en este registro','err');return;}
-  _prRestore(snap);
-  irCalcTab('cortocircuito');
-  toast(`✅ Protección "${record.nombre}" cargada`,'ok');
+  _prRestore(snap);irCalcTab('cortocircuito');toast(`✅ Protección "${record.nombre}" cargada`,'ok');
 }
-
 async function eliminarProteccion(id,btnEl){
-  if(!confirm('¿Eliminar este cálculo de protección?'))return;
+  if(!confirm('¿Eliminar este cálculo? La acción no se puede deshacer.'))return;
   if(btnEl){btnEl.disabled=true;btnEl.textContent='…';}
   const r=await api(`electrical-projects/index?id=${id}`,{method:'DELETE'});
   if(isErr(r)){toast(r?.msg||'Error al eliminar','err');if(btnEl){btnEl.disabled=false;btnEl.innerHTML='<i data-lucide="trash-2" style="width:13px;height:13px"></i>';refreshIcons();}return;}
-  toast('Cálculo eliminado','ok');
-  abrirHistorialProtecciones();
+  toast('Cálculo eliminado','ok');abrirHistorialProtecciones();
+}
+
+// ── PDF Protección ────────────────────────────────────────────
+async function exportarPDFProteccionFromRecord(id){
+  let record=_prCalcsCache.find(c=>String(c.id)===String(id));
+  if(!record){const r=await api('electrical-projects/index');if(!isErr(r)){const todos=Array.isArray(r)?r:(r?.data?r.data:[]);_prCalcsCache=todos.filter(p=>p.tipo==='proteccion_calc');record=_prCalcsCache.find(c=>String(c.id)===String(id));}}
+  if(!record){toast('No se encontró el registro','err');return;}
+  const snap=_parseCargasField(record.cargas)[0]||{};
+  await _exportarPDFProteccion(snap, record.nombre||'Protección', record.cliente||'—', record.ubicacion||'');
+}
+async function exportarPDFProteccion(){
+  const snap=_prSnapshot();
+  if(!snap.Ic||parseFloat(snap.Ic)<=0){toast('Completa el cálculo antes de exportar','err');return;}
+  await _exportarPDFProteccion(snap,'Cálculo de Protección','—','');
+}
+async function _exportarPDFProteccion(snap, nombre, cliente, notas){
+  const fecha=new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'});
+  const Ic=parseFloat(snap.Ic)||0;
+  const tipo=snap.tipo||'gral';
+  const V=parseFloat(snap.v)||220;
+  const fases=parseInt(snap.fases)||1;
+  const kvaCC=parseFloat(snap.kvaCC)||150;
+  const Zpct=parseFloat(snap.z)||5;
+  const factores={gral:{cb:1.25,fusible:1.50,label:'Carga general — NEC 240.4',nota:'El breaker no debe superar el 125% de la corriente del conductor.'},
+    motor:{cb:2.50,fusible:4.00,label:'Motor AC — NEC 430.52',nota:'Breaker 250% Ic. Fusible dual element 400% Ic.'},
+    transformador:{cb:1.25,fusible:1.25,label:'Transformador — NEC 450.3(B)',nota:'Protección al 125% de la corriente nominal primaria.'},
+    condensador:{cb:1.35,fusible:1.65,label:'Condensadores — NEC 460.8',nota:'Breaker 135%, fusible 165% de Ic.'}};
+  const f=factores[tipo]||factores.gral;
+  const IbCB=Ic*f.cb;const IbFus=Ic*f.fusible;
+  const cbRec=BREAKERS_STD.find(b=>b>=IbCB)||2000;const fusRec=BREAKERS_STD.find(b=>b>=IbFus)||2000;
+  const sqrt3=fases===3?Math.sqrt(3):1;
+  const Sb=kvaCC*1000;const InomTx=Sb/(V*sqrt3);const Icc=InomTx/(Zpct/100);const IccKA=Icc/1000;
+  let prKA=6;if(IccKA>6)prKA=10;if(IccKA>10)prKA=25;if(IccKA>25)prKA=50;
+  const html=`<div style="font-family:'Helvetica Neue',Arial,sans-serif;color:#111;background:#fff;padding:40px;max-width:750px;margin:0 auto">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #ef4444;padding-bottom:16px;margin-bottom:20px">
+      <div><div style="font-size:22px;font-weight:900;color:#111">SEST</div>
+        <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:1px">Servicios Eléctricos y Seguridad Tapia</div></div>
+      <div style="text-align:right"><div style="font-size:13px;font-weight:700">Dimensionamiento de Protecciones</div>
+        <div style="font-size:11px;color:#6b7280">NEC Art. 240 / 430 · NTE INEN</div>
+        <div style="font-size:11px;color:#6b7280">${fecha}</div>
+        ${usuario?.nombre?`<div style="font-size:11px;color:#6b7280">Por: <strong>${usuario.nombre}</strong></div>`:''}</div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px">
+        <div style="font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Nombre del cálculo</div>
+        <div style="font-size:13px;font-weight:700">${nombre}</div></div>
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px">
+        <div style="font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Cliente / Proyecto</div>
+        <div style="font-size:13px;font-weight:700">${cliente}</div></div>
+    </div>
+    <div style="margin-bottom:18px">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#374151;border-left:3px solid #ef4444;padding-left:8px;margin-bottom:10px">1. PARÁMETROS DE ENTRADA</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px"><div style="font-size:9px;color:#6b7280;text-transform:uppercase">Corriente de carga (Ic)</div><div style="font-size:16px;font-weight:800;color:#111">${Ic.toFixed(2)} A</div></div>
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px"><div style="font-size:9px;color:#6b7280;text-transform:uppercase">Tipo de carga</div><div style="font-size:13px;font-weight:700">${f.label.split('—')[0]}</div></div>
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px"><div style="font-size:9px;color:#6b7280;text-transform:uppercase">Sistema</div><div style="font-size:13px;font-weight:700">${V} V · ${fases===3?'Trifásico':'Monofásico'}</div></div>
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px"><div style="font-size:9px;color:#6b7280;text-transform:uppercase">Transformador</div><div style="font-size:13px;font-weight:700">${kvaCC} kVA</div></div>
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px"><div style="font-size:9px;color:#6b7280;text-transform:uppercase">Impedancia Z%</div><div style="font-size:13px;font-weight:700">${Zpct}%</div></div>
+      </div></div>
+    <div style="margin-bottom:18px">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#374151;border-left:3px solid #ef4444;padding-left:8px;margin-bottom:10px">2. RESULTADOS</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+        <div style="background:#fef2f2;border:2px solid #fecaca;border-radius:10px;padding:16px;text-align:center">
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;margin-bottom:4px">Breaker recomendado</div>
+          <div style="font-size:32px;font-weight:900;color:#dc2626;font-family:monospace">${cbRec} A</div>
+          <div style="font-size:10px;color:#374151">Mín. ${IbCB.toFixed(1)} A · ${fases===3?'3 polos':'2 polos'}</div></div>
+        <div style="background:#eff6ff;border:2px solid #bfdbfe;border-radius:10px;padding:16px;text-align:center">
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;margin-bottom:4px">Fusible recomendado</div>
+          <div style="font-size:32px;font-weight:900;color:#2563eb;font-family:monospace">${fusRec} A</div>
+          <div style="font-size:10px;color:#374151">Mín. ${IbFus.toFixed(1)} A</div></div>
+        <div style="background:#fef9ec;border:2px solid #fde68a;border-radius:10px;padding:16px;text-align:center">
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;margin-bottom:4px">Icc estimada</div>
+          <div style="font-size:32px;font-weight:900;color:#d97706;font-family:monospace">${IccKA.toFixed(2)} kA</div>
+          <div style="font-size:10px;color:#374151">Poder ruptura mín: ${prKA} kA</div></div>
+      </div></div>
+    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px;margin-bottom:16px;font-size:11px">
+      <strong style="color:#dc2626">${f.label}:</strong> ${f.nota}
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#374151;border-left:3px solid #ef4444;padding-left:8px;margin-bottom:8px">3. NORMATIVA APLICADA</div>
+      <div style="font-size:11px;line-height:1.75;color:#374151">
+        <p>• <strong>NEC Art. 240:</strong> Overcurrent Protection — dimensionamiento de breakers</p>
+        <p>• <strong>NEC Art. 430.52:</strong> Protección de motores — factores 250% (CB) / 400% (fusible)</p>
+        <p>• <strong>NEC Art. 450.3(B):</strong> Transformadores — protección al 125% Ic</p>
+        <p>• <strong>IEC/NTE INEN:</strong> Serie normalizada de interruptores en Ecuador</p>
+      </div></div>
+    <div style="text-align:center;font-size:10px;color:#9ca3af;padding-top:12px;border-top:1px solid #e5e7eb;margin-top:20px">
+      <p>Documento generado por SEST · Dimensionamiento de Protecciones · ${fecha}</p>
+      <p>Cálculo conforme a NEC y NTE INEN aplicables en Ecuador 🇪🇨</p>
+    </div></div>`;
+  const cont=document.getElementById('pdf-informe');
+  if(!cont){toast('Error: contenedor PDF no encontrado','err');return;}
+  cont.innerHTML=html;
+  await htmlAPdfDesdeNodoFuente(cont,`Proteccion_${nombre.replace(/[^a-zA-Z0-9]/g,'_')}.pdf`);
+  cont.innerHTML='';
 }
 
 // ═══════════════════════════════════════════════════════════════
-// TUBERÍAS / CONDUIT — GUARDAR / CARGAR / ELIMINAR
+// TUBERÍAS / CONDUIT — GUARDAR / CARGAR / ELIMINAR / PDF
 // tipo = 'tuberia_calc' en la tabla electrical_projects
 // ═══════════════════════════════════════════════════════════════
 let _tbCalcsCache = [];
@@ -5373,53 +5589,54 @@ function _tbSnapshot(){
     aislamiento:document.getElementById('tb-aislamiento')?.value||'THHN',
   };
 }
-
 function _tbRestore(snap){
   if(!snap)return;
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
-  set('tb-tipo', snap.tipo);
-  set('tb-ncond', snap.ncond);
-  set('tb-awg', snap.awg);
-  set('tb-aislamiento', snap.aislamiento);
-  // Restaurar botones de tipo conduit
+  set('tb-tipo',snap.tipo);set('tb-ncond',snap.ncond);set('tb-awg',snap.awg);set('tb-aislamiento',snap.aislamiento);
   const tipoBtns=document.querySelectorAll('#calctab-tuberia .pf-radio-group .pf-radio-btn');
   const tipoMap={'EMT':0,'PVC40':1,'IMC':2,'RMC':3};
   tipoBtns.forEach(b=>b.classList.remove('on'));
   const idx=tipoMap[snap.tipo]??0;
-  if(tipoBtns[idx]) tipoBtns[idx].classList.add('on');
+  if(tipoBtns[idx])tipoBtns[idx].classList.add('on');
   calcTuberia();
 }
-
 function _tbResumen(snap){
   if(!snap)return '—';
   return `${snap.tipo||'EMT'} · ${snap.ncond||'3'} cond. × AWG ${snap.awg||'12'} · ${snap.aislamiento||'THHN'}`;
 }
 
-async function guardarTuberia(){
+// ── Modal guardar tubería ─────────────────────────────────────
+function abrirGuardarTuberia(){
   const snap=_tbSnapshot();
-  const nombre=prompt('Nombre para este cálculo de tubería:','Conduit circuito');
-  if(!nombre)return;
-  const cliente=prompt('Proyecto / Cliente (opcional):','')||'';
-  setBL('btn-save-tub',true);
-  const payload={
-    nombre,cliente,ubicacion:'',
-    tipo:'tuberia_calc',
-    temp_f:'1.0',
-    sistema: snap.tipo||'EMT',
-    cargas:[snap],
-  };
+  document.getElementById('tb-guardar-nombre').value='';
+  document.getElementById('tb-guardar-cliente').value='';
+  document.getElementById('tb-guardar-notas').value='';
+  document.getElementById('tb-guardar-err').className='alert err';
+  document.getElementById('tb-guardar-preview-body').textContent=_tbResumen(snap);
+  openModal('m-tb-guardar');
+}
+async function confirmarGuardarTuberia(){
+  const nombre=(document.getElementById('tb-guardar-nombre')?.value||'').trim();
+  const cliente=(document.getElementById('tb-guardar-cliente')?.value||'').trim();
+  const notas=(document.getElementById('tb-guardar-notas')?.value||'').trim();
+  const errEl=document.getElementById('tb-guardar-err');
+  if(!nombre){errEl.textContent='El nombre es obligatorio';errEl.classList.add('show');document.getElementById('tb-guardar-nombre').focus();return;}
+  errEl.classList.remove('show');setBL('btn-tb-guardar-ok',true);
+  const snap=_tbSnapshot();
+  const payload={nombre,cliente,ubicacion:notas,tipo:'tuberia_calc',temp_f:'1.0',sistema:snap.tipo||'EMT',cargas:[snap]};
   try{
     const r=await api('electrical-projects/index',{method:'POST',body:JSON.stringify(payload)});
-    if(isErr(r)){toast(r?.msg||'Error al guardar','err');}
-    else{toast('✅ Tubería guardada correctamente','ok');}
-  }catch(e){toast('Error de conexión','err');}
-  setBL('btn-save-tub',false,'Guardar');
+    if(isErr(r)){errEl.textContent=r?.msg||'Error al guardar';errEl.classList.add('show');}
+    else{closeModal('m-tb-guardar');toast('✅ Tubería guardada en PostgreSQL','ok');}
+  }catch(e){errEl.textContent='Error de conexión';errEl.classList.add('show');}
+  setBL('btn-tb-guardar-ok',false,'Guardar en BD');
 }
 
+// ── Historial tuberías ────────────────────────────────────────
 async function abrirHistorialTuberias(){
   openModal('m-tuberias');
   const listEl=document.getElementById('tb-historial-list');
-  listEl.innerHTML='<div class="loading"><div class="spin"></div><p>Cargando…</p></div>';
+  listEl.innerHTML='<div class="loading"><div class="spin"></div><p>Cargando desde PostgreSQL…</p></div>';
   try{
     const r=await api('electrical-projects/index');
     if(isErr(r)){listEl.innerHTML=`<div style="text-align:center;padding:24px;color:var(--err)">${r?.msg||'Error al cargar'}</div>`;return;}
@@ -5429,15 +5646,14 @@ async function abrirHistorialTuberias(){
     if(!calcs.length){
       listEl.innerHTML=`<div style="text-align:center;padding:32px;color:var(--t3)">
         <i data-lucide="inbox" style="width:36px;height:36px;display:block;margin:0 auto 10px"></i>
-        <p>No hay cálculos guardados.</p>
+        <p style="font-size:13px">No hay cálculos guardados.</p>
         <p style="font-size:12px;margin-top:4px">Usa el botón <strong style="color:var(--acc)">Guardar</strong> después de calcular.</p>
       </div>`;refreshIcons();return;
     }
     calcs.sort((a,b)=>new Date(b.created_at||b.creado_en||0)-new Date(a.created_at||a.creado_en||0));
     listEl.innerHTML=`<div style="display:flex;flex-direction:column;gap:10px">
       ${calcs.map(c=>{
-        const cargasArr=_parseCargasField(c.cargas);
-        const snap=cargasArr[0]||{};
+        const cargasArr=_parseCargasField(c.cargas);const snap=cargasArr[0]||{};
         const fecha=c.created_at||c.creado_en?new Date(c.created_at||c.creado_en).toLocaleDateString('es-EC',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
         return`<div style="background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:14px 16px;display:flex;align-items:flex-start;gap:12px">
           <div style="width:36px;height:36px;border-radius:9px;background:rgba(34,197,94,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--ok)">
@@ -5446,14 +5662,18 @@ async function abrirHistorialTuberias(){
           <div style="flex:1;min-width:0">
             <div style="font-weight:700;font-size:13px;color:var(--t1);margin-bottom:2px">${c.nombre}</div>
             ${c.cliente?`<div style="font-size:12px;color:var(--t3);margin-bottom:2px">📁 ${c.cliente}</div>`:''}
+            ${c.ubicacion?`<div style="font-size:11px;color:var(--t3);margin-bottom:4px">📝 ${c.ubicacion}</div>`:''}
             <div style="font-size:11px;color:var(--t3);font-family:'DM Mono',monospace">${_tbResumen(snap)}</div>
             <div style="font-size:10px;color:var(--t3);margin-top:4px">🕒 ${fecha}</div>
           </div>
           <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
-            <button type="button" class="btn btn-acc btn-sm" onclick="cargarTuberia(${c.id})">
+            <button type="button" class="btn btn-acc btn-sm" onclick="cargarTuberia(${c.id})" title="Cargar">
               <i data-lucide="upload" style="width:13px;height:13px"></i> Cargar
             </button>
-            <button type="button" class="btn btn-danger btn-sm" onclick="eliminarTuberia(${c.id},this)">
+            <button type="button" class="btn btn-info btn-sm" onclick="exportarPDFTuberiaFromRecord(${c.id})" title="PDF">
+              <i data-lucide="file-down" style="width:13px;height:13px"></i> PDF
+            </button>
+            <button type="button" class="btn btn-danger btn-sm" onclick="eliminarTuberia(${c.id},this)" title="Eliminar">
               <i data-lucide="trash-2" style="width:13px;height:13px"></i>
             </button>
           </div>
@@ -5463,32 +5683,111 @@ async function abrirHistorialTuberias(){
     refreshIcons();
   }catch(e){listEl.innerHTML=`<div style="text-align:center;padding:24px;color:var(--err)">Error de conexión</div>`;}
 }
-
 async function cargarTuberia(id){
   closeModal('m-tuberias');
   let record=_tbCalcsCache.find(c=>String(c.id)===String(id));
-  if(!record){
-    const r=await api('electrical-projects/index');
-    if(isErr(r)){toast('Error al cargar','err');return;}
-    const todos=Array.isArray(r)?r:(r?.data?r.data:[]);
-    _tbCalcsCache=todos.filter(p=>p.tipo==='tuberia_calc');
-    record=_tbCalcsCache.find(c=>String(c.id)===String(id));
-  }
+  if(!record){const r=await api('electrical-projects/index');if(isErr(r)){toast('Error al cargar','err');return;}const todos=Array.isArray(r)?r:(r?.data?r.data:[]);_tbCalcsCache=todos.filter(p=>p.tipo==='tuberia_calc');record=_tbCalcsCache.find(c=>String(c.id)===String(id));}
   if(!record){toast('No se encontró el registro','err');return;}
   const snap=_parseCargasField(record.cargas)[0]||null;
   if(!snap){toast('Sin datos de cálculo en este registro','err');return;}
-  _tbRestore(snap);
-  irCalcTab('tuberia');
-  toast(`✅ Tubería "${record.nombre}" cargada`,'ok');
+  _tbRestore(snap);irCalcTab('tuberia');toast(`✅ Tubería "${record.nombre}" cargada`,'ok');
 }
-
 async function eliminarTuberia(id,btnEl){
-  if(!confirm('¿Eliminar este cálculo de tubería?'))return;
+  if(!confirm('¿Eliminar este cálculo? La acción no se puede deshacer.'))return;
   if(btnEl){btnEl.disabled=true;btnEl.textContent='…';}
   const r=await api(`electrical-projects/index?id=${id}`,{method:'DELETE'});
   if(isErr(r)){toast(r?.msg||'Error al eliminar','err');if(btnEl){btnEl.disabled=false;btnEl.innerHTML='<i data-lucide="trash-2" style="width:13px;height:13px"></i>';refreshIcons();}return;}
-  toast('Cálculo eliminado','ok');
-  abrirHistorialTuberias();
+  toast('Cálculo eliminado','ok');abrirHistorialTuberias();
+}
+
+// ── PDF Tubería ───────────────────────────────────────────────
+async function exportarPDFTuberiaFromRecord(id){
+  let record=_tbCalcsCache.find(c=>String(c.id)===String(id));
+  if(!record){const r=await api('electrical-projects/index');if(!isErr(r)){const todos=Array.isArray(r)?r:(r?.data?r.data:[]);_tbCalcsCache=todos.filter(p=>p.tipo==='tuberia_calc');record=_tbCalcsCache.find(c=>String(c.id)===String(id));}}
+  if(!record){toast('No se encontró el registro','err');return;}
+  const snap=_parseCargasField(record.cargas)[0]||{};
+  await _exportarPDFTuberia(snap, record.nombre||'Tubería', record.cliente||'—', record.ubicacion||'');
+}
+async function exportarPDFTuberia(){
+  const snap=_tbSnapshot();
+  await _exportarPDFTuberia(snap,'Cálculo de Tubería','—','');
+}
+async function _exportarPDFTuberia(snap, nombre, cliente, notas){
+  const fecha=new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'});
+  const tipo=snap.tipo||'EMT';
+  const nCond=parseInt(snap.ncond)||3;
+  const awg=snap.awg||'12';
+  const aisl=snap.aislamiento||'THHN';
+  const areaCond=THHN_AREA[awg]||0;
+  const totalArea=areaCond*nCond;
+  const factor=nCond===1?0.53:nCond===2?0.31:0.40;
+  const areaConduitMin=totalArea/factor;
+  const tabla=CONDUIT_AREA[tipo]||CONDUIT_AREA.EMT;
+  let conduitSel=tabla.find(([n,a])=>a*factor>=totalArea);
+  if(!conduitSel)conduitSel=tabla[tabla.length-1];
+  const [nomSel,areaSel]=conduitSel;
+  const pctLlenado=(totalArea/areaSel*100);
+  const colorFill=pctLlenado>(factor*100)?'#dc2626':'#16a34a';
+  const html=`<div style="font-family:'Helvetica Neue',Arial,sans-serif;color:#111;background:#fff;padding:40px;max-width:750px;margin:0 auto">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #22c55e;padding-bottom:16px;margin-bottom:20px">
+      <div><div style="font-size:22px;font-weight:900">SEST</div>
+        <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:1px">Servicios Eléctricos y Seguridad Tapia</div></div>
+      <div style="text-align:right"><div style="font-size:13px;font-weight:700">Cálculo de Tuberías / Conduit</div>
+        <div style="font-size:11px;color:#6b7280">NEC Chapter 9 Table 1 & 4 · NTE INEN</div>
+        <div style="font-size:11px;color:#6b7280">${fecha}</div>
+        ${usuario?.nombre?`<div style="font-size:11px;color:#6b7280">Por: <strong>${usuario.nombre}</strong></div>`:''}</div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px">
+        <div style="font-size:9px;color:#6b7280;text-transform:uppercase">Nombre del cálculo</div>
+        <div style="font-size:13px;font-weight:700">${nombre}</div></div>
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px">
+        <div style="font-size:9px;color:#6b7280;text-transform:uppercase">Cliente / Proyecto</div>
+        <div style="font-size:13px;font-weight:700">${cliente}</div></div>
+    </div>
+    <div style="margin-bottom:18px">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#374151;border-left:3px solid #22c55e;padding-left:8px;margin-bottom:10px">1. PARÁMETROS DE ENTRADA</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px"><div style="font-size:9px;color:#6b7280;text-transform:uppercase">Tipo conduit</div><div style="font-size:15px;font-weight:800;color:#111">${tipo}</div></div>
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px"><div style="font-size:9px;color:#6b7280;text-transform:uppercase">N° conductores</div><div style="font-size:15px;font-weight:800">${nCond}</div></div>
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px"><div style="font-size:9px;color:#6b7280;text-transform:uppercase">Calibre AWG</div><div style="font-size:15px;font-weight:800">AWG #{awg}</div></div>
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px"><div style="font-size:9px;color:#6b7280;text-transform:uppercase">Aislamiento</div><div style="font-size:15px;font-weight:800">${aisl}</div></div>
+      </div></div>
+    <div style="margin-bottom:18px">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#374151;border-left:3px solid #22c55e;padding-left:8px;margin-bottom:10px">2. RESULTADOS</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+        <div style="background:#f0fdf4;border:2px solid #bbf7d0;border-radius:10px;padding:16px;text-align:center">
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;margin-bottom:4px">Conduit recomendado</div>
+          <div style="font-size:32px;font-weight:900;color:#16a34a;font-family:monospace">${tipo} ${nomSel}</div>
+          <div style="font-size:10px;color:#374151">Área interna: ${areaSel.toFixed(1)} mm²</div></div>
+        <div style="background:#f0fdf4;border:2px solid #bbf7d0;border-radius:10px;padding:16px;text-align:center">
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;margin-bottom:4px">Área conductores</div>
+          <div style="font-size:32px;font-weight:900;color:#15803d;font-family:monospace">${totalArea.toFixed(1)}</div>
+          <div style="font-size:10px;color:#374151">mm² total · ${areaCond} mm² c/u</div></div>
+        <div style="background:${pctLlenado>(factor*100)?'#fef2f2':'#f0fdf4'};border:2px solid ${pctLlenado>(factor*100)?'#fecaca':'#bbf7d0'};border-radius:10px;padding:16px;text-align:center">
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;margin-bottom:4px">% de llenado</div>
+          <div style="font-size:32px;font-weight:900;color:${colorFill};font-family:monospace">${pctLlenado.toFixed(1)}%</div>
+          <div style="font-size:10px;color:#374151">${pctLlenado>(factor*100)?'⚠️ Excede límite':'✅ Dentro del límite'} (${(factor*100).toFixed(0)}%)</div></div>
+      </div></div>
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px;margin-bottom:16px;font-size:11px">
+      <strong style="color:#15803d">NEC Chapter 9 Table 1:</strong> Con ${nCond} conductor${nCond>1?'es':''}, el llenado máximo permitido es <strong>${(factor*100).toFixed(0)}%</strong> del área interna. Área mínima requerida: <strong>${areaConduitMin.toFixed(1)} mm²</strong>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#374151;border-left:3px solid #22c55e;padding-left:8px;margin-bottom:8px">3. NORMATIVA APLICADA</div>
+      <div style="font-size:11px;line-height:1.75;color:#374151">
+        <p>• <strong>NEC Chapter 9 Table 1:</strong> 1 cond=53%, 2 cond=31%, 3+ cond=40% de llenado</p>
+        <p>• <strong>NEC Chapter 9 Table 4:</strong> Áreas internas de conduits EMT, PVC, IMC, RMC</p>
+        <p>• <strong>Conductor THHN/THWN-2:</strong> Áreas exteriores según NEC Chapter 9 Table 5</p>
+        <p>• <strong>NTE INEN 2345 / ARCONEL:</strong> Requisitos de instalación Ecuador</p>
+      </div></div>
+    <div style="text-align:center;font-size:10px;color:#9ca3af;padding-top:12px;border-top:1px solid #e5e7eb;margin-top:20px">
+      <p>Documento generado por SEST · Cálculo de Tuberías / Conduit · ${fecha}</p>
+      <p>Cálculo conforme a NEC y NTE INEN aplicables en Ecuador 🇪🇨</p>
+    </div></div>`.replace('{awg}',awg);
+  const cont=document.getElementById('pdf-informe');
+  if(!cont){toast('Error: contenedor PDF no encontrado','err');return;}
+  cont.innerHTML=html;
+  await htmlAPdfDesdeNodoFuente(cont,`Tuberia_${nombre.replace(/[^a-zA-Z0-9]/g,'_')}.pdf`);
+  cont.innerHTML='';
 }
 
 // ───────────────────────────────────────────────────────────────
@@ -5557,19 +5856,33 @@ function abrirModalBalances() {
         <p style="font-size:11px;margin-top:4px">Completa el formulario y presiona "Guardar proyecto".</p>
       </div>`;
     } else {
-      cont.innerHTML = `<div class="bc-saved-list">` +
+      cont.innerHTML = `<div style="display:flex;flex-direction:column;gap:10px">` +
         balances.slice().reverse().map(b => {
-          const d = new Date(b.updatedAt || b.createdAt || Date.now());
+          const d = new Date(b.updatedAt || b.createdAt || b.updated_at || b.created_at || Date.now());
           const dStr = d.toLocaleDateString('es-EC', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
           const activo = b.id === _bcProyectoId;
-          return `<div class="bc-saved-item" style="${activo?'border-color:var(--acc);background:var(--acc-d)':''}" onclick="cargarBalance('${b.id}')">
-            <i data-lucide="${activo?'folder-open':'folder'}" style="width:18px;height:18px;color:${activo?'var(--acc)':'var(--t3)'};flex-shrink:0"></i>
-            <div style="flex:1;min-width:0">
-              <div class="bc-saved-item-name">${b.nombre}</div>
-              <div class="bc-saved-item-date">${b.cliente?b.cliente+' · ':''}${b.sistema||'120'}V · ${dStr}</div>
+          return `<div style="background:var(--s2);border:1px solid ${activo?'var(--acc)':'var(--bd)'};border-radius:12px;padding:14px 16px;display:flex;align-items:flex-start;gap:12px;${activo?'background:var(--acc-d)':''}">
+            <div style="width:36px;height:36px;border-radius:9px;background:rgba(245,200,0,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--acc)">
+              <i data-lucide="${activo?'folder-open':'zap'}" style="width:18px;height:18px"></i>
             </div>
-            <span class="bc-saved-item-cnt">${(b.cargas||[]).length} cargas</span>
-            <button type="button" onclick="event.stopPropagation();eliminarBalance('${b.id}')" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--err);border-radius:5px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;flex-shrink:0;line-height:1" title="Eliminar" onmouseover="this.style.background='rgba(239,68,68,.2)'" onmouseout="this.style.background='rgba(239,68,68,.1)'">×</button>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;font-size:13px;color:var(--t1);margin-bottom:2px">${b.nombre}${activo?' <span style="font-size:10px;background:var(--acc);color:#000;border-radius:4px;padding:1px 6px;font-weight:700">ACTIVO</span>':''}</div>
+              ${b.cliente?`<div style="font-size:12px;color:var(--t3);margin-bottom:2px">📁 ${b.cliente}</div>`:''}
+              ${b.ubicacion?`<div style="font-size:11px;color:var(--t3);margin-bottom:4px">📝 ${b.ubicacion}</div>`:''}
+              <div style="font-size:11px;color:var(--t3);font-family:'DM Mono',monospace">${b.sistema||'120'}V · ${b.tipo||'residencial'} · ${(b.cargas||[]).length} circuito${(b.cargas||[]).length!==1?'s':''}</div>
+              <div style="font-size:10px;color:var(--t3);margin-top:4px">🕒 ${dStr}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+              <button type="button" class="btn btn-acc btn-sm" onclick="cargarBalance('${b.id}')" title="Cargar este proyecto">
+                <i data-lucide="upload" style="width:13px;height:13px"></i> Cargar
+              </button>
+              <button type="button" class="btn btn-info btn-sm" onclick="exportarPDFBalanceFromRecord('${b.id}')" title="Exportar PDF">
+                <i data-lucide="file-down" style="width:13px;height:13px"></i> PDF
+              </button>
+              <button type="button" class="btn btn-danger btn-sm" onclick="event.stopPropagation();eliminarBalance('${b.id}')" title="Eliminar">
+                <i data-lucide="trash-2" style="width:13px;height:13px"></i>
+              </button>
+            </div>
           </div>`;
         }).join('') + `</div>`;
     }
@@ -5946,7 +6259,7 @@ async function generarInformePDF() {
 
 <!-- MODAL: Proyectos guardados de Balance de Cargas -->
 <div class="modal-bg" id="m-balances" onclick="if(event.target===this)closeModal('m-balances')">
-  <div class="modal" style="max-width:520px">
+  <div class="modal" style="max-width:680px">
     <div class="modal-head">
       <span style="font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px">
         <i data-lucide="folder-open" style="width:18px;height:18px;color:var(--acc)"></i>
@@ -5957,7 +6270,7 @@ async function generarInformePDF() {
       </button>
     </div>
     <div style="padding:16px">
-      <div id="bc-saved-list-container" class="bc-saved-list">
+      <div id="bc-saved-list-container" style="min-height:80px">
         <div style="text-align:center;padding:24px;color:var(--t3)">
           <i data-lucide="inbox" style="width:32px;height:32px;margin-bottom:8px;display:block;margin-left:auto;margin-right:auto"></i>
           <p>No hay proyectos guardados</p>
@@ -5990,12 +6303,53 @@ async function generarInformePDF() {
   </div>
 </div>
 
+<!-- MODAL: Guardar cálculo de Protección -->
+<div class="modal-bg" id="m-pr-guardar" onclick="if(event.target===this)closeModal('m-pr-guardar')">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-head">
+      <span style="font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px">
+        <i data-lucide="save" style="width:18px;height:18px;color:var(--err)"></i>
+        Guardar Cálculo de Protección
+      </span>
+      <button type="button" onclick="closeModal('m-pr-guardar')" class="btn btn-ghost btn-sm">
+        <i data-lucide="x" style="width:14px;height:14px"></i>
+      </button>
+    </div>
+    <div style="padding:20px;display:flex;flex-direction:column;gap:14px">
+      <div id="pr-guardar-err" class="alert err"></div>
+      <div class="fld">
+        <label>Nombre del cálculo <span style="color:var(--err)">*</span></label>
+        <input id="pr-guardar-nombre" placeholder="Ej: Protección tablero principal"/>
+      </div>
+      <div class="fld">
+        <label>Proyecto / Cliente <span style="color:var(--t3);font-weight:400">(opcional)</span></label>
+        <input id="pr-guardar-cliente" placeholder="Ej: Vivienda Sr. Torres"/>
+      </div>
+      <div class="fld">
+        <label>Notas <span style="color:var(--t3);font-weight:400">(opcional)</span></label>
+        <textarea id="pr-guardar-notas" rows="2" placeholder="Observaciones del diseño…" style="resize:vertical;min-height:52px"></textarea>
+      </div>
+      <div style="background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:12px;font-size:12px;color:var(--t2)">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);margin-bottom:8px">Resumen a guardar</div>
+        <div id="pr-guardar-preview-body">—</div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button type="button" class="btn btn-ghost" onclick="closeModal('m-pr-guardar')">Cancelar</button>
+      <button type="button" class="btn btn-acc" id="btn-pr-guardar-ok" onclick="confirmarGuardarProteccion()">
+        <i data-lucide="save" style="width:15px;height:15px"></i>
+        <span class="btn-lbl">Guardar en BD</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: Historial de Protecciones -->
 <div class="modal-bg" id="m-protecciones" onclick="if(event.target===this)closeModal('m-protecciones')">
   <div class="modal" style="max-width:680px">
     <div class="modal-head">
       <span style="font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px">
-        <i data-lucide="shield-alert" style="width:18px;height:18px;color:var(--err)"></i>
+        <i data-lucide="folder-open" style="width:18px;height:18px;color:var(--err)"></i>
         Historial de Cálculos de Protecciones
       </span>
       <button type="button" onclick="closeModal('m-protecciones')" class="btn btn-ghost btn-sm">
@@ -6010,12 +6364,53 @@ async function generarInformePDF() {
   </div>
 </div>
 
+<!-- MODAL: Guardar cálculo de Tubería -->
+<div class="modal-bg" id="m-tb-guardar" onclick="if(event.target===this)closeModal('m-tb-guardar')">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-head">
+      <span style="font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px">
+        <i data-lucide="save" style="width:18px;height:18px;color:var(--ok)"></i>
+        Guardar Cálculo de Tubería
+      </span>
+      <button type="button" onclick="closeModal('m-tb-guardar')" class="btn btn-ghost btn-sm">
+        <i data-lucide="x" style="width:14px;height:14px"></i>
+      </button>
+    </div>
+    <div style="padding:20px;display:flex;flex-direction:column;gap:14px">
+      <div id="tb-guardar-err" class="alert err"></div>
+      <div class="fld">
+        <label>Nombre del cálculo <span style="color:var(--err)">*</span></label>
+        <input id="tb-guardar-nombre" placeholder="Ej: Conduit circuito cocina"/>
+      </div>
+      <div class="fld">
+        <label>Proyecto / Cliente <span style="color:var(--t3);font-weight:400">(opcional)</span></label>
+        <input id="tb-guardar-cliente" placeholder="Ej: Vivienda Sr. Torres"/>
+      </div>
+      <div class="fld">
+        <label>Notas <span style="color:var(--t3);font-weight:400">(opcional)</span></label>
+        <textarea id="tb-guardar-notas" rows="2" placeholder="Observaciones del diseño…" style="resize:vertical;min-height:52px"></textarea>
+      </div>
+      <div style="background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:12px;font-size:12px;color:var(--t2)">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);margin-bottom:8px">Resumen a guardar</div>
+        <div id="tb-guardar-preview-body">—</div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button type="button" class="btn btn-ghost" onclick="closeModal('m-tb-guardar')">Cancelar</button>
+      <button type="button" class="btn btn-acc" id="btn-tb-guardar-ok" onclick="confirmarGuardarTuberia()">
+        <i data-lucide="save" style="width:15px;height:15px"></i>
+        <span class="btn-lbl">Guardar en BD</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: Historial de Tuberías / Conduit -->
 <div class="modal-bg" id="m-tuberias" onclick="if(event.target===this)closeModal('m-tuberias')">
   <div class="modal" style="max-width:680px">
     <div class="modal-head">
       <span style="font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px">
-        <i data-lucide="circle-dashed" style="width:18px;height:18px;color:var(--ok)"></i>
+        <i data-lucide="folder-open" style="width:18px;height:18px;color:var(--ok)"></i>
         Historial de Cálculos de Tuberías / Conduit
       </span>
       <button type="button" onclick="closeModal('m-tuberias')" class="btn btn-ghost btn-sm">
