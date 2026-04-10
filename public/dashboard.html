@@ -3108,7 +3108,7 @@ function formatMoney(valor) {
   return '$' + valor.toFixed(2);
 }
 
-// Cargar logo como base64 (para incrustarlo en el PDF)
+// Cargar logo como base64
 let logoBase64 = null;
 async function cargarLogoBase64() {
   if (logoBase64) return logoBase64;
@@ -3129,7 +3129,7 @@ async function cargarLogoBase64() {
   }
 }
 
-// Exportar PDF de nueva cotización (diseño elegante)
+// Exportar PDF de nueva cotización (con totales en tarjeta elegante)
 async function exportarPDFNc() {
   const todos = [...cotItems, ...cotAdic];
   if (!todos.length) {
@@ -3149,10 +3149,9 @@ async function exportarPDFNc() {
   const margin = 12;
   const contentWidth = pageWidth - margin * 2;
 
-  // Cargar logo
   const logoImg = await cargarLogoBase64();
 
-  // Función de encabezado para primera página
+  // Encabezado primera página
   const addFirstHeader = (doc, modelo, logoImg) => {
     let y = 15;
     if (logoImg) {
@@ -3170,7 +3169,6 @@ async function exportarPDFNc() {
     doc.text('Cotización formal para su proyecto. Valide plazos y especificaciones técnicas.', margin + (logoImg ? 30 : 0), y + 20);
     doc.text(`Documento elaborado por: ${modelo.elaborador || usuario?.nombre || ''}`, margin + (logoImg ? 30 : 0), y + 26);
     
-    // Número y fecha a la derecha
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
     doc.setTextColor(0, 0, 0);
@@ -3182,12 +3180,10 @@ async function exportarPDFNc() {
     doc.setTextColor(80, 80, 80);
     doc.text(`${modelo.fechaFmt} · Válida ${modelo.validez} días`, pageWidth - margin, y + 24, { align: 'right' });
     
-    // Línea decorativa
     doc.setDrawColor(200, 160, 0);
     doc.setLineWidth(0.5);
     doc.line(margin, y + 34, pageWidth - margin, y + 34);
     
-    // Datos del cliente
     y += 44;
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
@@ -3206,7 +3202,6 @@ async function exportarPDFNc() {
     if (modelo.cliente.dir) doc.text(modelo.cliente.dir, margin, yLine);
     
     yLine += 8;
-    // Descripción del trabajo
     if (modelo.descripcionTrabajo) {
       doc.setFont('helvetica', 'bold');
       doc.text('Descripción del trabajo', margin, yLine);
@@ -3233,7 +3228,7 @@ async function exportarPDFNc() {
     return 25;
   };
 
-  // Preparar datos de tabla
+  // Preparar datos de la tabla
   const tableData = modelo.items.map((it, idx) => [
     (idx + 1).toString(),
     it.desc || '—',
@@ -3248,27 +3243,70 @@ async function exportarPDFNc() {
   const descuento = modelo.descuentoValor;
   const iva = modelo.ivaValor;
   const total = modelo.total;
+  const descuentoPorcentaje = modelo.descuentoPct;
 
-  const addTotals = (doc, startY) => {
-    let y = startY;
+  // Función mejorada para dibujar los totales en una tarjeta a la derecha
+  const drawTotalsCard = (doc, yStart) => {
+    const cardWidth = 70;
+    const cardX = pageWidth - margin - cardWidth;
+    let currentY = yStart;
+    
+    // Dibujar fondo de la tarjeta
+    doc.setFillColor(248, 248, 248);
+    doc.setDrawColor(200, 160, 0);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(cardX, currentY, cardWidth, 45, 3, 3, 'FD');
+    
+    // Título de la tarjeta
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(100, 100, 100);
+    doc.text('RESUMEN DE LA COTIZACIÓN', cardX + cardWidth/2, currentY + 6, { align: 'center' });
+    
+    // Línea separadora
+    doc.setDrawColor(200, 160, 0);
+    doc.setLineWidth(0.2);
+    doc.line(cardX + 5, currentY + 9, cardX + cardWidth - 5, currentY + 9);
+    
+    let y = currentY + 14;
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(60, 60, 60);
-    doc.text(`Subtotal sin IVA: ${formatMoney(subtotal)}`, pageWidth - margin - 35, y, { align: 'right' });
+    
+    // Subtotal
+    doc.text('Subtotal sin IVA:', cardX + 5, y);
+    doc.text(formatMoney(subtotal), cardX + cardWidth - 5, y, { align: 'right' });
     y += 5;
+    
+    // Descuento (si aplica)
     if (descuento > 0) {
-      doc.text(`Descuento (${modelo.descuentoPct}%): -${formatMoney(descuento)}`, pageWidth - margin - 35, y, { align: 'right' });
+      doc.setTextColor(200, 100, 100);
+      doc.text(`Descuento (${descuentoPorcentaje}%):`, cardX + 5, y);
+      doc.text(`-${formatMoney(descuento)}`, cardX + cardWidth - 5, y, { align: 'right' });
       y += 5;
+      doc.setTextColor(60, 60, 60);
     }
-    doc.text(`${modelo.ivaSumarioText || 'IVA'}: ${formatMoney(iva)}`, pageWidth - margin - 35, y, { align: 'right' });
+    
+    // IVA
+    doc.text(`${modelo.ivaSumarioText || 'IVA'}:`, cardX + 5, y);
+    doc.text(formatMoney(iva), cardX + cardWidth - 5, y, { align: 'right' });
     y += 7;
+    
+    // Línea antes del total
+    doc.setDrawColor(200, 160, 0);
+    doc.line(cardX + 5, y - 2, cardX + cardWidth - 5, y - 2);
+    
+    // Total
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
+    doc.setFontSize(11);
     doc.setTextColor(200, 160, 0);
-    doc.text(`TOTAL: ${formatMoney(total)}`, pageWidth - margin - 35, y, { align: 'right' });
+    doc.text('TOTAL:', cardX + 5, y + 2);
+    doc.text(formatMoney(total), cardX + cardWidth - 5, y + 2, { align: 'right' });
+    
+    return currentY + 45; // retorna la nueva Y después de la tarjeta
   };
 
-  // Generar tabla
+  // Generar tabla principal
   let firstHeaderY = await addFirstHeader(doc, modelo, logoImg);
   doc.autoTable({
     head: tableHeaders,
@@ -3301,31 +3339,33 @@ async function exportarPDFNc() {
     }
   });
 
-  // Después de la tabla, agregar forma de pago y notas
-  let yFinal = doc.lastAutoTable.finalY + 8;
+  // Después de la tabla, agregar forma de pago y notas (si existen)
+  let yAfterTable = doc.lastAutoTable.finalY + 6;
   if (modelo.formaPago) {
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 0, 0);
-    doc.text('Forma de pago:', margin, yFinal);
+    doc.text('Forma de pago:', margin, yAfterTable);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(60, 60, 60);
-    doc.text(modelo.formaPago, margin + 30, yFinal);
-    yFinal += 6;
+    doc.text(modelo.formaPago, margin + 30, yAfterTable);
+    yAfterTable += 6;
   }
   if (modelo.notas) {
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 0, 0);
-    doc.text('Notas y condiciones:', margin, yFinal);
+    doc.text('Notas y condiciones:', margin, yAfterTable);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(60, 60, 60);
     const notasLines = doc.splitTextToSize(modelo.notas, contentWidth);
-    doc.text(notasLines, margin, yFinal + 5);
-    yFinal += 8 + (notasLines.length * 4);
+    doc.text(notasLines, margin, yAfterTable + 5);
+    yAfterTable += 8 + (notasLines.length * 4);
   }
-  // Totales al final
-  addTotals(doc, yFinal + 5);
+
+  // Dibujar tarjeta de totales justo después de notas (o después de tabla si no hay notas)
+  let totalsY = yAfterTable + 4;
+  drawTotalsCard(doc, totalsY);
 
   // Pie de página en todas las páginas
   const pageCount = doc.internal.getNumberOfPages();
@@ -3346,7 +3386,7 @@ async function exportarPDFNc() {
   toast('PDF descargado ✓', 'ok');
 }
 
-// Exportar PDF de cotización guardada (mismo diseño elegante)
+// Exportar PDF de cotización guardada (mismo diseño)
 async function exportarPDF() {
   if (!cotActual) {
     toast('No hay cotización seleccionada', 'err');
@@ -3458,24 +3498,58 @@ async function exportarPDF() {
   const descuento = modelo.descuentoValor;
   const iva = modelo.ivaValor;
   const total = modelo.total;
+  const descuentoPorcentaje = modelo.descuentoPct;
 
-  const addTotals = (doc, startY) => {
-    let y = startY;
+  const drawTotalsCard = (doc, yStart) => {
+    const cardWidth = 70;
+    const cardX = pageWidth - margin - cardWidth;
+    let currentY = yStart;
+    
+    doc.setFillColor(248, 248, 248);
+    doc.setDrawColor(200, 160, 0);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(cardX, currentY, cardWidth, 45, 3, 3, 'FD');
+    
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(100, 100, 100);
+    doc.text('RESUMEN DE LA COTIZACIÓN', cardX + cardWidth/2, currentY + 6, { align: 'center' });
+    
+    doc.setDrawColor(200, 160, 0);
+    doc.setLineWidth(0.2);
+    doc.line(cardX + 5, currentY + 9, cardX + cardWidth - 5, currentY + 9);
+    
+    let y = currentY + 14;
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(60, 60, 60);
-    doc.text(`Subtotal sin IVA: ${formatMoney(subtotal)}`, pageWidth - margin - 35, y, { align: 'right' });
+    
+    doc.text('Subtotal sin IVA:', cardX + 5, y);
+    doc.text(formatMoney(subtotal), cardX + cardWidth - 5, y, { align: 'right' });
     y += 5;
+    
     if (descuento > 0) {
-      doc.text(`Descuento (${modelo.descuentoPct}%): -${formatMoney(descuento)}`, pageWidth - margin - 35, y, { align: 'right' });
+      doc.setTextColor(200, 100, 100);
+      doc.text(`Descuento (${descuentoPorcentaje}%):`, cardX + 5, y);
+      doc.text(`-${formatMoney(descuento)}`, cardX + cardWidth - 5, y, { align: 'right' });
       y += 5;
+      doc.setTextColor(60, 60, 60);
     }
-    doc.text(`${modelo.ivaSumarioText || 'IVA'}: ${formatMoney(iva)}`, pageWidth - margin - 35, y, { align: 'right' });
+    
+    doc.text(`${modelo.ivaSumarioText || 'IVA'}:`, cardX + 5, y);
+    doc.text(formatMoney(iva), cardX + cardWidth - 5, y, { align: 'right' });
     y += 7;
+    
+    doc.setDrawColor(200, 160, 0);
+    doc.line(cardX + 5, y - 2, cardX + cardWidth - 5, y - 2);
+    
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
+    doc.setFontSize(11);
     doc.setTextColor(200, 160, 0);
-    doc.text(`TOTAL: ${formatMoney(total)}`, pageWidth - margin - 35, y, { align: 'right' });
+    doc.text('TOTAL:', cardX + 5, y + 2);
+    doc.text(formatMoney(total), cardX + cardWidth - 5, y + 2, { align: 'right' });
+    
+    return currentY + 45;
   };
 
   let firstHeaderY = await addFirstHeader(doc, modelo, logoImg);
@@ -3510,29 +3584,30 @@ async function exportarPDF() {
     }
   });
 
-  let yFinal = doc.lastAutoTable.finalY + 8;
+  let yAfterTable = doc.lastAutoTable.finalY + 6;
   if (modelo.formaPago) {
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 0, 0);
-    doc.text('Forma de pago:', margin, yFinal);
+    doc.text('Forma de pago:', margin, yAfterTable);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(60, 60, 60);
-    doc.text(modelo.formaPago, margin + 30, yFinal);
-    yFinal += 6;
+    doc.text(modelo.formaPago, margin + 30, yAfterTable);
+    yAfterTable += 6;
   }
   if (modelo.notas) {
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 0, 0);
-    doc.text('Notas y condiciones:', margin, yFinal);
+    doc.text('Notas y condiciones:', margin, yAfterTable);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(60, 60, 60);
     const notasLines = doc.splitTextToSize(modelo.notas, contentWidth);
-    doc.text(notasLines, margin, yFinal + 5);
-    yFinal += 8 + (notasLines.length * 4);
+    doc.text(notasLines, margin, yAfterTable + 5);
+    yAfterTable += 8 + (notasLines.length * 4);
   }
-  addTotals(doc, yFinal + 5);
+
+  drawTotalsCard(doc, yAfterTable + 4);
 
   const pageCount = doc.internal.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
