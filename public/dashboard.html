@@ -1671,7 +1671,7 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
                 <label class="pf-label"><i data-lucide="hash"></i> N.º de conductores</label>
                 <div class="pf-inp-wrap">
                   <span class="pf-inp-icon"><i data-lucide="list"></i></span>
-                  <input class="pf-inp" id="tb-ncond" type="number" min="1" max="50" step="1" value="3" oninput="calcTuberia()" style="padding-left:38px"/>
+                  <input class="pf-inp" id="tb-ncond" type="number" min="1" max="50" step="1" value="" oninput="calcTuberia()" style="padding-left:38px"/>
                 </div>
               </div>
 
@@ -1680,6 +1680,7 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
                 <div class="pf-inp-wrap is-select has-icon">
                   <span class="pf-inp-icon"><i data-lucide="align-center"></i></span>
                   <select class="pf-inp" id="tb-awg" onchange="calcTuberia()">
+                    <option value=""></option>
                     <option value="14">AWG #14 — 2.08 mm²</option>
                     <option value="12">AWG #12 — 3.31 mm²</option>
                     <option value="10">AWG #10 — 5.26 mm²</option>
