@@ -5355,18 +5355,18 @@ async function exportarPDFBalanceFromRecord(id){
     let conduitSel=CONDUIT_AREA.EMT.find(([n,a])=>a*0.40>=totArea);
     if(!conduitSel)conduitSel=CONDUIT_AREA.EMT[CONDUIT_AREA.EMT.length-1];
     return`<tr style="${i%2===0?'background:#fafafa':''}">
-      <td style="padding:5px 7px;border-bottom:1px solid #eee;font-weight:600">${String(i+1).padStart(2,'0')}</td>
-      <td style="padding:5px 7px;border-bottom:1px solid #eee">${c.desc||'—'}</td>
-      <td style="padding:5px 7px;border-bottom:1px solid #eee">${TIPO_LABEL[c.tipo]||c.tipo}</td>
-      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center">${cant}</td>
-      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center">${vC}V</td>
-      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center">${c.fase}</td>
-      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center">${c.fs||100}%</td>
-      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:right;font-weight:700">${(pd/1000).toFixed(3)}</td>
-      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:right;color:#3b82f6;font-weight:600">${Ic.toFixed(2)}</td>
-      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center;color:#1d4ed8;font-weight:700">AWG #${awgRow?awgRow[0]:'—'}</td>
-      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center;color:#b45309;font-weight:700">${brkRec}A ${polos}</td>
-      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center;color:#166534;font-weight:700">EMT ${conduitSel?conduitSel[0]:'—'}</td>
+      <td style="padding:4px;border-bottom:1px solid #eee;font-weight:600">${String(i+1).padStart(2,'0')}</td>
+      <td style="padding:4px;border-bottom:1px solid #eee;word-wrap:break-word">${c.desc||'—'}</td>
+      <td style="padding:4px;border-bottom:1px solid #eee">${TIPO_LABEL[c.tipo]||c.tipo}</td>
+      <td style="padding:4px;border-bottom:1px solid #eee;text-align:center">${cant}</td>
+      <td style="padding:4px;border-bottom:1px solid #eee;text-align:center">${vC}V</td>
+      <td style="padding:4px;border-bottom:1px solid #eee;text-align:center">${c.fase}</td>
+      <td style="padding:4px;border-bottom:1px solid #eee;text-align:center">${c.fs||100}%</td>
+      <td style="padding:4px;border-bottom:1px solid #eee;text-align:right;font-weight:700">${(pd/1000).toFixed(3)}</td>
+      <td style="padding:4px;border-bottom:1px solid #eee;text-align:right;color:#3b82f6;font-weight:600">${Ic.toFixed(2)}</td>
+      <td style="padding:4px;border-bottom:1px solid #eee;text-align:center;color:#1d4ed8;font-weight:700">AWG #${awgRow?awgRow[0]:'—'}</td>
+      <td style="padding:4px;border-bottom:1px solid #eee;text-align:center;color:#b45309;font-weight:700">${brkRec}A ${polos}</td>
+      <td style="padding:4px;border-bottom:1px solid #eee;text-align:center;color:#166534;font-weight:700">EMT ${conduitSel?conduitSel[0]:'—'}</td>
     </tr>`;
   }).join('');
   const filasFase=fases.map(f=>{
@@ -5376,50 +5376,64 @@ async function exportarPDFBalanceFromRecord(id){
       <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right">${If.toFixed(2)} A</td>
       <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right">${pct.toFixed(1)}%</td></tr>`;
   }).join('');
-  const htmlInforme=`<div style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#111;line-height:1.5">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;border-bottom:3px solid #f5c800;margin-bottom:20px">
-      <div><div style="font-size:22px;font-weight:900;color:#0c0c12">INFORME TÉCNICO ELÉCTRICO</div>
-        <div style="font-size:13px;font-weight:700;color:#555;margin-top:2px">Balance de Cargas · Dimensionamiento de Tablero</div>
-        <div style="font-size:11px;color:#888;margin-top:6px">NEC / NTE INEN 2345 / ARCONEL Ecuador</div></div>
-      <div style="text-align:right"><div style="font-size:11px;color:#888">Fecha</div>
-        <div style="font-size:14px;font-weight:700">${fecha}</div>
-        <div style="font-size:11px;color:#888">SEST · Ingeniería Eléctrica</div></div></div>
-    <div style="margin-bottom:16px">
-      <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #f5c800;padding-bottom:4px;margin-bottom:10px">1. DATOS DEL PROYECTO</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-        <div style="background:#f8f8f8;border-radius:6px;padding:9px 11px;border-left:3px solid #f5c800"><div style="font-size:9px;font-weight:700;color:#888;text-transform:uppercase">Proyecto</div><div style="font-size:13px;font-weight:800">${nombre}</div></div>
-        <div style="background:#f8f8f8;border-radius:6px;padding:9px 11px;border-left:3px solid #3b82f6"><div style="font-size:9px;font-weight:700;color:#888;text-transform:uppercase">Cliente</div><div style="font-size:13px;font-weight:700">${cliente}</div></div>
-        <div style="background:#f8f8f8;border-radius:6px;padding:9px 11px;border-left:3px solid #22c55e"><div style="font-size:9px;font-weight:700;color:#888;text-transform:uppercase">Ubicación</div><div style="font-size:13px;font-weight:700">${ubicacion}</div></div>
+  const htmlInforme=`<div style="font-family:'Segoe UI',Arial,sans-serif;font-size:11px;color:#111;line-height:1.4;width:100%;background:#fff;padding:16px;box-sizing:border-box">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:14px;border-bottom:3px solid #f5c800;margin-bottom:16px">
+      <div><div style="font-size:20px;font-weight:900;color:#0c0c12">INFORME TÉCNICO ELÉCTRICO</div>
+        <div style="font-size:12px;font-weight:700;color:#555;margin-top:2px">Balance de Cargas · Dimensionamiento de Tablero</div>
+        <div style="font-size:10px;color:#888;margin-top:4px">NEC / NTE INEN 2345 / ARCONEL Ecuador</div></div>
+      <div style="text-align:right"><div style="font-size:10px;color:#888">Fecha de elaboración</div>
+        <div style="font-size:13px;font-weight:700">${fecha}</div>
+        <div style="font-size:10px;color:#888">SEST · Sistema de Ingeniería</div></div></div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #f5c800;padding-bottom:3px;margin-bottom:8px">1. DATOS DEL PROYECTO</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+        <div style="background:#f8f8f8;border-radius:5px;padding:7px 10px;border-left:3px solid #f5c800"><div style="font-size:8px;font-weight:700;color:#888;text-transform:uppercase">Proyecto</div><div style="font-size:12px;font-weight:800">${nombre}</div></div>
+        <div style="background:#f8f8f8;border-radius:5px;padding:7px 10px;border-left:3px solid #3b82f6"><div style="font-size:8px;font-weight:700;color:#888;text-transform:uppercase">Cliente / Propietario</div><div style="font-size:12px;font-weight:700">${cliente}</div></div>
+        <div style="background:#f8f8f8;border-radius:5px;padding:7px 10px;border-left:3px solid #22c55e"><div style="font-size:8px;font-weight:700;color:#888;text-transform:uppercase">Ubicación</div><div style="font-size:12px;font-weight:700">${ubicacion}</div></div>
       </div></div>
-    <div style="margin-bottom:16px">
-      <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #f5c800;padding-bottom:4px;margin-bottom:10px">2. RESUMEN EJECUTIVO</div>
-      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
-        <div style="background:#0c0c12;color:#fff;border-radius:8px;padding:10px;text-align:center"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:3px">Pot. Instalada</div><div style="font-size:16px;font-weight:900;color:#f5c800;font-family:monospace">${(totalW/1000).toFixed(2)}</div><div style="font-size:9px;color:#888">kW</div></div>
-        <div style="background:#0c0c12;color:#fff;border-radius:8px;padding:10px;text-align:center"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:3px">Demanda</div><div style="font-size:16px;font-weight:900;color:#22c55e;font-family:monospace">${(totalWD/1000).toFixed(2)}</div><div style="font-size:9px;color:#888">kW</div></div>
-        <div style="background:#0c0c12;color:#fff;border-radius:8px;padding:10px;text-align:center"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:3px">I. Total</div><div style="font-size:16px;font-weight:900;color:#60a5fa;font-family:monospace">${ITotal.toFixed(2)}</div><div style="font-size:9px;color:#888">A</div></div>
-        <div style="background:#0c0c12;color:#fff;border-radius:8px;padding:10px;text-align:center"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:3px">Desbalance</div><div style="font-size:16px;font-weight:900;color:${desbalance>10?'#ef4444':'#22c55e'};font-family:monospace">${desbalance.toFixed(1)}%</div><div style="font-size:9px;color:#888">${desbalance>10?'⚠️ Excede':'✅ OK'}</div></div>
-        <div style="background:#0c0c12;color:#fff;border-radius:8px;padding:10px;text-align:center"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:3px">Breaker Ppal</div><div style="font-size:16px;font-weight:900;color:#f5c800;font-family:monospace">${brkAco}A</div><div style="font-size:9px;color:#888">${esTri?'3P':'2P'}</div></div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #f5c800;padding-bottom:3px;margin-bottom:8px">2. RESUMEN EJECUTIVO</div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">
+        <div style="background:#0c0c12;color:#fff;border-radius:6px;padding:8px;text-align:center"><div style="font-size:8px;color:#999;text-transform:uppercase;margin-bottom:2px">Pot. Instalada</div><div style="font-size:14px;font-weight:900;color:#f5c800;font-family:monospace">${(totalW/1000).toFixed(2)}</div><div style="font-size:8px;color:#888">kW</div></div>
+        <div style="background:#0c0c12;color:#fff;border-radius:6px;padding:8px;text-align:center"><div style="font-size:8px;color:#999;text-transform:uppercase;margin-bottom:2px">Demanda</div><div style="font-size:14px;font-weight:900;color:#22c55e;font-family:monospace">${(totalWD/1000).toFixed(2)}</div><div style="font-size:8px;color:#888">kW</div></div>
+        <div style="background:#0c0c12;color:#fff;border-radius:6px;padding:8px;text-align:center"><div style="font-size:8px;color:#999;text-transform:uppercase;margin-bottom:2px">I. Total</div><div style="font-size:14px;font-weight:900;color:#60a5fa;font-family:monospace">${ITotal.toFixed(2)}</div><div style="font-size:8px;color:#888">A</div></div>
+        <div style="background:#0c0c12;color:#fff;border-radius:6px;padding:8px;text-align:center"><div style="font-size:8px;color:#999;text-transform:uppercase;margin-bottom:2px">Desbalance</div><div style="font-size:14px;font-weight:900;color:${desbalance>10?'#ef4444':'#22c55e'};font-family:monospace">${desbalance.toFixed(1)}%</div><div style="font-size:8px;color:#888">${desbalance>10?'⚠ Excede':'OK'}</div></div>
+        <div style="background:#0c0c12;color:#fff;border-radius:6px;padding:8px;text-align:center"><div style="font-size:8px;color:#999;text-transform:uppercase;margin-bottom:2px">Breaker Ppal</div><div style="font-size:14px;font-weight:900;color:#f5c800;font-family:monospace">${brkAco}A</div><div style="font-size:8px;color:#888">${esTri?'3P':'2P'}</div></div>
       </div></div>
-    <div style="margin-bottom:16px">
-      <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #f5c800;padding-bottom:4px;margin-bottom:10px">3. TABLA DE CIRCUITOS</div>
-      <table style="width:100%;border-collapse:collapse;font-size:10px">
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #f5c800;padding-bottom:3px;margin-bottom:8px">3. TABLA DE CIRCUITOS</div>
+      <table style="width:100%;border-collapse:collapse;font-size:9px;table-layout:fixed">
+        <colgroup>
+          <col style="width:4%"/><col style="width:18%"/><col style="width:9%"/>
+          <col style="width:5%"/><col style="width:7%"/><col style="width:6%"/>
+          <col style="width:5%"/><col style="width:9%"/><col style="width:7%"/>
+          <col style="width:11%"/><col style="width:10%"/><col style="width:9%"/>
+        </colgroup>
         <thead><tr style="background:#0c0c12;color:#fff">
-          <th style="padding:6px 5px;text-align:left">N°</th><th style="padding:6px 5px;text-align:left">Descripción</th><th style="padding:6px 5px;text-align:left">Tipo</th>
-          <th style="padding:6px 5px;text-align:center">Cant.</th><th style="padding:6px 5px;text-align:center">V</th><th style="padding:6px 5px;text-align:center">Fase</th>
-          <th style="padding:6px 5px;text-align:center">Fs%</th><th style="padding:6px 5px;text-align:right">P.Dem(kW)</th><th style="padding:6px 5px;text-align:right">I(A)</th>
-          <th style="padding:6px 5px;text-align:center">Cable</th><th style="padding:6px 5px;text-align:center">Breaker</th><th style="padding:6px 5px;text-align:center">Conduit</th>
+          <th style="padding:5px 4px;text-align:left">N°</th>
+          <th style="padding:5px 4px;text-align:left">Descripción</th>
+          <th style="padding:5px 4px;text-align:left">Tipo</th>
+          <th style="padding:5px 4px;text-align:center">Cant.</th>
+          <th style="padding:5px 4px;text-align:center">V</th>
+          <th style="padding:5px 4px;text-align:center">Fase</th>
+          <th style="padding:5px 4px;text-align:center">Fs%</th>
+          <th style="padding:5px 4px;text-align:right">Dem.(kW)</th>
+          <th style="padding:5px 4px;text-align:right">I(A)</th>
+          <th style="padding:5px 4px;text-align:center">Cable</th>
+          <th style="padding:5px 4px;text-align:center">Breaker</th>
+          <th style="padding:5px 4px;text-align:center">Conduit</th>
         </tr></thead>
         <tbody>${filasCargas}</tbody>
       </table></div>
-    <div style="margin-bottom:16px">
-      <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #f5c800;padding-bottom:4px;margin-bottom:10px">4. BALANCE DE FASES</div>
-      <table style="width:50%;border-collapse:collapse;font-size:11px">
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #f5c800;padding-bottom:3px;margin-bottom:8px">4. BALANCE DE FASES</div>
+      <table style="width:50%;border-collapse:collapse;font-size:10px">
         <thead><tr style="background:#0c0c12;color:#fff">
-          <th style="padding:6px 8px;text-align:left">Fase</th><th style="padding:6px 8px;text-align:right">Potencia</th><th style="padding:6px 8px;text-align:right">Corriente</th><th style="padding:6px 8px;text-align:right">% Total</th>
+          <th style="padding:5px 7px;text-align:left">Fase</th><th style="padding:5px 7px;text-align:right">Potencia</th><th style="padding:5px 7px;text-align:right">Corriente</th><th style="padding:5px 7px;text-align:right">% Total</th>
         </tr></thead>
         <tbody>${filasFase}</tbody>
       </table></div>
-    <div style="text-align:center;font-size:9px;color:#999;padding-top:10px;border-top:1px solid #eee;margin-top:14px">
+    <div style="text-align:center;font-size:9px;color:#999;padding-top:8px;border-top:1px solid #eee;margin-top:12px">
       <p>Documento generado por SEST · Sistema de Ingeniería Eléctrica · ${fecha}</p>
       ${usuario?.nombre?`<p>Elaborado por: <strong>${usuario.nombre}</strong></p>`:''}
     </div></div>`;
@@ -6074,20 +6088,20 @@ async function generarInformePDF() {
     let conduitSel = CONDUIT_AREA.EMT.find(([n,a]) => a*0.40>=totArea);
     if (!conduitSel) conduitSel = CONDUIT_AREA.EMT[CONDUIT_AREA.EMT.length-1];
     return `<tr style="${i%2===0?'background:#fafafa':''}">
-      <td style="padding:5px 7px;border-bottom:1px solid #eee;font-weight:600">${String(i+1).padStart(2,'0')}</td>
-      <td style="padding:5px 7px;border-bottom:1px solid #eee">${c.desc||'—'}</td>
-      <td style="padding:5px 7px;border-bottom:1px solid #eee">${TIPO_LABEL[c.tipo]||c.tipo}</td>
-      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center">${cant}</td>
-      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center">${vC}V</td>
-      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center">${esTri_c?'3F':'1F'}</td>
-      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center">${fp}</td>
-      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center">${c.fase}</td>
-      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center">${c.fs||100}%</td>
-      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:right;font-weight:700">${(pd/1000).toFixed(3)}</td>
-      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:right;color:#3b82f6;font-weight:600">${Ic.toFixed(2)}</td>
-      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center;color:#1d4ed8;font-weight:700">AWG #${awgRow?awgRow[0]:'—'}</td>
-      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center;color:#b45309;font-weight:700">${brkRec}A ${polos}</td>
-      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center;color:#166534;font-weight:700">EMT ${conduitSel?conduitSel[0]:'—'}</td>
+      <td style="padding:4px 3px;border-bottom:1px solid #eee;font-weight:600">${String(i+1).padStart(2,'0')}</td>
+      <td style="padding:4px 3px;border-bottom:1px solid #eee;word-wrap:break-word">${c.desc||'—'}</td>
+      <td style="padding:4px 3px;border-bottom:1px solid #eee">${TIPO_LABEL[c.tipo]||c.tipo}</td>
+      <td style="padding:4px 3px;border-bottom:1px solid #eee;text-align:center">${cant}</td>
+      <td style="padding:4px 3px;border-bottom:1px solid #eee;text-align:center">${vC}V</td>
+      <td style="padding:4px 3px;border-bottom:1px solid #eee;text-align:center">${esTri_c?'3F':'1F'}</td>
+      <td style="padding:4px 3px;border-bottom:1px solid #eee;text-align:center">${fp}</td>
+      <td style="padding:4px 3px;border-bottom:1px solid #eee;text-align:center">${c.fase}</td>
+      <td style="padding:4px 3px;border-bottom:1px solid #eee;text-align:center">${c.fs||100}%</td>
+      <td style="padding:4px 3px;border-bottom:1px solid #eee;text-align:right;font-weight:700">${(pd/1000).toFixed(3)}</td>
+      <td style="padding:4px 3px;border-bottom:1px solid #eee;text-align:right;color:#3b82f6;font-weight:600">${Ic.toFixed(2)}</td>
+      <td style="padding:4px 3px;border-bottom:1px solid #eee;text-align:center;color:#1d4ed8;font-weight:700">AWG #${awgRow?awgRow[0]:'—'}</td>
+      <td style="padding:4px 3px;border-bottom:1px solid #eee;text-align:center;color:#b45309;font-weight:700">${brkRec}A ${polos}</td>
+      <td style="padding:4px 3px;border-bottom:1px solid #eee;text-align:center;color:#166534;font-weight:700">EMT ${conduitSel?conduitSel[0]:'—'}</td>
     </tr>`;
   }).join('');
 
@@ -6191,32 +6205,39 @@ async function generarInformePDF() {
       <!-- TABLA DE CARGAS -->
       <div style="margin-bottom:20px">
         <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#0c0c12;border-bottom:2px solid #f5c800;padding-bottom:5px;margin-bottom:10px">3. TABLA DE BALANCE DE CARGAS Y DIMENSIONAMIENTO</div>
-        <table style="width:100%;border-collapse:collapse;font-size:10px">
+        <table style="width:100%;border-collapse:collapse;font-size:9px;table-layout:fixed">
+          <colgroup>
+            <col style="width:3%"/><col style="width:16%"/><col style="width:8%"/>
+            <col style="width:5%"/><col style="width:6%"/><col style="width:5%"/>
+            <col style="width:5%"/><col style="width:6%"/><col style="width:5%"/>
+            <col style="width:8%"/><col style="width:7%"/>
+            <col style="width:10%"/><col style="width:9%"/><col style="width:7%"/>
+          </colgroup>
           <thead>
             <tr style="background:#0c0c12;color:#fff">
-              <th style="padding:6px 7px;text-align:left">N°</th>
-              <th style="padding:6px 7px;text-align:left">Descripción</th>
-              <th style="padding:6px 7px;text-align:left">Tipo</th>
-              <th style="padding:6px 7px;text-align:center">Cant.</th>
-              <th style="padding:6px 7px;text-align:center">Voltaje</th>
-              <th style="padding:6px 7px;text-align:center">Fases</th>
-              <th style="padding:6px 7px;text-align:center">F.P.</th>
-              <th style="padding:6px 7px;text-align:center">Fase</th>
-              <th style="padding:6px 7px;text-align:center">Fs%</th>
-              <th style="padding:6px 7px;text-align:right">Dem.(kW)</th>
-              <th style="padding:6px 7px;text-align:right">I (A)</th>
-              <th style="padding:6px 7px;text-align:center">Cable</th>
-              <th style="padding:6px 7px;text-align:center">Breaker</th>
-              <th style="padding:6px 7px;text-align:center">Conduit</th>
+              <th style="padding:5px 3px;text-align:left">N°</th>
+              <th style="padding:5px 3px;text-align:left">Descripción</th>
+              <th style="padding:5px 3px;text-align:left">Tipo</th>
+              <th style="padding:5px 3px;text-align:center">Cant.</th>
+              <th style="padding:5px 3px;text-align:center">V</th>
+              <th style="padding:5px 3px;text-align:center">Fases</th>
+              <th style="padding:5px 3px;text-align:center">F.P.</th>
+              <th style="padding:5px 3px;text-align:center">Fase</th>
+              <th style="padding:5px 3px;text-align:center">Fs%</th>
+              <th style="padding:5px 3px;text-align:right">Dem.(kW)</th>
+              <th style="padding:5px 3px;text-align:right">I(A)</th>
+              <th style="padding:5px 3px;text-align:center">Cable</th>
+              <th style="padding:5px 3px;text-align:center">Breaker</th>
+              <th style="padding:5px 3px;text-align:center">Conduit</th>
             </tr>
           </thead>
           <tbody>${filasCargas}</tbody>
           <tfoot>
             <tr style="background:#f5c80020;border-top:2px solid #f5c800">
-              <td colspan="9" style="padding:7px;font-weight:800;color:#0c0c12">TOTALES</td>
-              <td style="padding:7px;text-align:right;font-weight:800;color:#b45309">${(totalWD/1000).toFixed(3)}</td>
-              <td style="padding:7px;text-align:right;font-weight:800;color:#1d4ed8">${ITotal.toFixed(2)}</td>
-              <td colspan="3" style="padding:7px;text-align:center;font-weight:700;color:#166534">Breaker Ppal: ${brkAco}A</td>
+              <td colspan="9" style="padding:6px 3px;font-weight:800;color:#0c0c12">TOTALES</td>
+              <td style="padding:6px 3px;text-align:right;font-weight:800;color:#b45309">${(totalWD/1000).toFixed(3)}</td>
+              <td style="padding:6px 3px;text-align:right;font-weight:800;color:#1d4ed8">${ITotal.toFixed(2)}</td>
+              <td colspan="3" style="padding:6px 3px;text-align:center;font-weight:700;color:#166534">Brk: ${brkAco}A</td>
             </tr>
           </tfoot>
         </table>
