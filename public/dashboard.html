@@ -3251,34 +3251,29 @@ async function exportarPDFNc() {
     const cardX = pageWidth - margin - cardWidth;
     let currentY = yStart;
     
-    // Dibujar fondo de la tarjeta
     doc.setFillColor(248, 248, 248);
     doc.setDrawColor(200, 160, 0);
     doc.setLineWidth(0.3);
     doc.roundedRect(cardX, currentY, cardWidth, 45, 3, 3, 'FD');
     
-    // Título de la tarjeta
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(100, 100, 100);
-    doc.text('RESUMEN DE LA COTIZACIÓN', cardX + cardWidth/2, currentY + 6, { align: 'center' });
+    doc.text('RESUMEN DE LA COTIZACIÓN', cardX + cardWidth/2, currentY + 5, { align: 'center' });
     
-    // Línea separadora
     doc.setDrawColor(200, 160, 0);
     doc.setLineWidth(0.2);
-    doc.line(cardX + 5, currentY + 9, cardX + cardWidth - 5, currentY + 9);
+    doc.line(cardX + 5, currentY + 8, cardX + cardWidth - 5, currentY + 8);
     
-    let y = currentY + 14;
+    let y = currentY + 12;
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(60, 60, 60);
     
-    // Subtotal
     doc.text('Subtotal sin IVA:', cardX + 5, y);
     doc.text(formatMoney(subtotal), cardX + cardWidth - 5, y, { align: 'right' });
     y += 5;
     
-    // Descuento (si aplica)
     if (descuento > 0) {
       doc.setTextColor(200, 100, 100);
       doc.text(`Descuento (${descuentoPorcentaje}%):`, cardX + 5, y);
@@ -3287,23 +3282,20 @@ async function exportarPDFNc() {
       doc.setTextColor(60, 60, 60);
     }
     
-    // IVA
     doc.text(`${modelo.ivaSumarioText || 'IVA'}:`, cardX + 5, y);
     doc.text(formatMoney(iva), cardX + cardWidth - 5, y, { align: 'right' });
-    y += 7;
+    y += 6;
     
-    // Línea antes del total
     doc.setDrawColor(200, 160, 0);
     doc.line(cardX + 5, y - 2, cardX + cardWidth - 5, y - 2);
     
-    // Total
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
     doc.setTextColor(200, 160, 0);
     doc.text('TOTAL:', cardX + 5, y + 2);
     doc.text(formatMoney(total), cardX + cardWidth - 5, y + 2, { align: 'right' });
     
-    return currentY + 45; // retorna la nueva Y después de la tarjeta
+    return currentY + 42; // altura reducida de 45 a 42
   };
 
   // Generar tabla principal
