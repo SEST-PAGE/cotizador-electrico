@@ -3096,12 +3096,6 @@ async function htmlAPdfDesdeNodoFuente(sourceEl,filename){
   }
 }
 
-/* Exportar PDF nueva cotización (diseño profesional claro, no usa tema oscuro) */
-// Función auxiliar para formatear moneda
-function formatMoney(valor) {
-  return '$' + valor.toFixed(2);
-}
-
 //------------------------------------
 // Función auxiliar para formatear moneda
 function formatMoney(valor) {
@@ -3246,7 +3240,7 @@ async function exportarPDFNc() {
   const descuentoPorcentaje = modelo.descuentoPct;
 
   // Función mejorada para dibujar los totales en una tarjeta a la derecha
- /* const drawTotalsCard = (doc, yStart) => {
+  const drawTotalsCard = (doc, yStart) => {
     const cardWidth = 70;
     const cardX = pageWidth - margin - cardWidth;
     let currentY = yStart;
@@ -3297,7 +3291,7 @@ async function exportarPDFNc() {
     
     return currentY + 28; // altura reducida de 45 a 42
   };
-*/
+
   // Generar tabla principal
   let firstHeaderY = await addFirstHeader(doc, modelo, logoImg);
   doc.autoTable({
@@ -3331,7 +3325,6 @@ async function exportarPDFNc() {
     }
   });
 
-  // Después de la tabla, agregar forma de pago y notas (si existen)
 
   // ============================================================
   // SECCIÓN: FORMA DE PAGO + TARJETA DE TOTALES (una al lado de la otra)
@@ -3494,6 +3487,8 @@ async function exportarPDFNc() {
   doc.save(`${modelo.numero}.pdf`);
   toast('PDF descargado ✓', 'ok');
 }
+//-------==============================================================================
+
 /* Utilidades jhonatan */
 function openModal(id){document.getElementById(id).classList.add('on');refreshIcons();}
 function closeModal(id){document.getElementById(id).classList.remove('on');}
