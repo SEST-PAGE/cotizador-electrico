@@ -7,7 +7,10 @@
 <link rel="icon" type="image/jpeg" href="logo.jpg"/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -178,7 +181,7 @@ body{background:var(--bg);color:var(--t1);font-family:'DM Sans',sans-serif;font-
   overflow:hidden;
 }
 .user-av{
-  width:34px;height:34px;border-radius:50%;
+  width:26px;height:26px;border-radius:50%;
   background:var(--acc);color:#000;
   font-weight:700;font-size:14px;
   display:flex;align-items:center;justify-content:center;
@@ -1036,6 +1039,11 @@ mark{background:rgba(245,200,0,.25);color:var(--t1);border-radius:2px;padding:0 
                   <label>Documento elaborado por <span style="font-weight:400;color:var(--t3);text-transform:none;letter-spacing:0">(PDF)</span></label>
                   <input id="nc-elaborado" placeholder="Nombre en el documento PDF" autocomplete="name"/>
                 </div>
+                 <!--  NUEVO CAMPO -->
+    <div class="fld" style="margin-bottom:14px">
+      <label>RUC / Cédula del Ingeniero <span style="font-weight:400;color:var(--t3);text-transform:none;letter-spacing:0">(PDF)</span></label>
+      <input id="nc-ingeniero-ruc" placeholder="Número de identificación del ingeniero" autocomplete="off"/>
+    </div>
                 <div style="display:grid;grid-template-columns:1fr 130px;gap:12px;margin-bottom:12px">
                   <div class="fld"><label>Forma de Pago</label>
                     <select id="nc-forma-pago">
@@ -2502,6 +2510,7 @@ async function prepEditarCot(id){
   if(isErr(r)){toast(r.msg,'err');return;}
   cotEditandoId=id;
   limpiarCot(false);
+  sSet('nc-ingeniero-ruc', '');
   sSet('nc-numero',r.numero);
   sSet('nc-fecha',(r.creado_en||new Date().toISOString()).split('T')[0]);
   sSet('nc-validez',r.validez_dias||30);
@@ -2730,6 +2739,7 @@ function construirModeloPdfNuevaCot(){
   return{
     numero:num,fechaFmt,validez,
     elaborador:sGet('nc-elaborado').trim()||usuario?.nombre||'',
+    ingenieroRuc: sGet('nc-ingeniero-ruc').trim() || '',
     cliente:{
       nombre:sGet('nc-cliente').trim()||'Sin cliente',
       empresa:'',
@@ -2765,6 +2775,7 @@ function construirModeloPdfGuardada(c){
       ruc:(c.cliente_ruc||'').trim(),
       tel:(c.cliente_telefono||'').trim(),
       email:(c.cliente_email||'').trim(),
+      ingenieroRuc: '',
       dir:(c.cliente_direccion||'').trim()
     },
     descripcionTrabajo:(c.descripcion||c.titulo||'').trim(),
@@ -2924,116 +2935,32 @@ function htmlDocumentoCotizacionPdfProfesional(m){
 </div>`;
 }
 
-// ══════════════════════════════════════════════════════════════════════
-// PDF GENERATION — DISEÑO PROFESIONAL SEST
-// Generación directa con jsPDF — 100% independiente del zoom del navegador
-// ══════════════════════════════════════════════════════════════════════
+// ── Escala fija para html2canvas — siempre alta resolución ──────
+function escalaCanvasPdf(){ return 3; }
 
-// ── Paleta de colores ──────────────────────────────────────────────────
-const NAVY  = [26, 55, 90];
-const GOLD  = [212, 168, 28];
-const CREAM = [255, 248, 234];
-const DTXT  = [15, 23, 42];
-const LGRAY_P = [148, 163, 184];
-const SLATE_P = [241, 245, 249];
+// ── Opciones base de html2pdf (A4, retina, sin compresión) ───────
+const PDF_WIDTH_PX = 794; // ancho A4 a 96 dpi — tamaño constante en móvil y desktop
+const html2pdfOptsPdf={
+  margin:[8,8,8,8],
+  image:{type:'png',quality:1},
+  html2canvas:{
+    scale:3,
+    useCORS:true,
+    allowTaint:true,
+    logging:false,
+    backgroundColor:'#ffffff',
+    scrollX:0,
+    scrollY:0,
+    letterRendering:true,
+    imageTimeout:15000,
+    windowWidth:PDF_WIDTH_PX,   // 🔑 fuerza ancho A4 aunque la pantalla sea pequeña
+    windowHeight:1123            // A4 altura
+  },
+  jsPDF:{unit:'mm',format:'a4',orientation:'portrait',compress:false},
+  pagebreak:{mode:['avoid-all','css','legacy']}
+};
 
-// ── jsPDF — acceso robusto (compatible con html2pdf bundle) ───────────
-function _pdfNew(){
-  const JPDF = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
-  if(!JPDF) throw new Error('jsPDF no disponible. Recarga la página.');
-  return new JPDF({unit:'mm', format:'a4', orientation:'portrait'});
-}
-
-// ── Cargar logo como base64 (canvas bridge) ───────────────────────────
-async function _loadLogoBase64(){
-  return new Promise(resolve => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      try {
-        const c = document.createElement('canvas');
-        c.width = img.naturalWidth; c.height = img.naturalHeight;
-        c.getContext('2d').drawImage(img, 0, 0);
-        resolve(c.toDataURL('image/jpeg', 0.92));
-      } catch(e) { resolve(null); }
-    };
-    img.onerror = () => resolve(null);
-    img.src = 'logo.jpg';
-  });
-}
-
-// ── Helpers básicos de dibujo ──────────────────────────────────────────
-function _pf(d, sz, st='normal', col=DTXT){ d.setFont('helvetica', st); d.setFontSize(sz); d.setTextColor(...col); }
-function _pt(d, txt, x, y, opts={}){ d.text(String(txt ?? ''), x, y, opts); }
-function _pw(d, txt, maxW){ return d.splitTextToSize(String(txt ?? ''), maxW); }
-function _pln(d, x1,y1,x2,y2, col=[200,210,220], lw=0.25){
-  d.setDrawColor(...col); d.setLineWidth(lw); d.line(x1,y1,x2,y2);
-}
-function _prect(d, x,y,w,h, fill, stroke, lw=0.2){
-  if(fill) d.setFillColor(...fill);
-  if(stroke){ d.setDrawColor(...stroke); d.setLineWidth(lw); }
-  else d.setDrawColor(0,0,0,0);
-  d.rect(x,y,w,h, fill&&stroke?'FD':fill?'F':'D');
-}
-
-// ── Decoraciones curvas SEST (esquinas navy + acento de color) ────────
-function _drawSESTDecorations(d, ac){
-  const A = ac || GOLD;
-
-  // Esquina superior derecha — forma navy
-  d.setFillColor(...NAVY);
-  d.lines(
-    [[-62, 0], [10, 0, 62, 55, 62, 85], [0, -85]],
-    210, 0, [1,1], 'F', true
-  );
-  // Franja acento superior derecha
-  d.setDrawColor(...A); d.setLineWidth(6);
-  d.lines([[10, 5, 57, 45, 57, 65]], 153, 0, [1,1], 'S', false);
-
-  // Esquina inferior izquierda — forma navy
-  d.setFillColor(...NAVY);
-  d.lines(
-    [[0, -65], [0, 30, 55, 65, 82, 65], [-82, 0]],
-    0, 297, [1,1], 'F', true
-  );
-  // Franja acento inferior izquierda
-  d.setDrawColor(...A); d.setLineWidth(6);
-  d.lines([[0, 22, 45, 54, 66, 54]], 0, 243, [1,1], 'S', false);
-
-  // Pequeña forma navy esquina inferior derecha
-  d.setFillColor(...NAVY);
-  d.lines(
-    [[0, -38], [0, 22, -18, 38, -40, 38], [40, 0]],
-    210, 297, [1,1], 'F', true
-  );
-
-  d.setLineWidth(0.25); // reset
-}
-
-// ── Logo círculo fallback (si logo.jpg no carga) ──────────────────────
-function _drawLogoCircle(d, cx, cy, r){
-  d.setFillColor(...NAVY);
-  d.circle(cx, cy, r, 'F');
-  d.setFillColor(255,255,255);
-  d.circle(cx, cy, r - 1.8, 'F');
-  _pf(d, 5.5, 'bold', NAVY); _pt(d, 'SEST', cx, cy + 2.8, {align:'center'});
-  // Rayo (lightning bolt simplificado)
-  d.setFillColor(...GOLD);
-  d.lines([[1,-3.5],[-2,2],[1.5,0],[-1,3.5],[2,-2],[-1.5,0]], cx-0.5, cy-2, [1,1], 'F', true);
-}
-
-// ── Pie de página con número ──────────────────────────────────────────
-function _pdfFooterPages(d){
-  const n = d.internal.getNumberOfPages();
-  for(let p=1;p<=n;p++){
-    d.setPage(p);
-    if(n>1){
-      _pf(d,6,'normal',[140,150,160]);
-      _pt(d,`Página ${p} de ${n}`, 105, 292, {align:'center'});
-    }
-  }
-}
-
+// ── Overlay moderno de carga PDF ─────────────────────────────────
 function _mostrarLoadingPdf(msg){
   const existing = document.getElementById('pdf-loading-overlay');
   if(existing) existing.remove();
@@ -3132,45 +3059,15 @@ async function htmlAPdfDesdeNodoFuente(sourceEl,filename){
 
   _mostrarLoadingPdf('Preparando documento…');
 
-  // ── Normalizar zoom del navegador ──────────────────────────────
-  // window.devicePixelRatio incluye el zoom del navegador (ej: 175% → dpr≈1.75)
-  // Dividimos scale/dpr para que el canvas siempre tenga el mismo tamaño relativo
-  // independientemente del zoom actual (100%, 125%, 150%, 175%, 200%, etc.)
-  const dpr = Math.max(1, window.devicePixelRatio || 1);
-  const scaleNormalizado = Math.max(1.5, Math.min(3, 2 / dpr * dpr));
-  // ──────────────────────────────────────────────────────────────
-
-  // Contenedor oculto — usa position:ABSOLUTE (no fixed) para que no sea
-  // afectado por el viewport visual del zoom del navegador
-  const scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+  // Contenedor oculto fuera del viewport — 794px fijo siempre
   const host = document.createElement('div');
   host.id = 'pdf-capture-host';
-  host.style.cssText = `position:absolute;left:-9999px;top:${scrollY}px;width:794px;overflow:hidden;z-index:-1;`;
+  host.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;overflow:visible;z-index:-1;';
   const clone = sourceEl.cloneNode(true);
   clone.removeAttribute('id');
-  clone.style.cssText = 'display:block;width:794px;max-width:794px;box-sizing:border-box;background:#ffffff;color:#111827;overflow:hidden;';
+  clone.style.cssText = 'display:block;width:794px;box-sizing:border-box;background:#ffffff;color:#111827;overflow:visible;';
   host.appendChild(clone);
   document.body.appendChild(host);
-
-  // ── Forzar que TODAS las tablas del clon respeten el ancho A4 ──
-  clone.querySelectorAll('table').forEach(t=>{
-    t.style.width='100%';
-    t.style.maxWidth='100%';
-    t.style.tableLayout='fixed';
-    t.style.wordBreak='break-word';
-    t.style.overflowWrap='break-word';
-  });
-  clone.querySelectorAll('td,th').forEach(c=>{
-    c.style.wordBreak='break-word';
-    c.style.overflowWrap='break-word';
-    c.style.overflow='hidden';
-  });
-  // Forzar que todos los divs contenedores internos no excedan 794px
-  clone.querySelectorAll('div').forEach(d=>{
-    d.style.maxWidth='100%';
-    d.style.boxSizing='border-box';
-  });
-  // ──────────────────────────────────────────────────────────────
 
   try{
     _actualizarLoadingPdf('Cargando fuentes e imágenes…', 25);
@@ -3188,9 +3085,9 @@ async function htmlAPdfDesdeNodoFuente(sourceEl,filename){
       filename,
       html2canvas:{
         ...html2pdfOptsPdf.html2canvas,
-        scale:scaleNormalizado,
+        scale:3,
         windowWidth:PDF_WIDTH_PX,
-        windowHeight:99999
+        windowHeight:1123
       }
     }).from(clone).save();
 
@@ -3207,23 +3104,762 @@ async function htmlAPdfDesdeNodoFuente(sourceEl,filename){
   }
 }
 
-/* Exportar PDF nueva cotización — genera con jsPDF directo (sin html2canvas) */
-async function exportarPDFNc(){
-  const todos=[...cotItems,...cotAdic];
-  if(!todos.length){toast('Sin materiales para generar PDF','err');return;}
-  const fname=(sGet('nc-numero')||genNum()).replace(/[^\w.-]+/g,'_');
-  generarCotizacionPDF(construirModeloPdfNuevaCot(),`${fname}.pdf`);
+//==============================================================================================================================
+// Función auxiliar para formatear moneda
+function formatMoney(valor) {
+  return '$' + valor.toFixed(2);
 }
 
-/* Exportar PDF cotización guardada */
-async function exportarPDF(){
-  if(!cotActual)return;
-  const fname=(cotActual.numero||'cotizacion').replace(/[^\w.-]+/g,'_');
-  const modelo=construirModeloPdfGuardada(cotActual);
-  const elabPdf=sGet('ver-elaborado').trim();
-  modelo.elaborador=elabPdf||cotActual.usuario_nombre||usuario?.nombre||'';
-  generarCotizacionPDF(modelo,`${fname}.pdf`);
+// Cargar logo como base64
+let logoBase64 = null;
+async function cargarLogoBase64() {
+  if (logoBase64) return logoBase64;
+  try {
+    const response = await fetch('logo_Pantalla.jpg');
+    const blob = await response.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        logoBase64 = reader.result;
+        resolve(logoBase64);
+      };
+      reader.readAsDataURL(blob);
+    });
+  } catch (e) {
+    console.warn('No se pudo cargar el logo:', e);
+    return null;
+  }
 }
+
+// Exportar PDF de nueva cotización (con totales en tarjeta elegante)
+async function exportarPDFNc() {
+  const todos = [...cotItems, ...cotAdic];
+  if (!todos.length) {
+    toast('Sin materiales para generar PDF', 'err');
+    return;
+  }
+
+  _mostrarLoadingPdf('Preparando documento…');
+  _actualizarLoadingPdf('Construyendo datos de la cotización…', 10);
+
+  const modelo = construirModeloPdfNuevaCot();
+  _actualizarLoadingPdf('Generando PDF...', 30);
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({
+    unit: 'mm',
+    format: 'a4',
+    orientation: 'portrait'
+  });
+
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 12;
+  const contentWidth = pageWidth - margin * 2;
+
+  _actualizarLoadingPdf('Cargando logo...', 40);
+  const logoImg = await cargarLogoBase64();
+
+  // Encabezado primera página
+  const addFirstHeader = (doc, modelo, logoImg) => {
+    let y = 15;
+    if (logoImg) {
+      doc.addImage(logoImg, 'JPEG', margin, y, 25, 25);
+      y += 5;
+    }
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 0, 0);
+    doc.text('SEST', margin + (logoImg ? 30 : 0), y + 8);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(80, 80, 80);
+    doc.text('Servicios Eléctricos y Seguridad Tapia', margin + (logoImg ? 30 : 0), y + 14);
+    doc.text('Cotización formal para su proyecto. Valide plazos y especificaciones técnicas.', margin + (logoImg ? 30 : 0), y + 20);
+    doc.text(`Documento elaborado por: ${modelo.elaborador || usuario?.nombre || ''}`, margin + (logoImg ? 30 : 0), y + 26);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.text('COTIZACIÓN', pageWidth - margin, y + 8, { align: 'right' });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    doc.text(modelo.numero, pageWidth - margin, y + 16, { align: 'right' });
+    doc.setFontSize(8);
+    doc.setTextColor(80, 80, 80);
+    doc.text(`${modelo.fechaFmt} · Válida ${modelo.validez} días`, pageWidth - margin, y + 24, { align: 'right' });
+    
+    doc.setDrawColor(200, 160, 0);
+    doc.setLineWidth(0.5);
+    doc.line(margin, y + 34, pageWidth - margin, y + 34);
+    
+    y += 44;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 0, 0);
+    doc.text('CLIENTE', margin, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(60, 60, 60);
+    doc.text(modelo.cliente.nombre || 'Sin cliente', margin, y + 6);
+    let yLine = y + 12;
+    if (modelo.cliente.ruc) doc.text(`RUC/C.I.: ${modelo.cliente.ruc}`, margin, yLine);
+    yLine += 5;
+    if (modelo.cliente.tel) doc.text(`Tel: ${modelo.cliente.tel}`, margin, yLine);
+    yLine += 5;
+    if (modelo.cliente.email) doc.text(modelo.cliente.email, margin, yLine);
+    yLine += 5;
+    if (modelo.cliente.dir) doc.text(modelo.cliente.dir, margin, yLine);
+    
+    yLine += 8;
+    if (modelo.descripcionTrabajo) {
+      doc.setFont('helvetica', 'bold');
+      doc.text('Descripción del trabajo', margin, yLine);
+      doc.setFont('helvetica', 'normal');
+      const lines = doc.splitTextToSize(modelo.descripcionTrabajo, contentWidth);
+      doc.text(lines, margin, yLine + 6);
+      yLine += 12 + (lines.length * 5);
+    }
+    return yLine + 8;
+  };
+
+  // Encabezado compacto para páginas siguientes (corregido: más espacio)
+  const addCompactHeader = (doc, modelo, pageNum) => {
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 0, 0);
+    doc.text(`SEST - Cotización ${modelo.numero}`, margin, 12);
+    doc.setFontSize(8);
+    doc.setTextColor(80, 80, 80);
+    doc.text(`Página ${pageNum}`, pageWidth - margin, 12, { align: 'right' });
+    doc.setDrawColor(200, 160, 0);
+    doc.setLineWidth(0.3);
+    doc.line(margin, 18, pageWidth - margin, 18);
+    return 26; // Aumentado de 22 a 24 para más espacio
+  };
+
+  // Preparar datos de la tabla
+  const tableData = modelo.items.map((it, idx) => [
+    (idx + 1).toString(),
+    it.desc || '—',
+    it.cant.toString(),
+    it.unidad,
+    formatMoney(it.pUnit),
+    (it.ivaPct && it.ivaPct > 0) ? it.ivaPct + '%' : 'No',
+    formatMoney(it.sub)
+  ]);
+  const tableHeaders = [['#', 'Descripción', 'Cant.', 'Unidad', 'P. unit.', 'IVA %', 'Subtotal']];
+  const subtotal = modelo.subtotal;
+  const descuento = modelo.descuentoValor;
+  const iva = modelo.ivaValor;
+  const total = modelo.total;
+  const descuentoPorcentaje = modelo.descuentoPct;
+
+  _actualizarLoadingPdf('Diseñando tabla de materiales...', 55);
+
+  // Generar tabla principal
+  let firstHeaderY = await addFirstHeader(doc, modelo, logoImg);
+  doc.autoTable({
+    head: tableHeaders,
+    body: tableData,
+    startY: firstHeaderY,
+    margin: { top: margin, right: margin, left: margin, bottom: margin },
+    styles: { fontSize: 8, cellPadding: 2.5, valign: 'middle', overflow: 'linebreak', textColor: [40, 40, 40] },
+    headStyles: { fillColor: [30, 30, 60], textColor: 255, fontSize: 8, halign: 'center', valign: 'middle' },
+    alternateRowStyles: { fillColor: [245, 245, 245] },
+    columnStyles: {
+      0: { cellWidth: 8, halign: 'center' },
+      1: { cellWidth: 'auto', halign: 'left' },
+      2: { cellWidth: 12, halign: 'center' },
+      3: { cellWidth: 18, halign: 'center' },
+      4: { cellWidth: 20, halign: 'right' },
+      5: { cellWidth: 12, halign: 'center' },
+      6: { cellWidth: 22, halign: 'right' }
+    },
+    didDrawPage: function(data) {
+      if (data.pageNumber === 1) {
+        if (data.startY !== firstHeaderY + 2) {
+          data.startY = firstHeaderY + 2;
+        }
+      } else {
+        const compactY = addCompactHeader(doc, modelo, data.pageNumber);
+        if (data.startY !== compactY + 2) {
+          data.startY = compactY + 2;
+        }
+      }
+    }
+  });
+
+  _actualizarLoadingPdf('Agregando forma de pago y totales...', 75);
+
+  // ============================================================
+  // SECCIÓN: FORMA DE PAGO + TARJETA DE TOTALES
+  // ============================================================
+  let yAfterTable = doc.lastAutoTable.finalY + 4;
+  const leftColWidth = 80;
+  const rightColWidth = 70;
+  
+  let formaPagoLines = [];
+  let leftHeight = 0;
+  if (modelo.formaPago) {
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    formaPagoLines = doc.splitTextToSize(modelo.formaPago, leftColWidth - 10);
+    leftHeight = 20 + (formaPagoLines.length * 5);
+  }
+  
+  const rightHeight = 42;
+  const maxHeight = Math.max(leftHeight, rightHeight);
+  let columnY = yAfterTable;
+  
+  const pageHeight = doc.internal.pageSize.getHeight();
+  if (columnY + maxHeight + 55 > pageHeight - 15) {
+    doc.addPage();
+    columnY = margin + 10;
+    const compactY = addCompactHeader(doc, modelo, doc.internal.getNumberOfPages());
+    columnY = compactY + 6;
+  }
+  
+  // COLUMNA IZQUIERDA: FORMA DE PAGO
+  if (modelo.formaPago) {
+    const leftX = margin;
+    const leftWidth = leftColWidth;
+    
+    doc.setFillColor(248, 248, 248);
+    doc.setDrawColor(200, 160, 0);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(leftX, columnY, leftWidth, maxHeight, 3, 3, 'FD');
+    
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(100, 100, 100);
+    doc.text('FORMA DE PAGO', leftX + leftWidth/2, columnY + 5, { align: 'center' });
+    
+    doc.setDrawColor(200, 160, 0);
+    doc.setLineWidth(0.2);
+    doc.line(leftX + 5, columnY + 8, leftX + leftWidth - 5, columnY + 8);
+    
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(60, 60, 60);
+    let textY = columnY + 14;
+    for (let i = 0; i < formaPagoLines.length; i++) {
+      doc.text(formaPagoLines[i], leftX + 5, textY);
+      textY += 5;
+    }
+  }
+  
+  // COLUMNA DERECHA: TARJETA DE TOTALES
+  const cardWidth = rightColWidth;
+  const cardX = pageWidth - margin - cardWidth;
+  
+  doc.setFillColor(248, 248, 248);
+  doc.setDrawColor(200, 160, 0);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(cardX, columnY, cardWidth, maxHeight, 3, 3, 'FD');
+  
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(100, 100, 100);
+  doc.text('RESUMEN DE LA COTIZACIÓN', cardX + cardWidth/2, columnY + 5, { align: 'center' });
+  
+  doc.setDrawColor(200, 160, 0);
+  doc.setLineWidth(0.2);
+  doc.line(cardX + 5, columnY + 8, cardX + cardWidth - 5, columnY + 8);
+  
+  let y = columnY + 12;
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(60, 60, 60);
+  
+  doc.text('Subtotal sin IVA:', cardX + 5, y);
+  doc.text(formatMoney(subtotal), cardX + cardWidth - 5, y, { align: 'right' });
+  y += 5;
+  
+  if (descuento > 0) {
+    doc.setTextColor(200, 100, 100);
+    doc.text(`Descuento (${descuentoPorcentaje}%):`, cardX + 5, y);
+    doc.text(`-${formatMoney(descuento)}`, cardX + cardWidth - 5, y, { align: 'right' });
+    y += 5;
+    doc.setTextColor(60, 60, 60);
+  }
+  
+  doc.text(`${modelo.ivaSumarioText || 'IVA'}:`, cardX + 5, y);
+  doc.text(formatMoney(iva), cardX + cardWidth - 5, y, { align: 'right' });
+  y += 6;
+  
+  doc.setDrawColor(200, 160, 0);
+  doc.line(cardX + 5, y - 2, cardX + cardWidth - 5, y - 2);
+  
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(200, 160, 0);
+  doc.text('TOTAL:', cardX + 5, y + 2);
+  doc.text(formatMoney(total), cardX + cardWidth - 5, y + 2, { align: 'right' });
+  
+  // NOTAS Y CONDICIONES
+  let notasY = columnY + maxHeight + 8;
+  if (modelo.notas) {
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 0, 0);
+    doc.text('NOTAS Y CONDICIONES', margin, notasY);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(60, 60, 60);
+    const notasLines = doc.splitTextToSize(modelo.notas, contentWidth);
+    doc.text(notasLines, margin, notasY + 6);
+    notasY += 12 + (notasLines.length * 4);
+  } else {
+    notasY += 5;
+  }
+  
+  // ============================================================
+  // SECCIÓN DE FIRMAS (Cliente e Ingeniero)
+  // ============================================================
+// ============================================================
+// SECCIÓN DE FIRMAS (simplificada: solo Nombre y Cédula)
+// ============================================================
+let firmaY = notasY + 15;
+
+if (firmaY + 35 > pageHeight - 20) {
+  doc.addPage();
+  firmaY = 30;
+  // Encabezado compacto en la nueva página
+  doc.setDrawColor(200, 160, 0);
+  doc.setLineWidth(0.3);
+  doc.line(margin, 12, pageWidth - margin, 12);
+  firmaY = 20;
+}
+
+// Línea decorativa antes de firmas
+doc.setDrawColor(200, 160, 0);
+doc.setLineWidth(0.3);
+doc.line(margin, firmaY - 5, pageWidth - margin, firmaY - 5);
+
+doc.setFontSize(9);
+doc.setFont('helvetica', 'bold');
+doc.setTextColor(100, 100, 100);
+doc.text('ACEPTACIÓN DE LA COTIZACIÓN', pageWidth / 2, firmaY, { align: 'center' });
+
+// Cuadro de firma del cliente (izquierda)
+const firmaClienteX = margin;
+const firmaClienteWidth = (pageWidth - margin * 3) / 2;
+const firmaIngenieroX = pageWidth - margin - firmaClienteWidth;
+
+doc.setDrawColor(180, 180, 180);
+doc.setLineWidth(0.2);
+
+// Firma del cliente
+doc.line(firmaClienteX + 10, firmaY + 15, firmaClienteX + firmaClienteWidth - 10, firmaY + 15);
+doc.setFontSize(8);
+doc.setFont('helvetica', 'normal');
+doc.setTextColor(100, 100, 100);
+doc.text('Firma del Cliente', firmaClienteX + firmaClienteWidth / 2, firmaY + 20, { align: 'center' });
+doc.text('Nombre completo:', firmaClienteX + 10, firmaY + 28);
+doc.text('Cédula / RUC:', firmaClienteX + 10, firmaY + 35);
+
+// Líneas para datos del cliente
+doc.setDrawColor(200, 200, 200);
+doc.line(firmaClienteX + 55, firmaY + 26, firmaClienteX + firmaClienteWidth - 10, firmaY + 26);
+doc.line(firmaClienteX + 55, firmaY + 33, firmaClienteX + firmaClienteWidth - 10, firmaY + 33);
+
+// Pre-llenar nombre del cliente
+const nombreCliente = modelo.cliente.nombre || '_________________________';
+doc.setFont('helvetica', 'normal');
+doc.setTextColor(80, 80, 80);
+doc.text(nombreCliente, firmaClienteX + 58, firmaY + 28);
+doc.text(modelo.cliente.ruc || '_________________________', firmaClienteX + 58, firmaY + 35);
+
+// Firma del ingeniero (derecha)
+doc.line(firmaIngenieroX + 10, firmaY + 15, firmaIngenieroX + firmaClienteWidth - 10, firmaY + 15);
+doc.setFontSize(8);
+doc.setFont('helvetica', 'normal');
+doc.setTextColor(100, 100, 100);
+doc.text('Firma del Ingeniero', firmaIngenieroX + firmaClienteWidth / 2, firmaY + 20, { align: 'center' });
+doc.text('Nombre completo:', firmaIngenieroX + 10, firmaY + 28);
+doc.text('Cédula / RUC:', firmaIngenieroX + 10, firmaY + 35);
+
+// Pre-llenar nombre del ingeniero (desde el campo "Documento elaborado por")
+const nombreIngeniero = modelo.elaborador || usuario?.nombre || '_________________________';
+const rucIngeniero = modelo.ingenieroRuc || '_________________________';
+doc.text(nombreIngeniero, firmaIngenieroX + 58, firmaY + 28);
+doc.text(rucIngeniero, firmaIngenieroX + 58, firmaY + 35);
+
+// Líneas para los datos del ingeniero
+doc.line(firmaIngenieroX + 58, firmaY + 26, firmaIngenieroX + firmaClienteWidth - 10, firmaY + 26);
+doc.line(firmaIngenieroX + 58, firmaY + 33, firmaIngenieroX + firmaClienteWidth - 10, firmaY + 33);
+  // Pie de página
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(120, 120, 120);
+    doc.text(
+      `SEST · Servicios Eléctricos y Seguridad Tapia · Documento generado el ${new Date().toLocaleDateString('es-EC')}`,
+      pageWidth / 2,
+      doc.internal.pageSize.getHeight() - 8,
+      { align: 'center' }
+    );
+  }
+
+  doc.save(`${modelo.numero}.pdf`);
+  
+  _actualizarLoadingPdf('¡Listo! Descargando…', 100);
+  await new Promise(r => setTimeout(r, 400));
+  _ocultarLoadingPdf();
+  toast('PDF descargado ✓', 'ok');
+}
+async function exportarPDF() {
+  if (!cotActual) {
+    toast('No hay cotización seleccionada', 'err');
+    return;
+  }
+
+  _mostrarLoadingPdf('Preparando documento…');
+  _actualizarLoadingPdf('Cargando cotización guardada…', 15);
+
+  const modelo = construirModeloPdfGuardada(cotActual);
+  const elabPdf = document.getElementById('ver-elaborado')?.value.trim();
+  if (elabPdf) modelo.elaborador = elabPdf;
+  
+  _actualizarLoadingPdf('Generando PDF...', 35);
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({
+    unit: 'mm',
+    format: 'a4',
+    orientation: 'portrait'
+  });
+
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 12;
+  const contentWidth = pageWidth - margin * 2;
+
+  _actualizarLoadingPdf('Cargando logo...', 45);
+  const logoImg = await cargarLogoBase64();
+
+  const addFirstHeader = (doc, modelo, logoImg) => {
+    let y = 15;
+    if (logoImg) {
+      doc.addImage(logoImg, 'JPEG', margin, y, 25, 25);
+      y += 5;
+    }
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 0, 0);
+    doc.text('SEST', margin + (logoImg ? 30 : 0), y + 8);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(80, 80, 80);
+    doc.text('Servicios Eléctricos y Seguridad Tapia', margin + (logoImg ? 30 : 0), y + 14);
+    doc.text('Cotización formal para su proyecto. Valide plazos y especificaciones técnicas.', margin + (logoImg ? 30 : 0), y + 20);
+    doc.text(`Documento elaborado por: ${modelo.elaborador || usuario?.nombre || ''}`, margin + (logoImg ? 30 : 0), y + 26);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.text('COTIZACIÓN', pageWidth - margin, y + 8, { align: 'right' });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    doc.text(modelo.numero, pageWidth - margin, y + 16, { align: 'right' });
+    doc.setFontSize(8);
+    doc.setTextColor(80, 80, 80);
+    doc.text(`${modelo.fechaFmt} · Válida ${modelo.validez} días`, pageWidth - margin, y + 24, { align: 'right' });
+    
+    doc.setDrawColor(200, 160, 0);
+    doc.setLineWidth(0.5);
+    doc.line(margin, y + 34, pageWidth - margin, y + 34);
+    
+    y += 44;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 0, 0);
+    doc.text('CLIENTE', margin, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(60, 60, 60);
+    doc.text(modelo.cliente.nombre || 'Sin cliente', margin, y + 6);
+    let yLine = y + 12;
+    if (modelo.cliente.ruc) doc.text(`RUC/C.I.: ${modelo.cliente.ruc}`, margin, yLine);
+    yLine += 5;
+    if (modelo.cliente.tel) doc.text(`Tel: ${modelo.cliente.tel}`, margin, yLine);
+    yLine += 5;
+    if (modelo.cliente.email) doc.text(modelo.cliente.email, margin, yLine);
+    yLine += 5;
+    if (modelo.cliente.dir) doc.text(modelo.cliente.dir, margin, yLine);
+    
+    yLine += 8;
+    if (modelo.descripcionTrabajo) {
+      doc.setFont('helvetica', 'bold');
+      doc.text('Descripción del trabajo', margin, yLine);
+      doc.setFont('helvetica', 'normal');
+      const lines = doc.splitTextToSize(modelo.descripcionTrabajo, contentWidth);
+      doc.text(lines, margin, yLine + 6);
+      yLine += 12 + (lines.length * 5);
+    }
+    return yLine + 8;
+  };
+
+  const addCompactHeader = (doc, modelo, pageNum) => {
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 0, 0);
+    doc.text(`SEST - Cotización ${modelo.numero}`, margin, 12);
+    doc.setFontSize(8);
+    doc.setTextColor(80, 80, 80);
+    doc.text(`Página ${pageNum}`, pageWidth - margin, 12, { align: 'right' });
+    doc.setDrawColor(200, 160, 0);
+    doc.setLineWidth(0.3);
+    doc.line(margin, 18, pageWidth - margin, 18);
+    return 24;
+  };
+
+  const tableData = modelo.items.map((it, idx) => [
+    (idx + 1).toString(),
+    it.desc || '—',
+    it.cant.toString(),
+    it.unidad,
+    formatMoney(it.pUnit),
+    it.ivaSi ? '15%' : 'No',
+    formatMoney(it.sub)
+  ]);
+  const tableHeaders = [['#', 'Descripción', 'Cant.', 'Unidad', 'P. unit.', 'IVA %', 'Subtotal']];
+  const subtotal = modelo.subtotal;
+  const descuento = modelo.descuentoValor;
+  const iva = modelo.ivaValor;
+  const total = modelo.total;
+  const descuentoPorcentaje = modelo.descuentoPct;
+
+  _actualizarLoadingPdf('Diseñando tabla de materiales...', 60);
+
+  let firstHeaderY = await addFirstHeader(doc, modelo, logoImg);
+  doc.autoTable({
+    head: tableHeaders,
+    body: tableData,
+    startY: firstHeaderY,
+    margin: { top: margin, right: margin, left: margin, bottom: margin },
+    styles: { fontSize: 8, cellPadding: 2.5, valign: 'middle', overflow: 'linebreak', textColor: [40, 40, 40] },
+    headStyles: { fillColor: [30, 30, 60], textColor: 255, fontSize: 8, halign: 'center', valign: 'middle' },
+    alternateRowStyles: { fillColor: [245, 245, 245] },
+    columnStyles: {
+      0: { cellWidth: 8, halign: 'center' },
+      1: { cellWidth: 'auto', halign: 'left' },
+      2: { cellWidth: 12, halign: 'center' },
+      3: { cellWidth: 18, halign: 'center' },
+      4: { cellWidth: 20, halign: 'right' },
+      5: { cellWidth: 12, halign: 'center' },
+      6: { cellWidth: 22, halign: 'right' }
+    },
+    didDrawPage: function(data) {
+      if (data.pageNumber === 1) {
+        if (data.startY !== firstHeaderY + 2) {
+          data.startY = firstHeaderY + 2;
+        }
+      } else {
+        const compactY = addCompactHeader(doc, modelo, data.pageNumber);
+        if (data.startY !== compactY + 2) {
+          data.startY = compactY + 2;
+        }
+      }
+    }
+  });
+
+  _actualizarLoadingPdf('Agregando forma de pago y totales...', 75);
+
+  // SECCIÓN: FORMA DE PAGO + TARJETA DE TOTALES
+  let yAfterTable = doc.lastAutoTable.finalY + 4;
+  const leftColWidth = 80;
+  const rightColWidth = 70;
+  
+  let formaPagoLines = [];
+  let leftHeight = 0;
+  if (modelo.formaPago) {
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    formaPagoLines = doc.splitTextToSize(modelo.formaPago, leftColWidth - 10);
+    leftHeight = 20 + (formaPagoLines.length * 5);
+  }
+  
+  const rightHeight = 42;
+  const maxHeight = Math.max(leftHeight, rightHeight);
+  let columnY = yAfterTable;
+  
+  const pageHeight = doc.internal.pageSize.getHeight();
+  if (columnY + maxHeight + 55 > pageHeight - 15) {
+    doc.addPage();
+    columnY = margin + 10;
+    const compactY = addCompactHeader(doc, modelo, doc.internal.getNumberOfPages());
+    columnY = compactY + 6;
+  }
+  
+  if (modelo.formaPago) {
+    const leftX = margin;
+    const leftWidth = leftColWidth;
+    
+    doc.setFillColor(248, 248, 248);
+    doc.setDrawColor(200, 160, 0);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(leftX, columnY, leftWidth, maxHeight, 3, 3, 'FD');
+    
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(100, 100, 100);
+    doc.text('FORMA DE PAGO', leftX + leftWidth/2, columnY + 5, { align: 'center' });
+    
+    doc.setDrawColor(200, 160, 0);
+    doc.setLineWidth(0.2);
+    doc.line(leftX + 5, columnY + 8, leftX + leftWidth - 5, columnY + 8);
+    
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(60, 60, 60);
+    let textY = columnY + 14;
+    for (let i = 0; i < formaPagoLines.length; i++) {
+      doc.text(formaPagoLines[i], leftX + 5, textY);
+      textY += 5;
+    }
+  }
+  
+  const cardWidth = rightColWidth;
+  const cardX = pageWidth - margin - cardWidth;
+  
+  doc.setFillColor(248, 248, 248);
+  doc.setDrawColor(200, 160, 0);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(cardX, columnY, cardWidth, maxHeight, 3, 3, 'FD');
+  
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(100, 100, 100);
+  doc.text('RESUMEN DE LA COTIZACIÓN', cardX + cardWidth/2, columnY + 5, { align: 'center' });
+  
+  doc.setDrawColor(200, 160, 0);
+  doc.setLineWidth(0.2);
+  doc.line(cardX + 5, columnY + 8, cardX + cardWidth - 5, columnY + 8);
+  
+  let y = columnY + 12;
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(60, 60, 60);
+  
+  doc.text('Subtotal sin IVA:', cardX + 5, y);
+  doc.text(formatMoney(subtotal), cardX + cardWidth - 5, y, { align: 'right' });
+  y += 5;
+  
+  if (descuento > 0) {
+    doc.setTextColor(200, 100, 100);
+    doc.text(`Descuento (${descuentoPorcentaje}%):`, cardX + 5, y);
+    doc.text(`-${formatMoney(descuento)}`, cardX + cardWidth - 5, y, { align: 'right' });
+    y += 5;
+    doc.setTextColor(60, 60, 60);
+  }
+  
+  doc.text(`${modelo.ivaSumarioText || 'IVA'}:`, cardX + 5, y);
+  doc.text(formatMoney(iva), cardX + cardWidth - 5, y, { align: 'right' });
+  y += 6;
+  
+  doc.setDrawColor(200, 160, 0);
+  doc.line(cardX + 5, y - 2, cardX + cardWidth - 5, y - 2);
+  
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(200, 160, 0);
+  doc.text('TOTAL:', cardX + 5, y + 2);
+  doc.text(formatMoney(total), cardX + cardWidth - 5, y + 2, { align: 'right' });
+  
+  let notasY = columnY + maxHeight + 8;
+  if (modelo.notas) {
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 0, 0);
+    doc.text('NOTAS Y CONDICIONES', margin, notasY);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(60, 60, 60);
+    const notasLines = doc.splitTextToSize(modelo.notas, contentWidth);
+    doc.text(notasLines, margin, notasY + 6);
+    notasY += 12 + (notasLines.length * 4);
+  } else {
+    notasY += 5;
+  }
+  
+  // ============================================================
+  // SECCIÓN DE FIRMAS
+  // ============================================================
+  let firmaY = notasY + 15;
+  
+  if (firmaY + 35 > pageHeight - 20) {
+    doc.addPage();
+    firmaY = 30;
+    const compactY = addCompactHeader(doc, modelo, doc.internal.getNumberOfPages());
+    firmaY = compactY + 10;
+  }
+  
+  doc.setDrawColor(200, 160, 0);
+  doc.setLineWidth(0.3);
+  doc.line(margin, firmaY - 5, pageWidth - margin, firmaY - 5);
+  
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(100, 100, 100);
+  doc.text('ACEPTACIÓN DE LA COTIZACIÓN', pageWidth / 2, firmaY, { align: 'center' });
+  
+  const firmaClienteX = margin;
+  const firmaClienteWidth = (pageWidth - margin * 3) / 2;
+  const firmaIngenieroX = pageWidth - margin - firmaClienteWidth;
+  
+  doc.setDrawColor(180, 180, 180);
+  doc.setLineWidth(0.2);
+  
+  doc.line(firmaClienteX + 10, firmaY + 15, firmaClienteX + firmaClienteWidth - 10, firmaY + 15);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(100, 100, 100);
+  doc.text('Firma del Cliente', firmaClienteX + firmaClienteWidth / 2, firmaY + 20, { align: 'center' });
+  doc.text('Nombre completo:', firmaClienteX + 10, firmaY + 28);
+  doc.text('Cédula / RUC:', firmaClienteX + 10, firmaY + 35);
+  doc.text('Fecha:', firmaClienteX + 10, firmaY + 42);
+  
+  doc.setDrawColor(200, 200, 200);
+  doc.line(firmaClienteX + 55, firmaY + 26, firmaClienteX + firmaClienteWidth - 10, firmaY + 26);
+  doc.line(firmaClienteX + 55, firmaY + 33, firmaClienteX + firmaClienteWidth - 10, firmaY + 33);
+  doc.line(firmaClienteX + 55, firmaY + 40, firmaClienteX + firmaClienteWidth - 10, firmaY + 40);
+  
+  doc.line(firmaIngenieroX + 10, firmaY + 15, firmaIngenieroX + firmaClienteWidth - 10, firmaY + 15);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(100, 100, 100);
+  doc.text('Firma del Ingeniero', firmaIngenieroX + firmaClienteWidth / 2, firmaY + 20, { align: 'center' });
+  doc.text(`Nombre: ${modelo.elaborador || usuario?.nombre || ''}`, firmaIngenieroX + 10, firmaY + 28);
+  doc.text('Registro profesional:', firmaIngenieroX + 10, firmaY + 35);
+  doc.text('Sello de la empresa', firmaIngenieroX + 10, firmaY + 42);
+  
+  doc.line(firmaIngenieroX + 10, firmaY + 33, firmaIngenieroX + firmaClienteWidth - 10, firmaY + 33);
+  
+  _actualizarLoadingPdf('Finalizando documento...', 90);
+  await new Promise(r => setTimeout(r, 200));
+  
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(120, 120, 120);
+    doc.text(
+      `SEST · Servicios Eléctricos y Seguridad Tapia · Documento generado el ${new Date().toLocaleDateString('es-EC')}`,
+      pageWidth / 2,
+      doc.internal.pageSize.getHeight() - 8,
+      { align: 'center' }
+    );
+  }
+
+  doc.save(`${modelo.numero}.pdf`);
+  
+  _actualizarLoadingPdf('¡Listo! Descargando…', 100);
+  await new Promise(r => setTimeout(r, 400));
+  _ocultarLoadingPdf();
+  toast('PDF descargado ✓', 'ok');
+}
+//-------==============================================================================
 
 /* Utilidades jhonatan */
 function openModal(id){document.getElementById(id).classList.add('on');refreshIcons();}
@@ -5163,216 +5799,198 @@ async function exportarPDFCable(){
   const fecha=new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'});
   const tempColInfo=TEMPCOL_MAP[snap.tempCol||'cu90']||TEMPCOL_MAP['cu90'];
   const sisInfo=SISTEMAS_EC[snap.sistema]||SISTEMAS_EC['120/240'];
-  const sys=snap.sistema||'120/240';
-  const cfg2=SISTEMAS_EC[sys]||SISTEMAS_EC['120/240'];
-  const circuito=snap.circuito||'mono-ll';
-  const material=snap.material||'Cu';
-  const fp=parseFloat(snap.fp)||0.9;
-  const eff=parseFloat(snap.eff)||0.85;
-  const tempF=parseFloat(snap.temp)||1.0;
-  const agrupF=parseFloat(snap.agrup)||1.0;
-  const tipoMotor=parseInt(snap.motor)||0;
-  const longitud=parseFloat(snap.longitud)||1;
-  const caidaMax=parseFloat(snap.caidaMax)||3;
-  let tension=cfg2.tension,nFases=cfg2.fases;
-  if(sys==='120/240'){tension=circuito==='mono-ln'?120:240;nFases=1;}
-  else if(sys==='380'){tension=circuito==='tri-fn'?220:380;nFases=circuito==='tri-fn'?1:3;}
-  let Ic=0;
-  if(snap.modo==='corriente'){Ic=parseFloat(snap.amperes)||0;}
-  else{let W=parseFloat(snap.potencia)||0;const pu=snap.unidad||'W';
-    if(pu==='kW')W*=1000;if(pu==='HP')W*=746;if(pu==='kVA')W*=1000;
-    const sq=nFases===3?Math.sqrt(3):1;Ic=W/(tension*sq*fp*(pu==='HP'?eff:1));}
-  if(Ic<=0){toast('Sin datos de corriente en el calcculo','err');return;}
-  const factorMotor=(tipoMotor===1||tipoMotor===2)?1.25:1.0;
-  const IdCorr=Ic*factorMotor/(tempF*agrupF);
-  const colIdx=(TEMPCOL_MAP[snap.tempCol||'cu90']||TEMPCOL_MAP['cu90']).idx;
-  const awgPorAmp=AWG_TABLE.find(r=>r[colIdx]!=null&&r[colIdx]>=IdCorr)||AWG_TABLE[AWG_TABLE.length-1];
-  const rho=material==='Cu'?0.0172:0.0282;
-  let awgFinal=awgPorAmp;let caidaReal=0;
-  if(awgPorAmp){const R0=rho*longitud/awgPorAmp[1];const Vd0=Ic*R0*2;caidaReal=(Vd0/tension)*100;
-    if(caidaReal>caidaMax){const aMin=(rho*longitud*Ic*2)/(tension*caidaMax/100);
-      const cand=AWG_TABLE.find(r=>r[1]>=aMin&&r[colIdx]!=null);
-      if(cand){awgFinal=cand;const R2=rho*longitud/cand[1];caidaReal=(Ic*R2*2/tension)*100;}}}
-  const IbMin=Ic*((tipoMotor===1||tipoMotor===2)?2.5:1.25);
-  const brkRec=BREAKERS_STD.find(b=>b>=IbMin)||BREAKERS_STD[BREAKERS_STD.length-1];
-  const polos=nFases===3?'3 polos':'2 polos';
-  const caidaOk=caidaReal<=caidaMax;
-  generarReporteTecnicoPDF({
-    titulo:'Calculo de Conductor AWG',
-    subtitulo:'NEC 310.15(B)(16) / NTE INEN 2345',
-    ac:GOLD,nombre:'Calibrador de Cables',cliente:usuario?.nombre||'SEST',
-    elaborador:usuario?.nombre||'',fecha,
-    filename:'Calculo_Cable_AWG_'+new Date().toISOString().slice(0,10)+'.pdf',
-    secciones:[
-      {titulo:'1. PARAMETROS DE ENTRADA',params:[
-        {label:'Sistema',valor:sisInfo.label||snap.sistema},
-        {label:snap.modo==='corriente'?'Corriente entrada':'Potencia carga',
-         valor:snap.modo==='corriente'?(snap.amperes||'-')+' A':(snap.potencia||'-')+' '+(snap.unidad||'W')},
-        {label:'Aislamiento',valor:tempColInfo.label},
-        {label:'Longitud circuito',valor:(snap.longitud||'-')+' m'},
-        {label:'Factor de potencia',valor:(snap.fp||'-')+' cos fi'},
-        {label:'Caida tension max.',valor:(snap.caidaMax||'-')+' %'},
-        {label:'Factor temperatura',valor:String(snap.temp||'1.0')},
-        {label:'Factor agrupamiento',valor:String(snap.agrup||'1.0')},
-        {label:'Tipo instalacion',valor:snap.instalacion||'-'},
-      ]},
-      {titulo:'2. RESULTADO DEL CALCULO',resultados:[
-        {label:'Calibre Final',valor:awgFinal?'AWG '+awgFinal[0]:'-',
-         unit:awgFinal?awgFinal[1].toFixed(2)+' mm2':'',color:GOLD},
-        {label:'Corriente diseno',valor:IdCorr.toFixed(2),unit:'A (con factores)',color:[59,130,246]},
-        {label:'Caida de tension',valor:caidaReal.toFixed(2)+'%',
-         unit:caidaOk?'OK - dentro del limite':'Excede '+caidaMax+'%',ok:caidaOk,
-         color:caidaOk?[22,163,74]:[220,38,38]},
-        {label:'Corriente de carga',valor:Ic.toFixed(2),
-         unit:tension+'V - '+(nFases===3?'Trifasico':'Monofasico'),color:DTXT},
-        {label:'Breaker recomendado',valor:brkRec+' A',unit:polos+' - IEC/NTE INEN',color:DTXT},
-        {label:'Ampacidad del cable',valor:awgFinal?awgFinal[colIdx]+' A':'-',unit:tempColInfo.label,color:DTXT},
-      ]},
-      {titulo:'3. NORMATIVA APLICADA',texto:[
-        '- NEC 310.15(B)(16) / NTE INEN 2345 - Col: '+tempColInfo.label,
-        '- Caida de tension: rho = '+(material==='Al'?'0.0282':'0.0172')+' Ohm.mm2/m ('+( material==='Al'?'Aluminio':'Cobre')+')',
-        '- Metodo: MAX(Criterio Ampacidad, Criterio Caida de Tension)',
-        '- Motores: Factor de servicio 1.25 - NEC 430.22',
-        '- Protecciones serie IEC/NTE INEN: 6,10,16,20,25,32,40,50,63,80,100,125 A',
-        '- Sistema electrico: '+( sisInfo.label||snap.sistema),
-      ]},
-    ]
-  });
+
+  // Construir HTML del PDF
+  const htmlPDF=`
+  <div style="font-family:'Helvetica Neue',Arial,sans-serif;color:#111827;background:#fff;padding:40px;max-width:750px;margin:0 auto">
+    <!-- ENCABEZADO -->
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #f5c800;padding-bottom:16px;margin-bottom:20px">
+      <div>
+        <div style="font-size:22px;font-weight:900;color:#111827;letter-spacing:-0.5px">SEST</div>
+        <div style="font-size:11px;color:#6b7280;font-weight:500;text-transform:uppercase;letter-spacing:1px">Servicios Eléctricos y Seguridad Tapia</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:13px;font-weight:700;color:#111827">Cálculo de Conductor AWG</div>
+        <div style="font-size:11px;color:#6b7280;margin-top:2px">NEC 310.15(B)(16) · NTE INEN 2345</div>
+        <div style="font-size:11px;color:#6b7280;margin-top:2px">${fecha}</div>
+        ${usuario?.nombre?`<div style="font-size:11px;color:#6b7280;margin-top:2px">Elaborado por: <strong>${usuario.nombre}</strong></div>`:''}
+      </div>
+    </div>
+
+    <!-- PARÁMETROS DE ENTRADA -->
+    <div style="margin-bottom:18px">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#374151;border-left:3px solid #f5c800;padding-left:8px;margin-bottom:10px">1. PARÁMETROS DE ENTRADA</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px">
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Sistema</div>
+          <div style="font-size:12px;font-weight:700;color:#111827">${sisInfo.label||snap.sistema}</div>
+        </div>
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px">
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">${snap.modo==='corriente'?'Corriente de entrada':'Potencia de la carga'}</div>
+          <div style="font-size:12px;font-weight:700;color:#111827">${snap.modo==='corriente'?(snap.amperes||'—')+' A':(snap.potencia||'—')+' '+snap.unidad}</div>
+        </div>
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px">
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Aislamiento</div>
+          <div style="font-size:12px;font-weight:700;color:#111827">${tempColInfo.label}</div>
+        </div>
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px">
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Longitud del circuito</div>
+          <div style="font-size:12px;font-weight:700;color:#111827">${snap.longitud||'—'} m</div>
+        </div>
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px">
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Factor de potencia</div>
+          <div style="font-size:12px;font-weight:700;color:#111827">${snap.fp||'—'} cos φ</div>
+        </div>
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px">
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Caída de tensión máx.</div>
+          <div style="font-size:12px;font-weight:700;color:#111827">${snap.caidaMax||'—'} %</div>
+        </div>
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px">
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Factor temperatura</div>
+          <div style="font-size:12px;font-weight:700;color:#111827">${snap.temp||'1.0'}</div>
+        </div>
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px">
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Factor agrupamiento</div>
+          <div style="font-size:12px;font-weight:700;color:#111827">${snap.agrup||'1.0'}</div>
+        </div>
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px">
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Tipo de instalación</div>
+          <div style="font-size:12px;font-weight:700;color:#111827">${snap.instalacion||'—'}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTADO DEL CÁLCULO -->
+    <div style="margin-bottom:18px">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#374151;border-left:3px solid #f5c800;padding-left:8px;margin-bottom:10px">2. RESULTADO DEL CÁLCULO</div>
+      <div style="background:#fffbeb;border:2px solid #f5c800;border-radius:10px;padding:16px">
+        ${(()=>{
+          // Re-run calc logic to get clean values for PDF
+          const sys=snap.sistema||'120/240';
+          const cfg=SISTEMAS_EC[sys]||SISTEMAS_EC['120/240'];
+          const circuito=snap.circuito||'mono-ll';
+          const material=snap.material||'Cu';
+          const fp=parseFloat(snap.fp)||0.9;
+          const eff=parseFloat(snap.eff)||0.85;
+          const tempF=parseFloat(snap.temp)||1.0;
+          const agrupF=parseFloat(snap.agrup)||1.0;
+          const tipoMotor=parseInt(snap.motor)||0;
+          const longitud=parseFloat(snap.longitud)||1;
+          const caidaMax=parseFloat(snap.caidaMax)||3;
+          let tension=cfg.tension,nFases=cfg.fases;
+          if(sys==='120/240'){tension=circuito==='mono-ln'?120:240;nFases=1;}
+          else if(sys==='380'){tension=circuito==='tri-fn'?220:380;nFases=circuito==='tri-fn'?1:3;}
+          let Ic=0;
+          if(snap.modo==='corriente'){Ic=parseFloat(snap.amperes)||0;}
+          else{let W=parseFloat(snap.potencia)||0;const pu=snap.unidad||'W';if(pu==='kW')W*=1000;if(pu==='HP')W*=746;if(pu==='kVA')W*=1000;const sq=nFases===3?Math.sqrt(3):1;Ic=W/(tension*sq*fp*(pu==='HP'?eff:1));}
+          if(Ic<=0)return '<p style="color:#6b7280">Sin datos de carga.</p>';
+          const factorMotor=(tipoMotor===1||tipoMotor===2)?1.25:1.0;
+          const IdCorr=Ic*factorMotor/(tempF*agrupF);
+          const tempColKey=snap.tempCol||'cu90';
+          const colIdx=(TEMPCOL_MAP[tempColKey]||TEMPCOL_MAP['cu90']).idx;
+          const awgPorAmp=AWG_TABLE.find(r=>r[colIdx]!=null&&r[colIdx]>=IdCorr)||AWG_TABLE[AWG_TABLE.length-1];
+          const rho=material==='Cu'?0.0172:0.0282;
+          let awgFinal=awgPorAmp;let caidaReal=0;
+          if(awgPorAmp){const R0=rho*longitud/awgPorAmp[1];const Vd0=Ic*R0*2;caidaReal=(Vd0/tension)*100;
+            if(caidaReal>caidaMax){const aMin=(rho*longitud*Ic*2)/(tension*caidaMax/100);const cand=AWG_TABLE.find(r=>r[1]>=aMin&&r[colIdx]!=null);if(cand){awgFinal=cand;const R2=rho*longitud/cand[1];caidaReal=(Ic*R2*2/tension)*100;}}
+          }
+          const IbMin=Ic*((tipoMotor===1||tipoMotor===2)?2.5:1.25);
+          const brkRec=BREAKERS_STD.find(b=>b>=IbMin)||BREAKERS_STD[BREAKERS_STD.length-1];
+          const polos=nFases===3?'3 polos':tension<=120?'2 polos':'2 polos';
+          const caidaOk=caidaReal<=caidaMax;
+          return `
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px">
+            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px;text-align:center">
+              <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Calibre Final AWG</div>
+              <div style="font-size:26px;font-weight:900;color:#f5c800;font-family:monospace">${awgFinal?'AWG '+awgFinal[0]:'—'}</div>
+              <div style="font-size:10px;color:#374151;margin-top:2px">${awgFinal?awgFinal[1].toFixed(2)+' mm²':''}</div>
+            </div>
+            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px;text-align:center">
+              <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Corriente de diseño</div>
+              <div style="font-size:26px;font-weight:900;color:#3b82f6;font-family:monospace">${IdCorr.toFixed(2)}</div>
+              <div style="font-size:10px;color:#374151;margin-top:2px">A (con factores)</div>
+            </div>
+            <div style="background:#fff;border:1px solid ${caidaOk?'#bbf7d0':'#fecaca'};border-radius:8px;padding:12px;text-align:center">
+              <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Caída de tensión</div>
+              <div style="font-size:26px;font-weight:900;color:${caidaOk?'#16a34a':'#dc2626'};font-family:monospace">${caidaReal.toFixed(2)}%</div>
+              <div style="font-size:10px;color:#374151;margin-top:2px">${caidaOk?'✅ OK':'⚠️ Excede '+caidaMax+'%'}</div>
+            </div>
+            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px;text-align:center">
+              <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Corriente de carga</div>
+              <div style="font-size:20px;font-weight:800;color:#111827;font-family:monospace">${Ic.toFixed(2)} A</div>
+              <div style="font-size:10px;color:#374151;margin-top:2px">${tension} V · ${nFases===3?'Trifásico':'Monofásico'}</div>
+            </div>
+            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px;text-align:center">
+              <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Breaker recomendado</div>
+              <div style="font-size:20px;font-weight:800;color:#111827;font-family:monospace">${brkRec} A</div>
+              <div style="font-size:10px;color:#374151;margin-top:2px">${polos} · IEC/NTE INEN</div>
+            </div>
+            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px;text-align:center">
+              <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Ampacidad del cable</div>
+              <div style="font-size:20px;font-weight:800;color:#111827;font-family:monospace">${awgFinal?awgFinal[colIdx]+' A':'—'}</div>
+              <div style="font-size:10px;color:#374151;margin-top:2px">${tempColInfo.label}</div>
+            </div>
+          </div>`;
+        })()}
+      </div>
+    </div>
+
+    <!-- NOTAS TÉCNICAS -->
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#374151;border-left:3px solid #f5c800;padding-left:8px;margin-bottom:10px">3. NORMATIVA APLICADA</div>
+      <div style="font-size:11px;line-height:1.75;color:#374151">
+        <p>• <strong>Norma de ampacidad:</strong> NEC 310.15(B)(16) / NTE INEN 2345 · Columna: ${tempColInfo.label} · ${tempColInfo.desc}</p>
+        <p>• <strong>Caída de tensión:</strong> Calculada con ρ = ${snap.material==='Al'?'0.0282':'0.0172'} Ω·mm²/m (${snap.material==='Al'?'Aluminio':'Cobre'})</p>
+        <p>• <strong>Método de selección:</strong> MAX(Criterio Ampacidad, Criterio Caída de Tensión)</p>
+        <p>• <strong>Motores:</strong> Factor de servicio 1.25 — NEC 430.22</p>
+        <p>• <strong>Protecciones:</strong> Serie IEC/NTE INEN (Ecuador): 1, 2, 3, 4, 6, 10, 16, 20, 25, 32, 40, 50, 63, 80, 100, 125 A…</p>
+        <p>• <strong>Sistema eléctrico:</strong> ${sisInfo.label||snap.sistema}</p>
+      </div>
+    </div>
+
+    <!-- PIE -->
+    <div style="text-align:center;font-size:10px;color:#9ca3af;padding-top:12px;border-top:1px solid #e5e7eb;margin-top:20px">
+      <p>Documento generado por SEST · Calibrador de Conductores AWG · ${fecha}</p>
+      <p>Cálculo conforme a NEC (National Electrical Code) y NTE INEN aplicables en Ecuador 🇪🇨</p>
+    </div>
+  </div>`;
+
+  const tpl=document.getElementById('pdf-template');
+  if(!tpl){toast('Error: contenedor PDF no encontrado','err');return;}
+  tpl.innerHTML=htmlPDF;
+
+  await htmlAPdfDesdeNodoFuente(tpl,`Calculo_Cable_AWG_${new Date().toISOString().slice(0,10)}.pdf`);
+  tpl.innerHTML='';
 }
 
+// ═══ ALIASES — conectan los botones del calibrador con sus funciones ═══
+function guardarCalcCable()      { abrirGuardarCalcCable(); }
+function abrirModalCableCalcs()  { abrirHistorialCalcCable(); }
 function exportarPDFCableCalc()  { exportarPDFCable(); }
 
 // ═══════════════════════════════════════════════════════════════
 // BALANCE DE CARGAS — HISTORIAL CON PDF (reemplaza abrirModalBalances)
 // ═══════════════════════════════════════════════════════════════
-async function exportarPDFProteccionFromRecord(id){
-  let record=_prCalcsCache.find(c=>String(c.id)===String(id));
-  if(!record){const r=await api('electrical-projects/index');if(!isErr(r)){const todos=Array.isArray(r)?r:(r?.data?r.data:[]);_prCalcsCache=todos.filter(p=>p.tipo==='proteccion_calc');record=_prCalcsCache.find(c=>String(c.id)===String(id));}}
-  if(!record){toast('No se encontro el registro','err');return;}
-  const snap=_parseCargasField(record.cargas)[0]||{};
-  await _exportarPDFProteccion(snap,record.nombre||'Proteccion',record.cliente||'-',record.ubicacion||'');
-}
-async function exportarPDFProteccion(){
-  const snap=_prSnapshot();
-  if(!snap.Ic||parseFloat(snap.Ic)<=0){toast('Completa el calculo antes de exportar','err');return;}
-  await _exportarPDFProteccion(snap,'Calculo de Proteccion','-','');
-}
-async function _exportarPDFProteccion(snap,nombre,cliente,notas){
-  const fecha=new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'});
-  const Ic=parseFloat(snap.Ic)||0;
-  const tipo=snap.tipo||'gral';
-  const V=parseFloat(snap.v)||220;
-  const fases=parseInt(snap.fases)||1;
-  const kvaCC=parseFloat(snap.kvaCC)||150;
-  const Zpct=parseFloat(snap.z)||5;
-  const factores={
-    gral:{cb:1.25,fusible:1.50,label:'Carga general',nota:'Breaker no debe superar el 125% de la corriente del conductor. NEC 240.4'},
-    motor:{cb:2.50,fusible:4.00,label:'Motor AC',nota:'Breaker 250% Ic. Fusible dual element 400% Ic. NEC 430.52'},
-    transformador:{cb:1.25,fusible:1.25,label:'Transformador',nota:'Proteccion al 125% corriente nominal primaria. NEC 450.3(B)'},
-    condensador:{cb:1.35,fusible:1.65,label:'Condensadores',nota:'Breaker 135%, fusible 165% de Ic. NEC 460.8'}};
-  const f=factores[tipo]||factores.gral;
-  const IbCB=Ic*f.cb;const IbFus=Ic*f.fusible;
-  const cbRec=BREAKERS_STD.find(b=>b>=IbCB)||2000;
-  const fusRec=BREAKERS_STD.find(b=>b>=IbFus)||2000;
-  const sqrt3=fases===3?Math.sqrt(3):1;
-  const Sb=kvaCC*1000;const InomTx=Sb/(V*sqrt3);const Icc=InomTx/(Zpct/100);const IccKA=Icc/1000;
-  let prKA=6;if(IccKA>6)prKA=10;if(IccKA>10)prKA=25;if(IccKA>25)prKA=50;
-  generarReporteTecnicoPDF({
-    titulo:'Dimensionamiento de Protecciones',subtitulo:'NEC Art. 240/430 - NTE INEN',
-    ac:[220,38,38],nombre,cliente,elaborador:usuario?.nombre||'',fecha,
-    filename:'Proteccion_'+nombre.replace(/[^a-zA-Z0-9]/g,'_')+'.pdf',
-    secciones:[
-      {titulo:'1. PARAMETROS DE ENTRADA',params:[
-        {label:'Corriente de carga (Ic)',valor:Ic.toFixed(2)+' A'},
-        {label:'Tipo de carga',valor:f.label},
-        {label:'Sistema',valor:V+' V - '+(fases===3?'Trifasico':'Monofasico')},
-        {label:'Transformador',valor:kvaCC+' kVA'},
-        {label:'Impedancia Z%',valor:Zpct+'%'},
-        {label:'Nombre calculo',valor:nombre},
-      ]},
-      {titulo:'2. RESULTADOS',resultados:[
-        {label:'Breaker recomendado',valor:cbRec+' A',unit:'Min. '+IbCB.toFixed(1)+' A - '+(fases===3?'3 polos':'2 polos'),color:[220,38,38]},
-        {label:'Fusible recomendado',valor:fusRec+' A',unit:'Min. '+IbFus.toFixed(1)+' A dual element',color:[59,130,246]},
-        {label:'Icc calculada',valor:Icc.toFixed(0)+' A',unit:IccKA.toFixed(2)+' kA',color:DTXT},
-        {label:'Poder de corte min.',valor:prKA+' kA',unit:'Segun NEC 110.9',ok:prKA>=IccKA,color:DTXT},
-      ]},
-      {titulo:'3. NOTA TECNICA',nota:f.nota},
-      {titulo:'4. NORMATIVA',texto:[
-        '- NEC 240.4: Proteccion de conductores',
-        '- NEC 430.52: Proteccion de motores de corriente alterna',
-        '- NEC 450.3(B): Proteccion de transformadores',
-        '- NEC 110.9: Capacidad de interrupcion requerida',
-        '- NTE INEN / ARCONEL: Aplicables en Ecuador',
-      ]},
-    ]
-  });
-}
-
-async function exportarPDFTuberiaFromRecord(id){
-  let record=_tbCalcsCache.find(c=>String(c.id)===String(id));
-  if(!record){const r=await api('electrical-projects/index');if(!isErr(r)){const todos=Array.isArray(r)?r:(r?.data?r.data:[]);_tbCalcsCache=todos.filter(p=>p.tipo==='tuberia_calc');record=_tbCalcsCache.find(c=>String(c.id)===String(id));}}
-  if(!record){toast('No se encontro el registro','err');return;}
-  const snap=_parseCargasField(record.cargas)[0]||{};
-  await _exportarPDFTuberia(snap,record.nombre||'Tuberia',record.cliente||'-',record.ubicacion||'');
-}
-async function exportarPDFTuberia(){
-  const snap=_tbSnapshot();
-  await _exportarPDFTuberia(snap,'Calculo de Tuberia','-','');
-}
-async function _exportarPDFTuberia(snap,nombre,cliente,notas){
-  const fecha=new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'});
-  const tipo=snap.tipo||'EMT';
-  const nCond=parseInt(snap.ncond)||3;
-  const awg=snap.awg||'12';
-  const aisl=snap.aislamiento||'THHN';
-  const areaCond=THHN_AREA[awg]||0;
-  const totalArea=areaCond*nCond;
-  const factor=nCond===1?0.53:nCond===2?0.31:0.40;
-  const areaConduitMin=totalArea/factor;
-  const tabla=CONDUIT_AREA[tipo]||CONDUIT_AREA.EMT;
-  let conduitSel=tabla.find(([n,a])=>a*factor>=totalArea);
-  if(!conduitSel)conduitSel=tabla[tabla.length-1];
-  const[nomSel,areaSel]=conduitSel;
-  const pctLlenado=(totalArea/areaSel*100);
-  const pctOk=pctLlenado<=(factor*100);
-  generarReporteTecnicoPDF({
-    titulo:'Calculo de Tuberias / Conduit',subtitulo:'NEC Chapter 9 Table 1 & 4 - NTE INEN',
-    ac:[22,163,74],nombre,cliente,elaborador:usuario?.nombre||'',fecha,
-    filename:'Tuberia_'+nombre.replace(/[^a-zA-Z0-9]/g,'_')+'.pdf',
-    secciones:[
-      {titulo:'1. PARAMETROS DE ENTRADA',params:[
-        {label:'Tipo conduit',valor:tipo},
-        {label:'Num. conductores',valor:String(nCond)},
-        {label:'Calibre AWG',valor:'AWG #'+awg},
-        {label:'Aislamiento',valor:aisl},
-        {label:'Area por conductor',valor:areaCond.toFixed(2)+' mm2'},
-        {label:'Area total',valor:totalArea.toFixed(2)+' mm2'},
-      ]},
-      {titulo:'2. RESULTADOS',resultados:[
-        {label:'Conduit recomendado',valor:tipo+' '+nomSel,unit:'Area: '+areaSel.toFixed(1)+' mm2',color:[22,163,74]},
-        {label:'Area conductores',valor:totalArea.toFixed(1),unit:'mm2 - '+areaCond+' mm2 c/u',color:[21,128,61]},
-        {label:'Porcentaje llenado',valor:pctLlenado.toFixed(1)+'%',
-         unit:(pctOk?'Dentro del limite':'Excede limite')+' ('+(factor*100).toFixed(0)+'%)',ok:pctOk,color:pctOk?[22,163,74]:[220,38,38]},
-      ]},
-      {titulo:'3. NOTA NEC',nota:'Con '+nCond+' conductor'+(nCond>1?'es':'')+', llenado maximo: '+(factor*100).toFixed(0)+'%. Area minima requerida: '+areaConduitMin.toFixed(1)+' mm2'},
-      {titulo:'4. NORMATIVA',texto:[
-        '- NEC Chapter 9 Table 1: 1 cond=53%, 2 cond=31%, 3+ cond=40% de llenado',
-        '- NEC Chapter 9 Table 4: Areas internas EMT, PVC, IMC, RMC',
-        '- Conductor THHN/THWN-2: Areas segun NEC Chapter 9 Table 5',
-        '- NTE INEN 2345 / ARCONEL: Requisitos Ecuador',
-      ]},
-    ]
-  });
-}
-
-// ── Helper: construye datos para generarBalancePDF ─────────────
-function _buildBalancePdfData(nombre,cliente,ubicacion,tipoTab,tempFactor,cargasRec,sistemaRec,elaborador){
+async function exportarPDFBalanceFromRecord(id){
+  const todos = _getBalancesCache();
+  let record = todos.find(x=>String(x.id)===String(id));
+  if(!record){
+    const r=await api('electrical-projects/index');
+    if(!isErr(r)){_setBalancesCache(Array.isArray(r)?r:[]);record=_getBalancesCache().find(x=>String(x.id)===String(id));}
+  }
+  if(!record){toast('No se encontró el registro','err');return;}
+  const nombre   = record.nombre||'Sin nombre';
+  const cliente  = record.cliente||'—';
+  const ubicacion= record.ubicacion||'—';
+  const tipoTab  = record.tipo||'residencial';
+  const tempFactor=parseFloat(record.tempF||record.temp_f||1.0);
+  const cargasRec= JSON.parse(JSON.stringify(record.cargas||[]));
+  const sistemaRec= record.sistema||'120';
   const fecha=new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'});
   const cfg=BC_SISTEMAS[sistemaRec]||BC_SISTEMAS['120'];
-  const{tension,esTri,fases,label}=cfg;
+  const {tension,esTri,fases,label}=cfg;
   const sqrt3=esTri?Math.sqrt(3):1;
-  const TIPO_LABEL={iluminacion:'Iluminacion',tomacorriente:'Tomacorriente',motor:'Motor',
-    hvac:'HVAC/Clima',resistivo:'Resistivo',otro:'Especial'};
+  const TIPO_LABEL={iluminacion:'Iluminación',tomacorriente:'Tomacorriente',motor:'Motor',hvac:'HVAC/Clima',resistivo:'Resistivo',otro:'Especial'};
   const potPorFase={};fases.forEach(f=>potPorFase[f]=0);
   let totalW=0,totalWD=0;
   cargasRec.forEach(c=>{
@@ -5386,7 +6004,7 @@ function _buildBalancePdfData(nombre,cliente,ubicacion,tipoTab,tempFactor,cargas
   const vals=Object.values(potPorFase);
   const maxF=Math.max(...vals);const minF=Math.min(...vals);
   const desbalance=maxF>0?((maxF-minF)/maxF*100):0;
-  const filas=cargasRec.map((c,i)=>{
+  const filasCargas=cargasRec.map((c,i)=>{
     const cant=c.cantidad||1;const fp=c.fp||0.9;const vC=c.voltaje||tension;
     const esTri_c=c.sistema==='tri';const sqrt3_c=esTri_c?Math.sqrt(3):1;
     const potTotal=(c.potencia||0)*cant;const pd=potTotal*(c.fs||100)/100;
@@ -5400,421 +6018,920 @@ function _buildBalancePdfData(nombre,cliente,ubicacion,tipoTab,tempFactor,cargas
     const nCond=esTri_c?4:3;const totArea=areaC*nCond;
     let conduitSel=CONDUIT_AREA.EMT.find(([n,a])=>a*0.40>=totArea);
     if(!conduitSel)conduitSel=CONDUIT_AREA.EMT[CONDUIT_AREA.EMT.length-1];
-    return[String(i+1).padStart(2,'0'),c.desc||'-',TIPO_LABEL[c.tipo]||c.tipo,
-      String(cant),vC+'V',c.fase||'-',String(c.fs||100)+'%',
-      (pd/1000).toFixed(3),Ic.toFixed(2),
-      awgRow?'AWG '+awgRow[0]:'-',brkRec+'A '+polos,
-      conduitSel?'EMT '+conduitSel[0]:'-'];
-  });
+    return`<tr style="${i%2===0?'background:#fafafa':''}">
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;font-weight:600">${String(i+1).padStart(2,'0')}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee">${c.desc||'—'}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee">${TIPO_LABEL[c.tipo]||c.tipo}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center">${cant}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center">${vC}V</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center">${c.fase}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center">${c.fs||100}%</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:right;font-weight:700">${(pd/1000).toFixed(3)}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:right;color:#3b82f6;font-weight:600">${Ic.toFixed(2)}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center;color:#1d4ed8;font-weight:700">AWG #${awgRow?awgRow[0]:'—'}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center;color:#b45309;font-weight:700">${brkRec}A ${polos}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center;color:#166534;font-weight:700">EMT ${conduitSel?conduitSel[0]:'—'}</td>
+    </tr>`;
+  }).join('');
   const filasFase=fases.map(f=>{
     const pf=potPorFase[f]||0;const pct=totalWD>0?(pf/totalWD*100):0;const If=pf/(tension*0.9);
-    return[f,(pf/1000).toFixed(3)+' kW',If.toFixed(2)+' A',pct.toFixed(1)+'%'];
-  });
-  const stats=[
-    {label:'Pot. Instalada',valor:(totalW/1000).toFixed(2),unit:'kW',color:GOLD},
-    {label:'Demanda',valor:(totalWD/1000).toFixed(2),unit:'kW',color:[34,197,94]},
-    {label:'I. Total',valor:ITotal.toFixed(2),unit:'A',color:[96,165,250]},
-    {label:'Desbalance',valor:desbalance.toFixed(1)+'%',unit:desbalance>10?'Excede':'OK',
-     color:desbalance>10?[220,38,38]:[34,197,94]},
-    {label:'Breaker Ppal',valor:brkAco+'A',unit:esTri?'3P':'2P',color:GOLD},
-  ];
-  return{nombre,cliente,ubicacion,fecha,elaborador,stats,filas,filasFase,
-    filename:'Informe_'+nombre.replace(/[^a-zA-Z0-9]/g,'_')+'.pdf'};
+    return`<tr><td style="padding:5px 8px;border-bottom:1px solid #eee;font-weight:700">${f}</td>
+      <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right;font-weight:700">${(pf/1000).toFixed(3)} kW</td>
+      <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right">${If.toFixed(2)} A</td>
+      <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right">${pct.toFixed(1)}%</td></tr>`;
+  }).join('');
+  const htmlInforme=`<div style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#111;line-height:1.5">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;border-bottom:3px solid #f5c800;margin-bottom:20px">
+      <div><div style="font-size:22px;font-weight:900;color:#0c0c12">INFORME TÉCNICO ELÉCTRICO</div>
+        <div style="font-size:13px;font-weight:700;color:#555;margin-top:2px">Balance de Cargas · Dimensionamiento de Tablero</div>
+        <div style="font-size:11px;color:#888;margin-top:6px">NEC / NTE INEN 2345 / ARCONEL Ecuador</div></div>
+      <div style="text-align:right"><div style="font-size:11px;color:#888">Fecha</div>
+        <div style="font-size:14px;font-weight:700">${fecha}</div>
+        <div style="font-size:11px;color:#888">SEST · Ingeniería Eléctrica</div></div></div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #f5c800;padding-bottom:4px;margin-bottom:10px">1. DATOS DEL PROYECTO</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div style="background:#f8f8f8;border-radius:6px;padding:9px 11px;border-left:3px solid #f5c800"><div style="font-size:9px;font-weight:700;color:#888;text-transform:uppercase">Proyecto</div><div style="font-size:13px;font-weight:800">${nombre}</div></div>
+        <div style="background:#f8f8f8;border-radius:6px;padding:9px 11px;border-left:3px solid #3b82f6"><div style="font-size:9px;font-weight:700;color:#888;text-transform:uppercase">Cliente</div><div style="font-size:13px;font-weight:700">${cliente}</div></div>
+        <div style="background:#f8f8f8;border-radius:6px;padding:9px 11px;border-left:3px solid #22c55e"><div style="font-size:9px;font-weight:700;color:#888;text-transform:uppercase">Ubicación</div><div style="font-size:13px;font-weight:700">${ubicacion}</div></div>
+      </div></div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #f5c800;padding-bottom:4px;margin-bottom:10px">2. RESUMEN EJECUTIVO</div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
+        <div style="background:#0c0c12;color:#fff;border-radius:8px;padding:10px;text-align:center"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:3px">Pot. Instalada</div><div style="font-size:16px;font-weight:900;color:#f5c800;font-family:monospace">${(totalW/1000).toFixed(2)}</div><div style="font-size:9px;color:#888">kW</div></div>
+        <div style="background:#0c0c12;color:#fff;border-radius:8px;padding:10px;text-align:center"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:3px">Demanda</div><div style="font-size:16px;font-weight:900;color:#22c55e;font-family:monospace">${(totalWD/1000).toFixed(2)}</div><div style="font-size:9px;color:#888">kW</div></div>
+        <div style="background:#0c0c12;color:#fff;border-radius:8px;padding:10px;text-align:center"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:3px">I. Total</div><div style="font-size:16px;font-weight:900;color:#60a5fa;font-family:monospace">${ITotal.toFixed(2)}</div><div style="font-size:9px;color:#888">A</div></div>
+        <div style="background:#0c0c12;color:#fff;border-radius:8px;padding:10px;text-align:center"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:3px">Desbalance</div><div style="font-size:16px;font-weight:900;color:${desbalance>10?'#ef4444':'#22c55e'};font-family:monospace">${desbalance.toFixed(1)}%</div><div style="font-size:9px;color:#888">${desbalance>10?'⚠️ Excede':'✅ OK'}</div></div>
+        <div style="background:#0c0c12;color:#fff;border-radius:8px;padding:10px;text-align:center"><div style="font-size:9px;color:#999;text-transform:uppercase;margin-bottom:3px">Breaker Ppal</div><div style="font-size:16px;font-weight:900;color:#f5c800;font-family:monospace">${brkAco}A</div><div style="font-size:9px;color:#888">${esTri?'3P':'2P'}</div></div>
+      </div></div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #f5c800;padding-bottom:4px;margin-bottom:10px">3. TABLA DE CIRCUITOS</div>
+      <table style="width:100%;border-collapse:collapse;font-size:10px">
+        <thead><tr style="background:#0c0c12;color:#fff">
+          <th style="padding:6px 5px;text-align:left">N°</th><th style="padding:6px 5px;text-align:left">Descripción</th><th style="padding:6px 5px;text-align:left">Tipo</th>
+          <th style="padding:6px 5px;text-align:center">Cant.</th><th style="padding:6px 5px;text-align:center">V</th><th style="padding:6px 5px;text-align:center">Fase</th>
+          <th style="padding:6px 5px;text-align:center">Fs%</th><th style="padding:6px 5px;text-align:right">P.Dem(kW)</th><th style="padding:6px 5px;text-align:right">I(A)</th>
+          <th style="padding:6px 5px;text-align:center">Cable</th><th style="padding:6px 5px;text-align:center">Breaker</th><th style="padding:6px 5px;text-align:center">Conduit</th>
+        </tr></thead>
+        <tbody>${filasCargas}</tbody>
+      </table></div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid #f5c800;padding-bottom:4px;margin-bottom:10px">4. BALANCE DE FASES</div>
+      <table style="width:50%;border-collapse:collapse;font-size:11px">
+        <thead><tr style="background:#0c0c12;color:#fff">
+          <th style="padding:6px 8px;text-align:left">Fase</th><th style="padding:6px 8px;text-align:right">Potencia</th><th style="padding:6px 8px;text-align:right">Corriente</th><th style="padding:6px 8px;text-align:right">% Total</th>
+        </tr></thead>
+        <tbody>${filasFase}</tbody>
+      </table></div>
+    <div style="text-align:center;font-size:9px;color:#999;padding-top:10px;border-top:1px solid #eee;margin-top:14px">
+      <p>Documento generado por SEST · Sistema de Ingeniería Eléctrica · ${fecha}</p>
+      ${usuario?.nombre?`<p>Elaborado por: <strong>${usuario.nombre}</strong></p>`:''}
+    </div></div>`;
+  const cont=document.getElementById('pdf-informe');
+  if(!cont){toast('Error: contenedor PDF no encontrado','err');return;}
+  cont.innerHTML=htmlInforme;
+  await htmlAPdfDesdeNodoFuente(cont,`Informe_Balance_${nombre.replace(/[^a-zA-Z0-9]/g,'_')}.pdf`);
+  cont.innerHTML='';
 }
 
-async function exportarPDFBalanceFromRecord(id){
-  const todos=_getBalancesCache();
-  let record=todos.find(x=>String(x.id)===String(id));
-  if(!record){
+// ═══════════════════════════════════════════════════════════════
+// PROTECCIONES — GUARDAR / CARGAR / ELIMINAR / PDF
+// tipo = 'proteccion_calc' en la tabla electrical_projects
+// ═══════════════════════════════════════════════════════════════
+let _prCalcsCache = [];
+
+function _prSnapshot(){
+  return {
+    Ic:    document.getElementById('pr-Ic')?.value||'',
+    tipo:  document.getElementById('pr-tipo')?.value||'gral',
+    fases: document.getElementById('pr-fases')?.value||'1',
+    v:     document.getElementById('pr-v')?.value||'220',
+    kvaCC: document.getElementById('pr-kva-cc')?.value||'150',
+    z:     document.getElementById('pr-z')?.value||'5',
+  };
+}
+function _prRestore(snap){
+  if(!snap)return;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
+  set('pr-Ic',snap.Ic);set('pr-tipo',snap.tipo);set('pr-v',snap.v);set('pr-kva-cc',snap.kvaCC);set('pr-z',snap.z);
+  const fasesVal=snap.fases||'1';set('pr-fases',fasesVal);
+  const faseBtns=document.querySelectorAll('#calctab-cortocircuito .pf-radio-group .pf-radio-btn');
+  faseBtns.forEach(b=>b.classList.remove('on'));
+  if(fasesVal==='1'&&faseBtns[0])faseBtns[0].classList.add('on');
+  if(fasesVal==='3'&&faseBtns[1])faseBtns[1].classList.add('on');
+  calcProtecciones();
+}
+function _prResumen(snap){
+  if(!snap)return '—';
+  const TIPO_PR={gral:'Carga General',motor:'Motor AC',transformador:'Transformador',condensador:'Condensadores'};
+  return `Ic: ${snap.Ic||'—'} A · ${TIPO_PR[snap.tipo]||snap.tipo} · ${snap.fases==='3'?'Trifásico':'Monofásico'} · ${snap.v||'—'} V`;
+}
+
+// ── Modal guardar protección ──────────────────────────────────
+function abrirGuardarProteccion(){
+  const snap=_prSnapshot();
+  if(!snap.Ic||parseFloat(snap.Ic)<=0){toast('Ingresa una corriente de carga válida antes de guardar','err');return;}
+  document.getElementById('pr-guardar-nombre').value='';
+  document.getElementById('pr-guardar-cliente').value='';
+  document.getElementById('pr-guardar-notas').value='';
+  document.getElementById('pr-guardar-err').className='alert err';
+  document.getElementById('pr-guardar-preview-body').textContent=_prResumen(snap);
+  openModal('m-pr-guardar');
+}
+async function confirmarGuardarProteccion(){
+  const nombre=(document.getElementById('pr-guardar-nombre')?.value||'').trim();
+  const cliente=(document.getElementById('pr-guardar-cliente')?.value||'').trim();
+  const notas=(document.getElementById('pr-guardar-notas')?.value||'').trim();
+  const errEl=document.getElementById('pr-guardar-err');
+  if(!nombre){errEl.textContent='El nombre es obligatorio';errEl.classList.add('show');document.getElementById('pr-guardar-nombre').focus();return;}
+  errEl.classList.remove('show');setBL('btn-pr-guardar-ok',true);
+  const snap=_prSnapshot();
+  const payload={nombre,cliente,ubicacion:notas,tipo:'proteccion_calc',temp_f:'1.0',sistema:snap.v||'220',cargas:[snap]};
+  try{
+    const r=await api('electrical-projects/index',{method:'POST',body:JSON.stringify(payload)});
+    if(isErr(r)){errEl.textContent=r?.msg||'Error al guardar';errEl.classList.add('show');}
+    else{closeModal('m-pr-guardar');toast('✅ Protección guardada en PostgreSQL','ok');}
+  }catch(e){errEl.textContent='Error de conexión';errEl.classList.add('show');}
+  setBL('btn-pr-guardar-ok',false,'Guardar en BD');
+}
+
+// ── Historial protecciones ────────────────────────────────────
+async function abrirHistorialProtecciones(){
+  openModal('m-protecciones');
+  const listEl=document.getElementById('pr-historial-list');
+  listEl.innerHTML='<div class="loading"><div class="spin"></div><p>Cargando desde PostgreSQL…</p></div>';
+  try{
     const r=await api('electrical-projects/index');
-    if(!isErr(r)){_setBalancesCache(Array.isArray(r)?r:[]);record=_getBalancesCache().find(x=>String(x.id)===String(id));}
-  }
-  if(!record){toast('No se encontro el registro','err');return;}
-  const data=_buildBalancePdfData(
-    record.nombre||'Sin nombre',record.cliente||'-',record.ubicacion||'-',
-    record.tipo||'residencial',parseFloat(record.tempF||record.temp_f||1.0),
-    JSON.parse(JSON.stringify(record.cargas||[])),
-    record.sistema||'120', usuario?.nombre||''
-  );
-  generarBalancePDF(data);
+    if(isErr(r)){listEl.innerHTML=`<div style="text-align:center;padding:24px;color:var(--err)">${r?.msg||'Error al cargar'}</div>`;return;}
+    const todos=Array.isArray(r)?r:(r?.data?r.data:[]);
+    const calcs=todos.filter(p=>p.tipo==='proteccion_calc');
+    _prCalcsCache=calcs;
+    if(!calcs.length){
+      listEl.innerHTML=`<div style="text-align:center;padding:32px;color:var(--t3)">
+        <i data-lucide="inbox" style="width:36px;height:36px;display:block;margin:0 auto 10px"></i>
+        <p style="font-size:13px">No hay cálculos guardados.</p>
+        <p style="font-size:12px;margin-top:4px">Usa el botón <strong style="color:var(--acc)">Guardar</strong> después de calcular.</p>
+      </div>`;refreshIcons();return;
+    }
+    calcs.sort((a,b)=>new Date(b.created_at||b.creado_en||0)-new Date(a.created_at||a.creado_en||0));
+    listEl.innerHTML=`<div style="display:flex;flex-direction:column;gap:10px">
+      ${calcs.map(c=>{
+        const cargasArr=_parseCargasField(c.cargas);const snap=cargasArr[0]||{};
+        const fecha=c.created_at||c.creado_en?new Date(c.created_at||c.creado_en).toLocaleDateString('es-EC',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+        return`<div style="background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:14px 16px;display:flex;align-items:flex-start;gap:12px">
+          <div style="width:36px;height:36px;border-radius:9px;background:rgba(239,68,68,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--err)">
+            <i data-lucide="shield-alert" style="width:18px;height:18px"></i>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:13px;color:var(--t1);margin-bottom:2px">${c.nombre}</div>
+            ${c.cliente?`<div style="font-size:12px;color:var(--t3);margin-bottom:2px">📁 ${c.cliente}</div>`:''}
+            ${c.ubicacion?`<div style="font-size:11px;color:var(--t3);margin-bottom:4px">📝 ${c.ubicacion}</div>`:''}
+            <div style="font-size:11px;color:var(--t3);font-family:'DM Mono',monospace">${_prResumen(snap)}</div>
+            <div style="font-size:10px;color:var(--t3);margin-top:4px">🕒 ${fecha}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+            <button type="button" class="btn btn-acc btn-sm" onclick="cargarProteccion(${c.id})" title="Cargar este cálculo">
+              <i data-lucide="upload" style="width:13px;height:13px"></i> Cargar
+            </button>
+            <button type="button" class="btn btn-info btn-sm" onclick="exportarPDFProteccionFromRecord(${c.id})" title="Exportar PDF">
+              <i data-lucide="file-down" style="width:13px;height:13px"></i> PDF
+            </button>
+            <button type="button" class="btn btn-danger btn-sm" onclick="eliminarProteccion(${c.id},this)" title="Eliminar">
+              <i data-lucide="trash-2" style="width:13px;height:13px"></i>
+            </button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+    refreshIcons();
+  }catch(e){listEl.innerHTML=`<div style="text-align:center;padding:24px;color:var(--err)">Error de conexión</div>`;}
+}
+async function cargarProteccion(id){
+  closeModal('m-protecciones');
+  let record=_prCalcsCache.find(c=>String(c.id)===String(id));
+  if(!record){const r=await api('electrical-projects/index');if(isErr(r)){toast('Error al cargar','err');return;}const todos=Array.isArray(r)?r:(r?.data?r.data:[]);_prCalcsCache=todos.filter(p=>p.tipo==='proteccion_calc');record=_prCalcsCache.find(c=>String(c.id)===String(id));}
+  if(!record){toast('No se encontró el registro','err');return;}
+  const snap=_parseCargasField(record.cargas)[0]||null;
+  if(!snap){toast('Sin datos de cálculo en este registro','err');return;}
+  _prRestore(snap);irCalcTab('cortocircuito');toast(`✅ Protección "${record.nombre}" cargada`,'ok');
+}
+async function eliminarProteccion(id,btnEl){
+  if(!confirm('¿Eliminar este cálculo? La acción no se puede deshacer.'))return;
+  if(btnEl){btnEl.disabled=true;btnEl.textContent='…';}
+  const r=await api(`electrical-projects/index?id=${id}`,{method:'DELETE'});
+  if(isErr(r)){toast(r?.msg||'Error al eliminar','err');if(btnEl){btnEl.disabled=false;btnEl.innerHTML='<i data-lucide="trash-2" style="width:13px;height:13px"></i>';refreshIcons();}return;}
+  toast('Cálculo eliminado','ok');abrirHistorialProtecciones();
 }
 
-async function generarInformePDF(){
-  if(!cargas.length){toast('Agrega cargas antes de generar el informe','err');return;}
-  const nombre=document.getElementById('bc-proyecto-nombre')?.value||'Sin nombre';
-  const cliente=document.getElementById('bc-proyecto-cliente')?.value||'-';
-  const ubicacion=document.getElementById('bc-proyecto-ubicacion')?.value||'-';
-  const tipoTab=document.getElementById('bc-tipo-tablero')?.value||'residencial';
-  const tempFactor=parseFloat(document.getElementById('bc-temperatura-global')?.value||1.0);
-  const data=_buildBalancePdfData(
-    nombre,cliente,ubicacion,tipoTab,tempFactor,
-    JSON.parse(JSON.stringify(cargas)),_bcSistema,usuario?.nombre||''
-  );
-  generarBalancePDF(data);
+// ── PDF Protección ────────────────────────────────────────────
+async function exportarPDFProteccionFromRecord(id){
+  let record=_prCalcsCache.find(c=>String(c.id)===String(id));
+  if(!record){const r=await api('electrical-projects/index');if(!isErr(r)){const todos=Array.isArray(r)?r:(r?.data?r.data:[]);_prCalcsCache=todos.filter(p=>p.tipo==='proteccion_calc');record=_prCalcsCache.find(c=>String(c.id)===String(id));}}
+  if(!record){toast('No se encontró el registro','err');return;}
+  const snap=_parseCargasField(record.cargas)[0]||{};
+  await _exportarPDFProteccion(snap, record.nombre||'Protección', record.cliente||'—', record.ubicacion||'');
+}
+async function exportarPDFProteccion(){
+  const snap=_prSnapshot();
+  if(!snap.Ic||parseFloat(snap.Ic)<=0){toast('Completa el cálculo antes de exportar','err');return;}
+  await _exportarPDFProteccion(snap,'Cálculo de Protección','—','');
+}
+async function _exportarPDFProteccion(snap, nombre, cliente, notas){
+  const fecha=new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'});
+  const Ic=parseFloat(snap.Ic)||0;
+  const tipo=snap.tipo||'gral';
+  const V=parseFloat(snap.v)||220;
+  const fases=parseInt(snap.fases)||1;
+  const kvaCC=parseFloat(snap.kvaCC)||150;
+  const Zpct=parseFloat(snap.z)||5;
+  const factores={gral:{cb:1.25,fusible:1.50,label:'Carga general — NEC 240.4',nota:'El breaker no debe superar el 125% de la corriente del conductor.'},
+    motor:{cb:2.50,fusible:4.00,label:'Motor AC — NEC 430.52',nota:'Breaker 250% Ic. Fusible dual element 400% Ic.'},
+    transformador:{cb:1.25,fusible:1.25,label:'Transformador — NEC 450.3(B)',nota:'Protección al 125% de la corriente nominal primaria.'},
+    condensador:{cb:1.35,fusible:1.65,label:'Condensadores — NEC 460.8',nota:'Breaker 135%, fusible 165% de Ic.'}};
+  const f=factores[tipo]||factores.gral;
+  const IbCB=Ic*f.cb;const IbFus=Ic*f.fusible;
+  const cbRec=BREAKERS_STD.find(b=>b>=IbCB)||2000;const fusRec=BREAKERS_STD.find(b=>b>=IbFus)||2000;
+  const sqrt3=fases===3?Math.sqrt(3):1;
+  const Sb=kvaCC*1000;const InomTx=Sb/(V*sqrt3);const Icc=InomTx/(Zpct/100);const IccKA=Icc/1000;
+  let prKA=6;if(IccKA>6)prKA=10;if(IccKA>10)prKA=25;if(IccKA>25)prKA=50;
+  const html=`<div style="font-family:'Helvetica Neue',Arial,sans-serif;color:#111;background:#fff;padding:40px;max-width:750px;margin:0 auto">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #ef4444;padding-bottom:16px;margin-bottom:20px">
+      <div><div style="font-size:22px;font-weight:900;color:#111">SEST</div>
+        <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:1px">Servicios Eléctricos y Seguridad Tapia</div></div>
+      <div style="text-align:right"><div style="font-size:13px;font-weight:700">Dimensionamiento de Protecciones</div>
+        <div style="font-size:11px;color:#6b7280">NEC Art. 240 / 430 · NTE INEN</div>
+        <div style="font-size:11px;color:#6b7280">${fecha}</div>
+        ${usuario?.nombre?`<div style="font-size:11px;color:#6b7280">Por: <strong>${usuario.nombre}</strong></div>`:''}</div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px">
+        <div style="font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Nombre del cálculo</div>
+        <div style="font-size:13px;font-weight:700">${nombre}</div></div>
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px">
+        <div style="font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px">Cliente / Proyecto</div>
+        <div style="font-size:13px;font-weight:700">${cliente}</div></div>
+    </div>
+    <div style="margin-bottom:18px">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#374151;border-left:3px solid #ef4444;padding-left:8px;margin-bottom:10px">1. PARÁMETROS DE ENTRADA</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px"><div style="font-size:9px;color:#6b7280;text-transform:uppercase">Corriente de carga (Ic)</div><div style="font-size:16px;font-weight:800;color:#111">${Ic.toFixed(2)} A</div></div>
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px"><div style="font-size:9px;color:#6b7280;text-transform:uppercase">Tipo de carga</div><div style="font-size:13px;font-weight:700">${f.label.split('—')[0]}</div></div>
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px"><div style="font-size:9px;color:#6b7280;text-transform:uppercase">Sistema</div><div style="font-size:13px;font-weight:700">${V} V · ${fases===3?'Trifásico':'Monofásico'}</div></div>
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px"><div style="font-size:9px;color:#6b7280;text-transform:uppercase">Transformador</div><div style="font-size:13px;font-weight:700">${kvaCC} kVA</div></div>
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px"><div style="font-size:9px;color:#6b7280;text-transform:uppercase">Impedancia Z%</div><div style="font-size:13px;font-weight:700">${Zpct}%</div></div>
+      </div></div>
+    <div style="margin-bottom:18px">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#374151;border-left:3px solid #ef4444;padding-left:8px;margin-bottom:10px">2. RESULTADOS</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+        <div style="background:#fef2f2;border:2px solid #fecaca;border-radius:10px;padding:16px;text-align:center">
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;margin-bottom:4px">Breaker recomendado</div>
+          <div style="font-size:32px;font-weight:900;color:#dc2626;font-family:monospace">${cbRec} A</div>
+          <div style="font-size:10px;color:#374151">Mín. ${IbCB.toFixed(1)} A · ${fases===3?'3 polos':'2 polos'}</div></div>
+        <div style="background:#eff6ff;border:2px solid #bfdbfe;border-radius:10px;padding:16px;text-align:center">
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;margin-bottom:4px">Fusible recomendado</div>
+          <div style="font-size:32px;font-weight:900;color:#2563eb;font-family:monospace">${fusRec} A</div>
+          <div style="font-size:10px;color:#374151">Mín. ${IbFus.toFixed(1)} A</div></div>
+        <div style="background:#fef9ec;border:2px solid #fde68a;border-radius:10px;padding:16px;text-align:center">
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;margin-bottom:4px">Icc estimada</div>
+          <div style="font-size:32px;font-weight:900;color:#d97706;font-family:monospace">${IccKA.toFixed(2)} kA</div>
+          <div style="font-size:10px;color:#374151">Poder ruptura mín: ${prKA} kA</div></div>
+      </div></div>
+    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px;margin-bottom:16px;font-size:11px">
+      <strong style="color:#dc2626">${f.label}:</strong> ${f.nota}
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#374151;border-left:3px solid #ef4444;padding-left:8px;margin-bottom:8px">3. NORMATIVA APLICADA</div>
+      <div style="font-size:11px;line-height:1.75;color:#374151">
+        <p>• <strong>NEC Art. 240:</strong> Overcurrent Protection — dimensionamiento de breakers</p>
+        <p>• <strong>NEC Art. 430.52:</strong> Protección de motores — factores 250% (CB) / 400% (fusible)</p>
+        <p>• <strong>NEC Art. 450.3(B):</strong> Transformadores — protección al 125% Ic</p>
+        <p>• <strong>IEC/NTE INEN:</strong> Serie normalizada de interruptores en Ecuador</p>
+      </div></div>
+    <div style="text-align:center;font-size:10px;color:#9ca3af;padding-top:12px;border-top:1px solid #e5e7eb;margin-top:20px">
+      <p>Documento generado por SEST · Dimensionamiento de Protecciones · ${fecha}</p>
+      <p>Cálculo conforme a NEC y NTE INEN aplicables en Ecuador 🇪🇨</p>
+    </div></div>`;
+  const cont=document.getElementById('pdf-informe');
+  if(!cont){toast('Error: contenedor PDF no encontrado','err');return;}
+  cont.innerHTML=html;
+  await htmlAPdfDesdeNodoFuente(cont,`Proteccion_${nombre.replace(/[^a-zA-Z0-9]/g,'_')}.pdf`);
+  cont.innerHTML='';
 }
 
+// ═══════════════════════════════════════════════════════════════
+// TUBERÍAS / CONDUIT — GUARDAR / CARGAR / ELIMINAR / PDF
+// tipo = 'tuberia_calc' en la tabla electrical_projects
+// ═══════════════════════════════════════════════════════════════
+let _tbCalcsCache = [];
 
-// ══════════════════════════════════════════════════════════════════════
-// COTIZACIÓN PDF — Diseño profesional con curvas y acento dorado
-// ══════════════════════════════════════════════════════════════════════
-async function generarCotizacionPDF(m, filename){
-  _mostrarLoadingPdf('Preparando cotización…');
-  try {
-    const d = _pdfNew();
-    const L=18, R=192, CW=174;
-    const logoB64 = await _loadLogoBase64();
-
-    _drawSESTDecorations(d, GOLD);
-
-    // Logo
-    if(logoB64){ d.addImage(logoB64,'JPEG',L,10,22,22); }
-    else { _drawLogoCircle(d, L+11, 21, 11); }
-
-    // Nombre empresa
-    _pf(d,12,'bold',NAVY);
-    const empLines = _pw(d,'SEST - Servicios Eléctricos y Seguridad Tapia', 100);
-    d.text(empLines, L+27, 16);
-
-    // Fecha (izquierda de la decoración navy)
-    _pf(d,9,'normal',[80,90,110]); _pt(d, m.fechaFmt||'', 148, 16);
-
-    // Número cotización
-    _pf(d,7.5,'bold',[80,90,110]); _pt(d,'COTIZACIÓN',148,22);
-    _pf(d,11,'bold',NAVY);         _pt(d,`N° ${m.numero||'—'}`,148,28);
-    _pf(d,8,'normal',[80,90,110]); _pt(d,`Validez: ${m.validez||30} días`,148,34);
-    if(m.elaborador) _pt(d,`Por: ${m.elaborador}`,148,39);
-
-    // Datos del cliente
-    let y = 39;
-    if(m.cliente.nombre&&m.cliente.nombre!=='Sin cliente'){
-      _pf(d,10.5,'bold',DTXT); _pt(d,m.cliente.nombre,L,y); y+=5.5;
-    }
-    const cliLines=[m.cliente.empresa,
-      m.cliente.ruc?`RUC/CI: ${m.cliente.ruc}`:'',
-      m.cliente.email,
-      m.cliente.tel?`Tel: ${m.cliente.tel}`:'',
-      m.cliente.dir].filter(Boolean);
-    _pf(d,8.5,'normal',[60,75,90]);
-    cliLines.forEach(l=>{_pt(d,l,L,y);y+=4.5;});
-
-    // Descripción del trabajo
-    if(m.descripcionTrabajo){
-      y=Math.max(y,56)+2;
-      _pf(d,8,'bold',NAVY); _pt(d,'Descripción del trabajo:',L,y); y+=4.5;
-      _pf(d,8,'normal',DTXT);
-      const dl=_pw(d,m.descripcionTrabajo,CW);
-      d.text(dl,L,y); y+=dl.length*4.5+4;
-    } else { y=Math.max(y,58)+5; }
-
-    // ── Tabla de ítems ──────────────────────────────────────────────
-    const colW=[8,72,14,22,22,14,22];
-    const colX=[L]; for(let i=0;i<colW.length-1;i++) colX.push(colX[i]+colW[i]);
-    const rowH=7.5;
-    const heads=['#','Descripción','Cant.','Unidad','P. Unit.','IVA','Subtotal'];
-    const aligns=['c','l','c','l','r','c','r'];
-    const drawHead=(yy)=>{
-      _prect(d,L,yy,CW,rowH,NAVY);
-      _pf(d,7.5,'bold',[255,255,255]);
-      heads.forEach((h,c)=>{
-        const a=aligns[c]==='c'?'center':aligns[c]==='r'?'right':'left';
-        const px=a==='center'?colX[c]+colW[c]/2:a==='right'?colX[c]+colW[c]-2:colX[c]+2;
-        _pt(d,h,px,yy+5.2,{align:a});
-      });
-      return yy+rowH;
-    };
-    const ivaTxt=it=>{
-      if(it.ivaPct!=null&&it.ivaPct!==''){const p=Number(it.ivaPct);return!isFinite(p)?'—':p<=0?'No':p+'%';}
-      return it.ivaSi===true?'15%':it.ivaSi===false?'No':'—';
-    };
-    y=drawHead(y);
-    const maxY=252;
-    m.items.forEach((it,i)=>{
-      if(y+rowH>maxY){d.addPage();_drawSESTDecorations(d,GOLD);y=22;y=drawHead(y);}
-      _prect(d,L,y,CW,rowH,i%2===0?[255,255,255]:CREAM,[210,220,230],0.12);
-      d.setDrawColor(210,220,230);d.setLineWidth(0.12);
-      colX.forEach(cx=>d.line(cx,y,cx,y+rowH));
-      d.line(L+CW,y,L+CW,y+rowH);d.line(L,y+rowH,L+CW,y+rowH);
-      const vals=[String(i+1),it.desc||'—',String(it.cant),it.unidad||'—',
-        `$${Number(it.pUnit).toFixed(2)}`,ivaTxt(it),`$${Number(it.sub).toFixed(2)}`];
-      vals.forEach((v,c)=>{
-        const a=aligns[c]==='c'?'center':aligns[c]==='r'?'right':'left';
-        const px=a==='center'?colX[c]+colW[c]/2:a==='right'?colX[c]+colW[c]-2:colX[c]+2;
-        _pf(d,c===1?8:8,c===1?'bold':'normal',DTXT);
-        _pt(d,c===1?(_pw(d,v,colW[c]-4)[0]||''):v,px,y+5.2,{align:a});
-      });
-      y+=rowH;
-    });
-    _pln(d,L,y,L+CW,y,[180,195,210],0.5); y+=5;
-
-    // ── Totales ─────────────────────────────────────────────────────
-    if(y+38>maxY){d.addPage();_drawSESTDecorations(d,GOLD);y=22;}
-    const tX=R-72;
-    _pf(d,8.5,'bold',DTXT);  _pt(d,'SUBTOTAL:',tX,y+5);
-    _pf(d,8.5,'normal',DTXT);_pt(d,`$${m.subtotal.toFixed(2)}`,R,y+5,{align:'right'}); y+=7;
-    if(m.descuentoValor>0.009){
-      _pf(d,8.5,'bold',DTXT); _pt(d,`DESCUENTO ${Number(m.descuentoPct).toFixed(0)}%:`,tX,y+5);
-      _pf(d,8.5,'bold',[30,130,70]); _pt(d,`$${(m.subtotal-m.descuentoValor).toFixed(2)}`,R,y+5,{align:'right'}); y+=7;
-    }
-    if(m.ivaValor>0.009){
-      _pf(d,8.5,'bold',DTXT); _pt(d,m.ivaSumarioText||'IVA:',tX,y+5);
-      _pf(d,8.5,'normal',DTXT);_pt(d,`$${m.ivaValor.toFixed(2)}`,R,y+5,{align:'right'}); y+=7;
-    }
-    // Caja total con fondo dorado
-    _prect(d,tX-2,y,74,9.5,GOLD);
-    _pf(d,10,'bold',DTXT); _pt(d,'TOTAL:',tX+2,y+6.5);
-    _pt(d,`$${m.total.toFixed(2)}`,R-1,y+6.5,{align:'right'}); y+=16;
-
-    // ── Nota + Firma ────────────────────────────────────────────────
-    if(y+30>maxY){d.addPage();_drawSESTDecorations(d,GOLD);y=22;}
-    if(m.formaPago){
-      _pf(d,8.5,'bold',DTXT); _pt(d,'Forma de pago: ',L,y);
-      _pf(d,8.5,'normal',DTXT); _pt(d,m.formaPago,L+33,y); y+=6;
-    }
-    if(m.notas){
-      _pf(d,9,'bold',DTXT);   _pt(d,'Nota:',L,y); y+=5;
-      _pf(d,8,'normal',[60,75,90]);
-      const nl=_pw(d,m.notas,100); d.text(nl,L,y); y+=nl.length*4.5+4;
-    }
-    // Línea de firma
-    const sigStart=R-58, sigEnd=R;
-    _pln(d,sigStart,y+18,sigEnd,y+18,[100,115,130],0.5);
-    _pf(d,7,'normal',[90,100,115]);
-    const sigName=m.elaborador||'Firma autorizada';
-    _pt(d,sigName,(sigStart+sigEnd)/2,y+23,{align:'center'});
-    _pt(d,'C.C ________________',(sigStart+sigEnd)/2,y+27,{align:'center'});
-
-    // ── Footer ──────────────────────────────────────────────────────
-    const footY=276;
-    _pln(d,L,footY,R,footY,[180,195,210],0.3);
-    _pf(d,7.5,'normal',[90,100,115]);
-    _pt(d,'SEST · Servicios Eléctricos y Seguridad Tapia',105,footY+4,{align:'center'});
-    _pt(d,`Generado el ${new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})}`,105,footY+9,{align:'center'});
-
-    _pdfFooterPages(d);
-    d.save(filename);
-    _ocultarLoadingPdf(); toast('PDF descargado ✓','ok');
-  } catch(err){
-    console.error(err); _ocultarLoadingPdf();
-    toast('Error al generar PDF: '+err.message,'err');
-  }
+function _tbSnapshot(){
+  return {
+    tipo:       document.getElementById('tb-tipo')?.value||'EMT',
+    ncond:      document.getElementById('tb-ncond')?.value||'3',
+    awg:        document.getElementById('tb-awg')?.value||'12',
+    aislamiento:document.getElementById('tb-aislamiento')?.value||'THHN',
+  };
+}
+function _tbRestore(snap){
+  if(!snap)return;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
+  set('tb-tipo',snap.tipo);set('tb-ncond',snap.ncond);set('tb-awg',snap.awg);set('tb-aislamiento',snap.aislamiento);
+  const tipoBtns=document.querySelectorAll('#calctab-tuberia .pf-radio-group .pf-radio-btn');
+  const tipoMap={'EMT':0,'PVC40':1,'IMC':2,'RMC':3};
+  tipoBtns.forEach(b=>b.classList.remove('on'));
+  const idx=tipoMap[snap.tipo]??0;
+  if(tipoBtns[idx])tipoBtns[idx].classList.add('on');
+  calcTuberia();
+}
+function _tbResumen(snap){
+  if(!snap)return '—';
+  return `${snap.tipo||'EMT'} · ${snap.ncond||'3'} cond. × AWG ${snap.awg||'12'} · ${snap.aislamiento||'THHN'}`;
 }
 
-// ══════════════════════════════════════════════════════════════════════
-// REPORTE TÉCNICO PDF — mismo diseño, color de acento variable
-// ══════════════════════════════════════════════════════════════════════
-function generarReporteTecnicoPDF(cfg){
-  _mostrarLoadingPdf('Generando informe técnico…');
+// ── Modal guardar tubería ─────────────────────────────────────
+function abrirGuardarTuberia(){
+  const snap=_tbSnapshot();
+  document.getElementById('tb-guardar-nombre').value='';
+  document.getElementById('tb-guardar-cliente').value='';
+  document.getElementById('tb-guardar-notas').value='';
+  document.getElementById('tb-guardar-err').className='alert err';
+  document.getElementById('tb-guardar-preview-body').textContent=_tbResumen(snap);
+  openModal('m-tb-guardar');
+}
+async function confirmarGuardarTuberia(){
+  const nombre=(document.getElementById('tb-guardar-nombre')?.value||'').trim();
+  const cliente=(document.getElementById('tb-guardar-cliente')?.value||'').trim();
+  const notas=(document.getElementById('tb-guardar-notas')?.value||'').trim();
+  const errEl=document.getElementById('tb-guardar-err');
+  if(!nombre){errEl.textContent='El nombre es obligatorio';errEl.classList.add('show');document.getElementById('tb-guardar-nombre').focus();return;}
+  errEl.classList.remove('show');setBL('btn-tb-guardar-ok',true);
+  const snap=_tbSnapshot();
+  const payload={nombre,cliente,ubicacion:notas,tipo:'tuberia_calc',temp_f:'1.0',sistema:snap.tipo||'EMT',cargas:[snap]};
   try{
-    const d=_pdfNew();
-    const{titulo,subtitulo,ac=GOLD,nombre,cliente,elaborador,fecha,filename,secciones=[]}=cfg;
-    const L=18,R=192,CW=174;
-
-    _drawSESTDecorations(d,ac);
-
-    // Header
-    _drawLogoCircle(d,L+11,21,11);
-    _pf(d,12,'bold',NAVY); _pt(d,'SEST',L+26,17);
-    _pf(d,7,'normal',[80,90,110]); _pt(d,'Servicios Eléctricos y Seguridad Tapia',L+26,22);
-    if(elaborador){ _pf(d,7,'normal',[80,90,110]); _pt(d,`Por: ${elaborador}`,L+26,27); }
-    _pf(d,10,'bold',NAVY); _pt(d,titulo||'Informe Técnico',148,16,{align:'right'});
-    _pf(d,7,'normal',[80,90,110]);
-    if(subtitulo) _pt(d,subtitulo,148,21,{align:'right'});
-    _pt(d,fecha||'',148,26,{align:'right'});
-
-    let y=40;
-    // Cajas info
-    const hW=(CW-5)/2;
-    [[nombre||'—','CÁLCULO',L],[cliente||'—','CLIENTE',L+hW+5]].forEach(([val,lbl,bx])=>{
-      _prect(d,bx,y,hW,11,SLATE_P,[210,220,230],0.2);
-      _prect(d,bx,y,hW,1.5,ac);
-      _pf(d,6,'normal',[100,115,130]); _pt(d,lbl,bx+3,y+5.5);
-      _pf(d,9,'bold',DTXT); _pt(d,String(val).substring(0,42),bx+3,y+10);
-    });
-    y+=15;
-
-    for(const sec of secciones){
-      if(y+22>268){d.addPage();_drawSESTDecorations(d,ac);y=22;}
-      // Título de sección
-      _prect(d,L,y,2.5,6,ac);
-      _pf(d,7.5,'bold',[55,65,81]); _pt(d,sec.titulo.toUpperCase(),L+5,y+4.5);
-      y+=11;
-
-      if(sec.params){
-        const rows=[];
-        for(let i=0;i<sec.params.length;i+=3) rows.push(sec.params.slice(i,i+3));
-        for(const row of rows){
-          if(y+14>268){d.addPage();_drawSESTDecorations(d,ac);y=22;}
-          const n=row.length,bW=(CW-(n-1)*3)/n;
-          let x=L;
-          row.forEach(({label,valor})=>{
-            _prect(d,x,y,bW,12,SLATE_P,[210,220,230],0.15);
-            _prect(d,x,y,bW,1.5,ac);
-            _pf(d,5.5,'normal',[100,115,130]); _pt(d,String(label||'').toUpperCase(),x+2.5,y+5.5);
-            _pf(d,8.5,'bold',DTXT); _pt(d,_pw(d,valor||'—',bW-5)[0],x+2.5,y+10.5);
-            x+=bW+3;
-          });
-          y+=15;
-        }
-      }
-
-      if(sec.resultados){
-        if(y+22>268){d.addPage();_drawSESTDecorations(d,ac);y=22;}
-        const n=sec.resultados.length,bW=(CW-(n-1)*3)/n;
-        let x=L;
-        sec.resultados.forEach(({label,valor,unit='',ok=null,color=DTXT})=>{
-          const bg=ok===true?[240,253,244]:ok===false?[254,242,242]:SLATE_P;
-          const bc=ok===true?[187,247,208]:ok===false?[254,202,202]:[210,220,230];
-          _prect(d,x,y,bW,20,bg,bc,0.4);
-          _pf(d,6,'normal',[100,115,130]); _pt(d,String(label||'').toUpperCase(),x+bW/2,y+5.5,{align:'center'});
-          _pf(d,11,'bold',color); _pt(d,String(valor||'—'),x+bW/2,y+13,{align:'center'});
-          if(unit){_pf(d,6,'normal',[100,115,130]);_pt(d,unit,x+bW/2,y+17.5,{align:'center'});}
-          x+=bW+3;
-        });
-        y+=24;
-      }
-
-      if(sec.texto){
-        _pf(d,8,'normal',DTXT);
-        for(const line of sec.texto){
-          if(y>268){d.addPage();_drawSESTDecorations(d,ac);y=22;}
-          const wl=_pw(d,line,CW); d.text(wl,L,y); y+=wl.length*4.5+1.5;
-        }
-        y+=2;
-      }
-
-      if(sec.nota){
-        if(y+14>268){d.addPage();_drawSESTDecorations(d,ac);y=22;}
-        _prect(d,L,y,CW,14,[235,253,240],[187,247,208],0.35);
-        _pf(d,7.5,'normal',[21,128,61]);
-        const nl=_pw(d,sec.nota,CW-6); d.text(nl,L+3,y+5.5); y+=nl.length*4.5+6;
-      }
-      y+=3;
-    }
-
-    const footY=276;
-    _pln(d,L,footY,R,footY,[180,195,210],0.3);
-    _pf(d,7,'normal',[100,115,130]);
-    _pt(d,'SEST · Servicios Eléctricos y Seguridad Tapia',105,footY+4,{align:'center'});
-    _pt(d,`Generado el ${new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})}`,105,footY+9,{align:'center'});
-
-    _pdfFooterPages(d);
-    d.save(filename);
-    _ocultarLoadingPdf(); toast('PDF descargado ✓','ok');
-  }catch(err){ console.error(err); _ocultarLoadingPdf(); toast('Error al generar PDF','err'); }
+    const r=await api('electrical-projects/index',{method:'POST',body:JSON.stringify(payload)});
+    if(isErr(r)){errEl.textContent=r?.msg||'Error al guardar';errEl.classList.add('show');}
+    else{closeModal('m-tb-guardar');toast('✅ Tubería guardada en PostgreSQL','ok');}
+  }catch(e){errEl.textContent='Error de conexión';errEl.classList.add('show');}
+  setBL('btn-tb-guardar-ok',false,'Guardar en BD');
 }
 
-// ══════════════════════════════════════════════════════════════════════
-// BALANCE DE CARGAS PDF — acento azul
-// ══════════════════════════════════════════════════════════════════════
-function generarBalancePDF(data){
-  _mostrarLoadingPdf('Generando informe de balance…');
+// ── Historial tuberías ────────────────────────────────────────
+async function abrirHistorialTuberias(){
+  openModal('m-tuberias');
+  const listEl=document.getElementById('tb-historial-list');
+  listEl.innerHTML='<div class="loading"><div class="spin"></div><p>Cargando desde PostgreSQL…</p></div>';
   try{
-    const d=_pdfNew();
-    const{nombre,cliente,ubicacion,fecha,elaborador,stats=[],filas=[],filasFase=[],filename}=data;
-    const L=18,R=192,CW=174;
-    const BLUE=[37,99,235];
-
-    _drawSESTDecorations(d,BLUE);
-
-    // Header
-    _drawLogoCircle(d,L+11,21,11);
-    _pf(d,10.5,'bold',NAVY); _pt(d,'INFORME TÉCNICO ELÉCTRICO',L+26,17);
-    _pf(d,7,'normal',[80,90,110]); _pt(d,'Balance de Cargas · Dimensionamiento de Tablero',L+26,22);
-    _pf(d,7,'normal',[80,90,110]); _pt(d,'NEC / NTE INEN 2345 / ARCONEL Ecuador',L+26,27);
-    _pf(d,8.5,'bold',DTXT); _pt(d,fecha||'',R,17,{align:'right'});
-    if(elaborador){_pf(d,7,'normal',[80,90,110]);_pt(d,`Por: ${elaborador}`,R,22,{align:'right'});}
-
-    let y=40;
-    // Datos proyecto
-    const c3W=(CW-6)/3;
-    [[nombre||'—','PROYECTO',BLUE],[cliente||'—','CLIENTE',[22,163,74]],[ubicacion||'—','UBICACIÓN',[234,88,12]]]
-      .forEach(([val,lbl,ac],i)=>{
-        const bx=L+i*(c3W+3);
-        _prect(d,bx,y,c3W,12,SLATE_P,[210,220,230],0.15);
-        _prect(d,bx,y,c3W,1.5,ac);
-        _pf(d,6,'normal',[100,115,130]); _pt(d,lbl,bx+2.5,y+5.5);
-        _pf(d,8.5,'bold',DTXT); _pt(d,_pw(d,val,c3W-5)[0],bx+2.5,y+10.5);
-      });
-    y+=16;
-
-    // Stats
-    const sW=(CW-(stats.length-1)*2)/stats.length;
-    let sx=L;
-    stats.forEach(({label,valor,unit,color=GOLD})=>{
-      _prect(d,sx,y,sW,18,NAVY);
-      _pf(d,5.5,'normal',[160,170,190]); _pt(d,String(label||'').toUpperCase(),sx+sW/2,y+5,{align:'center'});
-      _pf(d,12,'bold',color||GOLD); _pt(d,String(valor||'—'),sx+sW/2,y+12,{align:'center'});
-      _pf(d,6,'normal',[160,170,190]); _pt(d,String(unit||''),sx+sW/2,y+17,{align:'center'});
-      sx+=sW+2;
-    });
-    y+=23;
-
-    // Tabla circuitos
-    if(y+22>268){d.addPage();_drawSESTDecorations(d,BLUE);y=22;}
-    _prect(d,L,y,2.5,6,BLUE);
-    _pf(d,7.5,'bold',[55,65,81]); _pt(d,'TABLA DE CIRCUITOS',L+5,y+4.5); y+=11;
-
-    const bRaw=[7,38,15,9,9,9,9,11,11,13,16,16];
-    const bSum=bRaw.reduce((a,b)=>a+b,0);
-    const bCols=bRaw.map(c=>Math.round(c*CW/bSum*10)/10);
-    const bHds=['#','Descripción','Tipo','Cant','V','Fase','FS%','kW','I(A)','AWG','Breaker','Conduit'];
-    const bAl=['c','l','l','c','c','c','c','r','r','c','c','c'];
-    const bCX=[L]; for(let i=0;i<bCols.length-1;i++) bCX.push(bCX[i]+bCols[i]);
-    const bCXc=(c)=>bAl[c]==='c'?bCX[c]+bCols[c]/2:bAl[c]==='r'?bCX[c]+bCols[c]-1:bCX[c]+1;
-    const bAln=(c)=>bAl[c]==='c'?'center':bAl[c]==='r'?'right':'left';
-    const drawBH=(yy)=>{
-      _prect(d,L,yy,CW,6.5,NAVY);
-      _pf(d,5.5,'bold',[255,255,255]);
-      bHds.forEach((h,c)=>_pt(d,h,bCXc(c),yy+4.5,{align:bAln(c)}));
-      return yy+6.5;
-    };
-    y=drawBH(y);
-    filas.forEach((row,i)=>{
-      if(y+5.5>265){d.addPage();_drawSESTDecorations(d,BLUE);y=22;y=drawBH(y);}
-      _prect(d,L,y,CW,5.5,i%2===0?[255,255,255]:CREAM,[210,220,230],0.1);
-      d.setDrawColor(210,220,230);d.setLineWidth(0.1);
-      bCX.forEach(cx=>d.line(cx,y,cx,y+5.5));
-      d.line(L+CW,y,L+CW,y+5.5);d.line(L,y+5.5,L+CW,y+5.5);
-      row.forEach((v,c)=>{
-        if(c>=bHds.length)return;
-        const cols={9:[29,78,216],10:[180,83,9],11:[22,101,52]};
-        _pf(d,5.5,c===1||c>=9?'bold':'normal',cols[c]||DTXT);
-        _pt(d,c===1?(_pw(d,String(v||'—'),bCols[c]-2)[0]||''):String(v||'—'),bCXc(c),y+3.9,{align:bAln(c)});
-      });
-      y+=5.5;
-    });
-    _pln(d,L,y,L+CW,y,[180,195,210],0.4); y+=7;
-
-    // Balance por fases
-    if(filasFase&&filasFase.length>1){
-      if(y+25>265){d.addPage();_drawSESTDecorations(d,BLUE);y=22;}
-      _prect(d,L,y,2.5,6,BLUE);
-      _pf(d,7.5,'bold',[55,65,81]); _pt(d,'BALANCE POR FASE',L+5,y+4.5); y+=11;
-      const fW=140,fCols=[25,38,38,39];
-      const fHds=['FASE','POTENCIA (kW)','CORRIENTE (A)','% DEL TOTAL'];
-      const fCX=[L]; for(let i=0;i<fCols.length-1;i++) fCX.push(fCX[i]+fCols[i]);
-      _prect(d,L,y,fW,6.5,NAVY);
-      _pf(d,6.5,'bold',[255,255,255]);
-      fHds.forEach((h,i)=>_pt(d,h,fCX[i]+fCols[i]/2,y+4.5,{align:'center'}));
-      y+=6.5;
-      filasFase.forEach((row,i)=>{
-        _prect(d,L,y,fW,6,i%2===0?[255,255,255]:CREAM,[210,220,230],0.1);
-        _pf(d,7,'bold',DTXT);
-        row.forEach((v,c)=>_pt(d,String(v||'—'),fCX[c]+fCols[c]/2,y+4.2,{align:'center'}));
-        y+=6;
-      });
+    const r=await api('electrical-projects/index');
+    if(isErr(r)){listEl.innerHTML=`<div style="text-align:center;padding:24px;color:var(--err)">${r?.msg||'Error al cargar'}</div>`;return;}
+    const todos=Array.isArray(r)?r:(r?.data?r.data:[]);
+    const calcs=todos.filter(p=>p.tipo==='tuberia_calc');
+    _tbCalcsCache=calcs;
+    if(!calcs.length){
+      listEl.innerHTML=`<div style="text-align:center;padding:32px;color:var(--t3)">
+        <i data-lucide="inbox" style="width:36px;height:36px;display:block;margin:0 auto 10px"></i>
+        <p style="font-size:13px">No hay cálculos guardados.</p>
+        <p style="font-size:12px;margin-top:4px">Usa el botón <strong style="color:var(--acc)">Guardar</strong> después de calcular.</p>
+      </div>`;refreshIcons();return;
     }
+    calcs.sort((a,b)=>new Date(b.created_at||b.creado_en||0)-new Date(a.created_at||a.creado_en||0));
+    listEl.innerHTML=`<div style="display:flex;flex-direction:column;gap:10px">
+      ${calcs.map(c=>{
+        const cargasArr=_parseCargasField(c.cargas);const snap=cargasArr[0]||{};
+        const fecha=c.created_at||c.creado_en?new Date(c.created_at||c.creado_en).toLocaleDateString('es-EC',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+        return`<div style="background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:14px 16px;display:flex;align-items:flex-start;gap:12px">
+          <div style="width:36px;height:36px;border-radius:9px;background:rgba(34,197,94,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--ok)">
+            <i data-lucide="circle-dashed" style="width:18px;height:18px"></i>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:13px;color:var(--t1);margin-bottom:2px">${c.nombre}</div>
+            ${c.cliente?`<div style="font-size:12px;color:var(--t3);margin-bottom:2px">📁 ${c.cliente}</div>`:''}
+            ${c.ubicacion?`<div style="font-size:11px;color:var(--t3);margin-bottom:4px">📝 ${c.ubicacion}</div>`:''}
+            <div style="font-size:11px;color:var(--t3);font-family:'DM Mono',monospace">${_tbResumen(snap)}</div>
+            <div style="font-size:10px;color:var(--t3);margin-top:4px">🕒 ${fecha}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+            <button type="button" class="btn btn-acc btn-sm" onclick="cargarTuberia(${c.id})" title="Cargar">
+              <i data-lucide="upload" style="width:13px;height:13px"></i> Cargar
+            </button>
+            <button type="button" class="btn btn-info btn-sm" onclick="exportarPDFTuberiaFromRecord(${c.id})" title="PDF">
+              <i data-lucide="file-down" style="width:13px;height:13px"></i> PDF
+            </button>
+            <button type="button" class="btn btn-danger btn-sm" onclick="eliminarTuberia(${c.id},this)" title="Eliminar">
+              <i data-lucide="trash-2" style="width:13px;height:13px"></i>
+            </button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+    refreshIcons();
+  }catch(e){listEl.innerHTML=`<div style="text-align:center;padding:24px;color:var(--err)">Error de conexión</div>`;}
+}
+async function cargarTuberia(id){
+  closeModal('m-tuberias');
+  let record=_tbCalcsCache.find(c=>String(c.id)===String(id));
+  if(!record){const r=await api('electrical-projects/index');if(isErr(r)){toast('Error al cargar','err');return;}const todos=Array.isArray(r)?r:(r?.data?r.data:[]);_tbCalcsCache=todos.filter(p=>p.tipo==='tuberia_calc');record=_tbCalcsCache.find(c=>String(c.id)===String(id));}
+  if(!record){toast('No se encontró el registro','err');return;}
+  const snap=_parseCargasField(record.cargas)[0]||null;
+  if(!snap){toast('Sin datos de cálculo en este registro','err');return;}
+  _tbRestore(snap);irCalcTab('tuberia');toast(`✅ Tubería "${record.nombre}" cargada`,'ok');
+}
+async function eliminarTuberia(id,btnEl){
+  if(!confirm('¿Eliminar este cálculo? La acción no se puede deshacer.'))return;
+  if(btnEl){btnEl.disabled=true;btnEl.textContent='…';}
+  const r=await api(`electrical-projects/index?id=${id}`,{method:'DELETE'});
+  if(isErr(r)){toast(r?.msg||'Error al eliminar','err');if(btnEl){btnEl.disabled=false;btnEl.innerHTML='<i data-lucide="trash-2" style="width:13px;height:13px"></i>';refreshIcons();}return;}
+  toast('Cálculo eliminado','ok');abrirHistorialTuberias();
+}
 
-    const footY=276;
-    _pln(d,L,footY,R,footY,[180,195,210],0.3);
-    _pf(d,7,'normal',[100,115,130]);
-    _pt(d,'SEST · Balance de Cargas · NEC / NTE INEN 2345 / ARCONEL Ecuador',105,footY+4,{align:'center'});
-    _pt(d,`Generado el ${new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})}`,105,footY+9,{align:'center'});
+// ── PDF Tubería ───────────────────────────────────────────────
+async function exportarPDFTuberiaFromRecord(id){
+  let record=_tbCalcsCache.find(c=>String(c.id)===String(id));
+  if(!record){const r=await api('electrical-projects/index');if(!isErr(r)){const todos=Array.isArray(r)?r:(r?.data?r.data:[]);_tbCalcsCache=todos.filter(p=>p.tipo==='tuberia_calc');record=_tbCalcsCache.find(c=>String(c.id)===String(id));}}
+  if(!record){toast('No se encontró el registro','err');return;}
+  const snap=_parseCargasField(record.cargas)[0]||{};
+  await _exportarPDFTuberia(snap, record.nombre||'Tubería', record.cliente||'—', record.ubicacion||'');
+}
+async function exportarPDFTuberia(){
+  const snap=_tbSnapshot();
+  await _exportarPDFTuberia(snap,'Cálculo de Tubería','—','');
+}
+async function _exportarPDFTuberia(snap, nombre, cliente, notas){
+  const fecha=new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'});
+  const tipo=snap.tipo||'EMT';
+  const nCond=parseInt(snap.ncond)||3;
+  const awg=snap.awg||'12';
+  const aisl=snap.aislamiento||'THHN';
+  const areaCond=THHN_AREA[awg]||0;
+  const totalArea=areaCond*nCond;
+  const factor=nCond===1?0.53:nCond===2?0.31:0.40;
+  const areaConduitMin=totalArea/factor;
+  const tabla=CONDUIT_AREA[tipo]||CONDUIT_AREA.EMT;
+  let conduitSel=tabla.find(([n,a])=>a*factor>=totalArea);
+  if(!conduitSel)conduitSel=tabla[tabla.length-1];
+  const [nomSel,areaSel]=conduitSel;
+  const pctLlenado=(totalArea/areaSel*100);
+  const colorFill=pctLlenado>(factor*100)?'#dc2626':'#16a34a';
+  const html=`<div style="font-family:'Helvetica Neue',Arial,sans-serif;color:#111;background:#fff;padding:40px;max-width:750px;margin:0 auto">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #22c55e;padding-bottom:16px;margin-bottom:20px">
+      <div><div style="font-size:22px;font-weight:900">SEST</div>
+        <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:1px">Servicios Eléctricos y Seguridad Tapia</div></div>
+      <div style="text-align:right"><div style="font-size:13px;font-weight:700">Cálculo de Tuberías / Conduit</div>
+        <div style="font-size:11px;color:#6b7280">NEC Chapter 9 Table 1 & 4 · NTE INEN</div>
+        <div style="font-size:11px;color:#6b7280">${fecha}</div>
+        ${usuario?.nombre?`<div style="font-size:11px;color:#6b7280">Por: <strong>${usuario.nombre}</strong></div>`:''}</div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px">
+        <div style="font-size:9px;color:#6b7280;text-transform:uppercase">Nombre del cálculo</div>
+        <div style="font-size:13px;font-weight:700">${nombre}</div></div>
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px">
+        <div style="font-size:9px;color:#6b7280;text-transform:uppercase">Cliente / Proyecto</div>
+        <div style="font-size:13px;font-weight:700">${cliente}</div></div>
+    </div>
+    <div style="margin-bottom:18px">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#374151;border-left:3px solid #22c55e;padding-left:8px;margin-bottom:10px">1. PARÁMETROS DE ENTRADA</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px"><div style="font-size:9px;color:#6b7280;text-transform:uppercase">Tipo conduit</div><div style="font-size:15px;font-weight:800;color:#111">${tipo}</div></div>
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px"><div style="font-size:9px;color:#6b7280;text-transform:uppercase">N° conductores</div><div style="font-size:15px;font-weight:800">${nCond}</div></div>
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px"><div style="font-size:9px;color:#6b7280;text-transform:uppercase">Calibre AWG</div><div style="font-size:15px;font-weight:800">AWG #{awg}</div></div>
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px"><div style="font-size:9px;color:#6b7280;text-transform:uppercase">Aislamiento</div><div style="font-size:15px;font-weight:800">${aisl}</div></div>
+      </div></div>
+    <div style="margin-bottom:18px">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#374151;border-left:3px solid #22c55e;padding-left:8px;margin-bottom:10px">2. RESULTADOS</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+        <div style="background:#f0fdf4;border:2px solid #bbf7d0;border-radius:10px;padding:16px;text-align:center">
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;margin-bottom:4px">Conduit recomendado</div>
+          <div style="font-size:32px;font-weight:900;color:#16a34a;font-family:monospace">${tipo} ${nomSel}</div>
+          <div style="font-size:10px;color:#374151">Área interna: ${areaSel.toFixed(1)} mm²</div></div>
+        <div style="background:#f0fdf4;border:2px solid #bbf7d0;border-radius:10px;padding:16px;text-align:center">
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;margin-bottom:4px">Área conductores</div>
+          <div style="font-size:32px;font-weight:900;color:#15803d;font-family:monospace">${totalArea.toFixed(1)}</div>
+          <div style="font-size:10px;color:#374151">mm² total · ${areaCond} mm² c/u</div></div>
+        <div style="background:${pctLlenado>(factor*100)?'#fef2f2':'#f0fdf4'};border:2px solid ${pctLlenado>(factor*100)?'#fecaca':'#bbf7d0'};border-radius:10px;padding:16px;text-align:center">
+          <div style="font-size:10px;color:#6b7280;text-transform:uppercase;margin-bottom:4px">% de llenado</div>
+          <div style="font-size:32px;font-weight:900;color:${colorFill};font-family:monospace">${pctLlenado.toFixed(1)}%</div>
+          <div style="font-size:10px;color:#374151">${pctLlenado>(factor*100)?'⚠️ Excede límite':'✅ Dentro del límite'} (${(factor*100).toFixed(0)}%)</div></div>
+      </div></div>
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px;margin-bottom:16px;font-size:11px">
+      <strong style="color:#15803d">NEC Chapter 9 Table 1:</strong> Con ${nCond} conductor${nCond>1?'es':''}, el llenado máximo permitido es <strong>${(factor*100).toFixed(0)}%</strong> del área interna. Área mínima requerida: <strong>${areaConduitMin.toFixed(1)} mm²</strong>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#374151;border-left:3px solid #22c55e;padding-left:8px;margin-bottom:8px">3. NORMATIVA APLICADA</div>
+      <div style="font-size:11px;line-height:1.75;color:#374151">
+        <p>• <strong>NEC Chapter 9 Table 1:</strong> 1 cond=53%, 2 cond=31%, 3+ cond=40% de llenado</p>
+        <p>• <strong>NEC Chapter 9 Table 4:</strong> Áreas internas de conduits EMT, PVC, IMC, RMC</p>
+        <p>• <strong>Conductor THHN/THWN-2:</strong> Áreas exteriores según NEC Chapter 9 Table 5</p>
+        <p>• <strong>NTE INEN 2345 / ARCONEL:</strong> Requisitos de instalación Ecuador</p>
+      </div></div>
+    <div style="text-align:center;font-size:10px;color:#9ca3af;padding-top:12px;border-top:1px solid #e5e7eb;margin-top:20px">
+      <p>Documento generado por SEST · Cálculo de Tuberías / Conduit · ${fecha}</p>
+      <p>Cálculo conforme a NEC y NTE INEN aplicables en Ecuador 🇪🇨</p>
+    </div></div>`.replace('{awg}',awg);
+  const cont=document.getElementById('pdf-informe');
+  if(!cont){toast('Error: contenedor PDF no encontrado','err');return;}
+  cont.innerHTML=html;
+  await htmlAPdfDesdeNodoFuente(cont,`Tuberia_${nombre.replace(/[^a-zA-Z0-9]/g,'_')}.pdf`);
+  cont.innerHTML='';
+}
 
-    _pdfFooterPages(d);
-    d.save(filename);
-    _ocultarLoadingPdf(); toast('PDF descargado ✓','ok');
-  }catch(err){ console.error(err); _ocultarLoadingPdf(); toast('Error al generar PDF','err'); }
+// ───────────────────────────────────────────────────────────────
+// Verificar conexión Neon al abrir la tab Cables
+// ───────────────────────────────────────────────────────────────
+function _initCcDbBadge(){
+  api('electrical-projects/index').then(r=>{
+    _updateCcDbBadge(isErr(r)?'err':'ok');
+  }).catch(()=>_updateCcDbBadge('err'));
+}
+
+function guardarBalance() {
+  const nombre   = (document.getElementById('bc-proyecto-nombre')?.value || '').trim();
+  const cliente  = (document.getElementById('bc-proyecto-cliente')?.value || '').trim();
+  const ubicacion= (document.getElementById('bc-proyecto-ubicacion')?.value || '').trim();
+  const tipo     = document.getElementById('bc-tipo-tablero')?.value || 'residencial';
+  const tempF    = document.getElementById('bc-temperatura-global')?.value || '1.0';
+
+  if (!nombre) { toast('Ingresa un nombre para el proyecto','err'); document.getElementById('bc-proyecto-nombre')?.focus(); return; }
+  if (!cargas.length) { toast('Agrega al menos una carga antes de guardar','err'); return; }
+
+  const ahora = new Date().toISOString();
+
+  const stEl = document.getElementById('bc-save-status');
+  if(stEl) stEl.textContent = 'Guardando en PostgreSQL…';
+
+  const data = {
+    id: _bcProyectoId || undefined,
+    nombre, cliente, ubicacion, tipo, tempF,
+    sistema: _bcSistema,
+    cargas: JSON.parse(JSON.stringify(cargas)),
+    createdAt: ahora, updatedAt: ahora
+  };
+
+  _saveBalanceToDB(data).then(saved => {
+    if(saved?.id) _bcProyectoId = saved.id;
+    const msg = data.id ? `✅ Proyecto "${nombre}" actualizado en DB` : `✅ Proyecto "${nombre}" guardado en DB`;
+    toast(msg, 'ok');
+    _actualizarBadgeProyecto(nombre);
+    if(stEl) stEl.textContent = 'Guardado en PostgreSQL · ' + new Date().toLocaleTimeString();
+  }).catch(()=>{
+    toast('Guardado en caché local (sin conexión)', 'info');
+    if(stEl) stEl.textContent = 'Guardado local · ' + new Date().toLocaleTimeString();
+  });
+}
+
+function _actualizarBadgeProyecto(nombre) {
+  const lbl = document.getElementById('bc-project-name-lbl');
+  if (lbl) lbl.textContent = nombre || 'Sin proyecto';
+}
+
+function abrirModalBalances() {
+  const cont = document.getElementById('bc-saved-list-container');
+  if(cont) cont.innerHTML='<div style="text-align:center;padding:20px;color:var(--t3)"><div class="spin" style="margin:0 auto 8px"></div><p>Cargando proyectos…</p></div>';
+  openModal('m-balances');
+  _loadBalancesFromDB().then(allRecords => {
+  const cont = document.getElementById('bc-saved-list-container');
+  if (!cont) return;
+    // Filtrar SOLO registros de balance de cargas (excluir cable_calc, proteccion_calc, tuberia_calc)
+    const TIPOS_EXCLUIDOS = ['cable_calc','proteccion_calc','tuberia_calc'];
+    const balances = allRecords.filter(b => !TIPOS_EXCLUIDOS.includes(b.tipo));
+    if (!balances.length) {
+      cont.innerHTML = `<div style="text-align:center;padding:28px;color:var(--t3)">
+        <i data-lucide="inbox" style="width:32px;height:32px;margin-bottom:8px;display:block;margin:0 auto 8px"></i>
+        <p>No hay proyectos en la base de datos.</p>
+        <p style="font-size:11px;margin-top:4px">Completa el formulario y presiona "Guardar proyecto".</p>
+      </div>`;
+    } else {
+      cont.innerHTML = `<div style="display:flex;flex-direction:column;gap:10px">` +
+        balances.slice().reverse().map(b => {
+          const d = new Date(b.updatedAt || b.createdAt || b.updated_at || b.created_at || Date.now());
+          const dStr = d.toLocaleDateString('es-EC', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+          const activo = b.id === _bcProyectoId;
+          return `<div style="background:var(--s2);border:1px solid ${activo?'var(--acc)':'var(--bd)'};border-radius:12px;padding:14px 16px;display:flex;align-items:flex-start;gap:12px;${activo?'background:var(--acc-d)':''}">
+            <div style="width:36px;height:36px;border-radius:9px;background:rgba(245,200,0,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--acc)">
+              <i data-lucide="${activo?'folder-open':'zap'}" style="width:18px;height:18px"></i>
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;font-size:13px;color:var(--t1);margin-bottom:2px">${b.nombre}${activo?' <span style="font-size:10px;background:var(--acc);color:#000;border-radius:4px;padding:1px 6px;font-weight:700">ACTIVO</span>':''}</div>
+              ${b.cliente?`<div style="font-size:12px;color:var(--t3);margin-bottom:2px">📁 ${b.cliente}</div>`:''}
+              ${b.ubicacion?`<div style="font-size:11px;color:var(--t3);margin-bottom:4px">📝 ${b.ubicacion}</div>`:''}
+              <div style="font-size:11px;color:var(--t3);font-family:'DM Mono',monospace">${b.sistema||'120'}V · ${b.tipo||'residencial'} · ${(b.cargas||[]).length} circuito${(b.cargas||[]).length!==1?'s':''}</div>
+              <div style="font-size:10px;color:var(--t3);margin-top:4px">🕒 ${dStr}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+              <button type="button" class="btn btn-acc btn-sm" onclick="cargarBalance('${b.id}')" title="Cargar este proyecto">
+                <i data-lucide="upload" style="width:13px;height:13px"></i> Cargar
+              </button>
+              <button type="button" class="btn btn-info btn-sm" onclick="exportarPDFBalanceFromRecord('${b.id}')" title="Exportar PDF">
+                <i data-lucide="file-down" style="width:13px;height:13px"></i> PDF
+              </button>
+              <button type="button" class="btn btn-danger btn-sm" onclick="event.stopPropagation();eliminarBalance('${b.id}')" title="Eliminar">
+                <i data-lucide="trash-2" style="width:13px;height:13px"></i>
+              </button>
+            </div>
+          </div>`;
+        }).join('') + `</div>`;
+    }
+    refreshIcons();
+  });
+}
+
+function cargarBalance(id) {
+  // Comparar como string para que funcione con IDs numéricos de PostgreSQL
+  const balances = _getBalancesCache();
+  const b = balances.find(x => String(x.id) === String(id));
+  if (!b) { toast('Proyecto no encontrado — intenta recargar la lista','err'); return; }
+  cargas = JSON.parse(JSON.stringify(b.cargas || []));
+  _bcSistema = b.sistema || '120';
+  _bcProyectoId = b.id; // Guardar el ID real (puede ser número) para edición
+  setBcSistema(_bcSistema);
+  // Restaurar campos del formulario
+  const setV = (elId, v) => { const el=document.getElementById(elId); if(el) el.value=v||''; };
+  setV('bc-proyecto-nombre', b.nombre);
+  setV('bc-proyecto-cliente', b.cliente);
+  setV('bc-proyecto-ubicacion', b.ubicacion);
+  setV('bc-tipo-tablero', b.tipo||'residencial');
+  setV('bc-temperatura-global', b.tempF||'1.0');
+  renderCargas();
+  recalcBalance();
+  _actualizarBadgeProyecto(b.nombre);
+  const stEl = document.getElementById('bc-save-status');
+  if(stEl) stEl.textContent = '✏️ Editando: ' + b.nombre;
+  closeModal('m-balances');
+  toast(`✏️ Proyecto "${b.nombre}" cargado para edición`, 'ok');
+}
+
+function eliminarBalance(id) {
+  if (!confirm('¿Eliminar este proyecto de la base de datos?')) return;
+  _deleteBalanceFromDB(id).then(()=>{
+    if (_bcProyectoId === id) {
+      _bcProyectoId = null;
+      _actualizarBadgeProyecto('Sin proyecto');
+      document.getElementById('bc-save-status').textContent = '';
+    }
+    abrirModalBalances();
+    toast('Proyecto eliminado de la DB', 'ok');
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INFORME TÉCNICO PDF
+// ═══════════════════════════════════════════════════════════════
+
+async function generarInformePDF() {
+  if (!cargas.length) { toast('Agrega cargas antes de generar el informe', 'err'); return; }
+
+  const nombre   = document.getElementById('bc-proyecto-nombre')?.value || 'Sin nombre';
+  const cliente  = document.getElementById('bc-proyecto-cliente')?.value || '—';
+  const ubicacion= document.getElementById('bc-proyecto-ubicacion')?.value || '—';
+  const tipoTab  = document.getElementById('bc-tipo-tablero')?.value || 'residencial';
+  const tempFactor = parseFloat(document.getElementById('bc-temperatura-global')?.value || 1.0);
+  const fecha = new Date().toLocaleDateString('es-EC', {day:'2-digit',month:'long',year:'numeric'});
+
+  const cfg = BC_SISTEMAS[_bcSistema] || BC_SISTEMAS['120'];
+  const { tension, esTri, fases, label } = cfg;
+
+  // Calcular datos para el informe
+  const tempF = tempFactor;
+  const circuitos = (window._bcCircuitos || []);
+  const acometida = window._bcAcometida || {};
+
+  const potPorFase = {};
+  fases.forEach(f => potPorFase[f] = 0);
+  let totalW = 0, totalWD = 0;
+  cargas.forEach(c => {
+    const cant = c.cantidad || 1;
+    const potUnit = c.potencia || 0;
+    const potTotal = potUnit * cant;
+    const pd = potTotal * (c.fs || 100) / 100;
+    if (potPorFase[c.fase] !== undefined) potPorFase[c.fase] += pd;
+    totalW  += potTotal;
+    totalWD += pd;
+  });
+  const ITotal = acometida.ITotal || (esTri ? totalWD/(tension*Math.sqrt(3)*0.9) : totalWD/(tension*0.9));
+  const brkAco = acometida.brkAco || (BREAKERS_STD.find(b => b >= ITotal*1.25)||2000);
+  const fsPromedio = cargas.length > 0 ? cargas.reduce((a,c)=>a+(c.fs||100),0)/cargas.length : 0;
+  const vals = Object.values(potPorFase);
+  const maxF = Math.max(...vals);
+  const minF = Math.min(...vals);
+  const desbalance = maxF > 0 ? ((maxF-minF)/maxF*100) : 0;
+
+  const TIPO_LABEL = {
+    iluminacion:'Iluminación', tomacorriente:'Tomacorriente', motor:'Motor',
+    hvac:'HVAC/Clima', resistivo:'Resistivo', otro:'Especial'
+  };
+
+  const filasCargas = cargas.map((c,i) => {
+    const cant = c.cantidad || 1;
+    const fp   = c.fp || 0.9;
+    const vC   = c.voltaje || tension;
+    const esTri_c = c.sistema === 'tri';
+    const sqrt3_c = esTri_c ? Math.sqrt(3) : 1;
+    const potTotal = (c.potencia||0) * cant;
+    const pd    = potTotal * (c.fs||100) / 100;
+    const Ic    = pd > 0 ? pd / (vC * sqrt3_c * fp) : 0;
+    const factorM = (c.tipo==='motor'||c.tipo==='hvac') ? 1.25 : 1.0;
+    const IdD = Ic * factorM / tempF;
+    let awgRow = AWG_TABLE.find(r => r[4]!=null && r[4]>=IdD) || AWG_TABLE[AWG_TABLE.length-1];
+    const IbMin = Ic * (factorM>1 ? 2.5 : 1.25);
+    const brkRec = BREAKERS_STD.find(b=>b>=IbMin)||2000;
+    const polos = esTri_c ? '3P' : '2P';
+    const areaC = THHN_AREA[awgRow ? awgRow[0] : '12'] || THHN_AREA['12'];
+    const nCond = esTri_c ? 4 : 3;
+    const totArea = areaC * nCond;
+    let conduitSel = CONDUIT_AREA.EMT.find(([n,a]) => a*0.40>=totArea);
+    if (!conduitSel) conduitSel = CONDUIT_AREA.EMT[CONDUIT_AREA.EMT.length-1];
+    return `<tr style="${i%2===0?'background:#fafafa':''}">
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;font-weight:600">${String(i+1).padStart(2,'0')}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee">${c.desc||'—'}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee">${TIPO_LABEL[c.tipo]||c.tipo}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center">${cant}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center">${vC}V</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center">${esTri_c?'3F':'1F'}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center">${fp}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center">${c.fase}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center">${c.fs||100}%</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:right;font-weight:700">${(pd/1000).toFixed(3)}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:right;color:#3b82f6;font-weight:600">${Ic.toFixed(2)}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center;color:#1d4ed8;font-weight:700">AWG #${awgRow?awgRow[0]:'—'}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center;color:#b45309;font-weight:700">${brkRec}A ${polos}</td>
+      <td style="padding:5px 7px;border-bottom:1px solid #eee;text-align:center;color:#166534;font-weight:700">EMT ${conduitSel?conduitSel[0]:'—'}</td>
+    </tr>`;
+  }).join('');
+
+  const filasFase = fases.map(f => {
+    const pf = potPorFase[f] || 0;
+    const pct = totalWD > 0 ? (pf/totalWD*100) : 0;
+    const If = pf / (tension * 0.9);
+    return `<tr>
+      <td style="padding:5px 8px;border-bottom:1px solid #eee;font-weight:700">${f}</td>
+      <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right;font-weight:700">${(pf/1000).toFixed(3)} kW</td>
+      <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right">${If.toFixed(2)} A</td>
+      <td style="padding:5px 8px;border-bottom:1px solid #eee;text-align:right">${pct.toFixed(1)}%</td>
+    </tr>`;
+  }).join('');
+
+  const htmlInforme = `
+    <div style="font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#111;line-height:1.5">
+      <!-- ENCABEZADO -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;border-bottom:3px solid #f5c800;margin-bottom:20px">
+        <div>
+          <div style="font-size:22px;font-weight:900;color:#0c0c12;letter-spacing:-0.5px">INFORME TÉCNICO ELÉCTRICO</div>
+          <div style="font-size:13px;font-weight:700;color:#555;margin-top:2px">Balance de Cargas · Dimensionamiento de Tablero</div>
+          <div style="font-size:11px;color:#888;margin-top:6px">Norma: NEC / NTE INEN 2345 / ARCONEL Ecuador</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:11px;color:#888">Fecha de elaboración</div>
+          <div style="font-size:14px;font-weight:700;color:#0c0c12">${fecha}</div>
+          <div style="font-size:11px;color:#888;margin-top:4px">SEST · Sistema de Ingeniería</div>
+        </div>
+      </div>
+
+      <!-- DATOS DEL PROYECTO -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#0c0c12;border-bottom:2px solid #f5c800;padding-bottom:5px;margin-bottom:10px">1. DATOS DEL PROYECTO</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+          <div style="background:#f8f8f8;border-radius:8px;padding:10px 12px;border-left:3px solid #f5c800">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#888;margin-bottom:3px">Proyecto</div>
+            <div style="font-size:14px;font-weight:800;color:#0c0c12">${nombre}</div>
+          </div>
+          <div style="background:#f8f8f8;border-radius:8px;padding:10px 12px;border-left:3px solid #3b82f6">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#888;margin-bottom:3px">Cliente / Propietario</div>
+            <div style="font-size:13px;font-weight:700;color:#0c0c12">${cliente}</div>
+          </div>
+          <div style="background:#f8f8f8;border-radius:8px;padding:10px 12px;border-left:3px solid #22c55e">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#888;margin-bottom:3px">Ubicación</div>
+            <div style="font-size:13px;font-weight:700;color:#0c0c12">${ubicacion}</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-top:8px">
+          <div style="background:#fef9ec;border-radius:6px;padding:8px 10px;border:1px solid #fde68a">
+            <div style="font-size:10px;color:#92400e;font-weight:700">Sistema</div>
+            <div style="font-size:12px;font-weight:700;color:#78350f">${label}</div>
+          </div>
+          <div style="background:#fef9ec;border-radius:6px;padding:8px 10px;border:1px solid #fde68a">
+            <div style="font-size:10px;color:#92400e;font-weight:700">Tipo de tablero</div>
+            <div style="font-size:12px;font-weight:700;color:#78350f;text-transform:capitalize">${tipoTab}</div>
+          </div>
+          <div style="background:#fef9ec;border-radius:6px;padding:8px 10px;border:1px solid #fde68a">
+            <div style="font-size:10px;color:#92400e;font-weight:700">Temp. ambiente</div>
+            <div style="font-size:12px;font-weight:700;color:#78350f">Factor ${tempFactor}</div>
+          </div>
+          <div style="background:#fef9ec;border-radius:6px;padding:8px 10px;border:1px solid #fde68a">
+            <div style="font-size:10px;color:#92400e;font-weight:700">Total circuitos</div>
+            <div style="font-size:12px;font-weight:700;color:#78350f">${cargas.length} circuitos</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RESUMEN EJECUTIVO -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#0c0c12;border-bottom:2px solid #f5c800;padding-bottom:5px;margin-bottom:10px">2. RESUMEN EJECUTIVO</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:8px">
+          <div style="background:#0c0c12;color:#fff;border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:#999;margin-bottom:4px">Potencia Instalada</div>
+            <div style="font-size:18px;font-weight:900;color:#f5c800;font-family:monospace">${(totalW/1000).toFixed(2)}</div>
+            <div style="font-size:11px;color:#888">kW</div>
+          </div>
+          <div style="background:#0c0c12;color:#fff;border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:#999;margin-bottom:4px">Potencia Demanda</div>
+            <div style="font-size:18px;font-weight:900;color:#22c55e;font-family:monospace">${(totalWD/1000).toFixed(2)}</div>
+            <div style="font-size:11px;color:#888">kW</div>
+          </div>
+          <div style="background:#0c0c12;color:#fff;border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:#999;margin-bottom:4px">Corriente Total</div>
+            <div style="font-size:18px;font-weight:900;color:#60a5fa;font-family:monospace">${ITotal.toFixed(2)}</div>
+            <div style="font-size:11px;color:#888">A</div>
+          </div>
+          <div style="background:#0c0c12;color:#fff;border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:#999;margin-bottom:4px">Breaker Principal</div>
+            <div style="font-size:18px;font-weight:900;color:#f5c800;font-family:monospace">${brkAco}A</div>
+            <div style="font-size:11px;color:#888">${esTri?'3 Polos':'2 Polos'}</div>
+          </div>
+          <div style="background:#0c0c12;color:#fff;border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:#999;margin-bottom:4px">Fs Promedio</div>
+            <div style="font-size:18px;font-weight:900;color:#f5c800;font-family:monospace">${fsPromedio.toFixed(0)}</div>
+            <div style="font-size:11px;color:#888">%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABLA DE CARGAS -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#0c0c12;border-bottom:2px solid #f5c800;padding-bottom:5px;margin-bottom:10px">3. TABLA DE BALANCE DE CARGAS Y DIMENSIONAMIENTO</div>
+        <table style="width:100%;border-collapse:collapse;font-size:10px">
+          <thead>
+            <tr style="background:#0c0c12;color:#fff">
+              <th style="padding:6px 7px;text-align:left">N°</th>
+              <th style="padding:6px 7px;text-align:left">Descripción</th>
+              <th style="padding:6px 7px;text-align:left">Tipo</th>
+              <th style="padding:6px 7px;text-align:center">Cant.</th>
+              <th style="padding:6px 7px;text-align:center">Voltaje</th>
+              <th style="padding:6px 7px;text-align:center">Fases</th>
+              <th style="padding:6px 7px;text-align:center">F.P.</th>
+              <th style="padding:6px 7px;text-align:center">Fase</th>
+              <th style="padding:6px 7px;text-align:center">Fs%</th>
+              <th style="padding:6px 7px;text-align:right">Dem.(kW)</th>
+              <th style="padding:6px 7px;text-align:right">I (A)</th>
+              <th style="padding:6px 7px;text-align:center">Cable</th>
+              <th style="padding:6px 7px;text-align:center">Breaker</th>
+              <th style="padding:6px 7px;text-align:center">Conduit</th>
+            </tr>
+          </thead>
+          <tbody>${filasCargas}</tbody>
+          <tfoot>
+            <tr style="background:#f5c80020;border-top:2px solid #f5c800">
+              <td colspan="9" style="padding:7px;font-weight:800;color:#0c0c12">TOTALES</td>
+              <td style="padding:7px;text-align:right;font-weight:800;color:#b45309">${(totalWD/1000).toFixed(3)}</td>
+              <td style="padding:7px;text-align:right;font-weight:800;color:#1d4ed8">${ITotal.toFixed(2)}</td>
+              <td colspan="3" style="padding:7px;text-align:center;font-weight:700;color:#166534">Breaker Ppal: ${brkAco}A</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- BALANCE POR FASES -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#0c0c12;border-bottom:2px solid #f5c800;padding-bottom:5px;margin-bottom:10px">4. BALANCE DE FASES</div>
+        <table style="width:50%;border-collapse:collapse;font-size:11px">
+          <thead><tr style="background:#0c0c12;color:#fff">
+            <th style="padding:6px 8px;text-align:left">Fase</th>
+            <th style="padding:6px 8px;text-align:right">Potencia</th>
+            <th style="padding:6px 8px;text-align:right">Corriente</th>
+            <th style="padding:6px 8px;text-align:right">% Total</th>
+          </tr></thead>
+          <tbody>${filasFase}</tbody>
+        </table>
+        <div style="margin-top:8px;padding:8px 12px;background:${desbalance>10?'#fef2f2':'#f0fdf4'};border:1px solid ${desbalance>10?'#fecaca':'#bbf7d0'};border-radius:6px;font-size:11px">
+          <strong>${desbalance>10?'⚠️ DESBALANCE EXCEDE 10%':'✅ Desbalance dentro del rango NEC'}</strong>: ${desbalance.toFixed(1)}%
+          (Máx. permitido: 10% — NEC / NTE INEN)
+        </div>
+      </div>
+
+      <!-- NOTAS TÉCNICAS -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:#0c0c12;border-bottom:2px solid #f5c800;padding-bottom:5px;margin-bottom:10px">5. NOTAS TÉCNICAS Y NORMATIVA APLICADA</div>
+        <div style="font-size:11px;line-height:1.7;color:#333">
+          <p>• <strong>Conductor:</strong> Cobre THHN/THWN-2, temperatura 90°C — NEC 310.15(B)(16) / NTE INEN 2345</p>
+          <p>• <strong>Factor de temperatura:</strong> ${tempFactor} aplicado a la capacidad de conducción</p>
+          <p>• <strong>Protecciones:</strong> Termomagnéticos dimensionados según NEC Art. 240 / 430</p>
+          <p>• <strong>Motores:</strong> Factor de servicio 1.25 aplicado — NEC 430.22</p>
+          <p>• <strong>Conduit:</strong> Llenado máximo 40% para 3+ conductores — NEC Chapter 9 Table 1</p>
+          <p>• <strong>Desbalance de fases:</strong> No debe superar el 10% según NEC y NTE INEN</p>
+          <p>• <strong>Breaker principal:</strong> Dimensionado al 125% de la corriente total de demanda</p>
+        </div>
+      </div>
+
+      <!-- PIE DE PÁGINA -->
+      <div style="text-align:center;font-size:10px;color:#999;padding-top:12px;border-top:1px solid #eee;margin-top:20px">
+        <p>Documento generado por SEST · Sistema de Ingeniería Eléctrica · ${fecha}</p>
+        <p>Este informe técnico ha sido elaborado según las normas NEC (National Electrical Code) y NTE INEN aplicables en Ecuador.</p>
+        <p style="margin-top:4px;font-weight:700;color:#666">${usuario?.nombre ? 'Elaborado por: ' + usuario.nombre : ''}</p>
+      </div>
+    </div>`;
+
+  // Usar la función unificada con overlay moderno y forzado A4 en móvil
+  const cont = document.getElementById('pdf-informe');
+  if (!cont) { toast('Error: contenedor PDF no encontrado', 'err'); return; }
+  cont.innerHTML = htmlInforme;
+  await htmlAPdfDesdeNodoFuente(cont, `Informe_${nombre.replace(/[^a-zA-Z0-9]/g,'_')}.pdf`);
+  cont.innerHTML = '';
 }
 
 
