@@ -3421,22 +3421,6 @@ async function exportarPDFNc() {
     firmaY = compactY + 10;
   }
   
-  // Línea decorativa antes de firmas
-  doc.setDrawColor(200, 160, 0);
-  doc.setLineWidth(0.3);
-  doc.line(margin, firmaY - 5, pageWidth - margin, firmaY - 5);
-  
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(100, 100, 100);
-  //doc.text('ACEPTACIÓN DE LA COTIZACIÓN', pageWidth / 2, firmaY, { align: 'center' });
-  
-  const firmaClienteX = margin;
-  const firmaClienteWidth = (pageWidth - margin * 3) / 2;
-  const firmaIngenieroX = pageWidth - margin - firmaClienteWidth;
-  
-  doc.setDrawColor(180, 180, 180);
-  doc.setLineWidth(0.2);
   
   // Firma del cliente
   doc.line(firmaClienteX + 10, firmaY + 15, firmaClienteX + firmaClienteWidth - 10, firmaY + 15);
@@ -3776,23 +3760,7 @@ async function exportarPDF() {
   }
   
   // SECCIÓN DE FIRMAS
-  let firmaY = notasY + 15;
   
-  if (firmaY + 35 > pageHeight - 20) {
-    doc.addPage();
-    firmaY = 30;
-    const compactY = addCompactHeader(doc, modelo, doc.internal.getNumberOfPages());
-    firmaY = compactY + 10;
-  }
-  
-  doc.setDrawColor(200, 160, 0);
-  doc.setLineWidth(0.3);
-  doc.line(margin, firmaY - 5, pageWidth - margin, firmaY - 5);
-  
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(100, 100, 100);
- // doc.text('ACEPTACIÓN DE LA COTIZACIÓN', pageWidth / 2, firmaY, { align: 'center' });
   
   const firmaClienteX = margin;
   const firmaClienteWidth = (pageWidth - margin * 3) / 2;
