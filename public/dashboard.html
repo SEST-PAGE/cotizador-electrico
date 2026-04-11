@@ -2924,393 +2924,116 @@ function htmlDocumentoCotizacionPdfProfesional(m){
 </div>`;
 }
 
-// ═══════════════════════════════════════════════════════════════
-// PDF GENERATION — DIRECT jsPDF  (100% zoom-independent)
-// Dibuja el PDF en coordenadas absolutas (mm) con la API de jsPDF.
-// No usa html2canvas en absoluto → el zoom del navegador no afecta nada.
-// jsPDF está disponible porque html2pdf.bundle.min.js lo incluye.
-// ═══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════
+// PDF GENERATION — DISEÑO PROFESIONAL SEST
+// Generación directa con jsPDF — 100% independiente del zoom del navegador
+// ══════════════════════════════════════════════════════════════════════
 
-// ── Constantes de layout A4 ──────────────────────────────────────
-const PG={
-  W:210,H:297,ML:14,MR:14,MT:14,MB:16,
-  get CW(){return this.W-this.ML-this.MR;},
-  get L(){return this.ML;},
-  get R(){return this.W-this.MR;},
-  YELLOW:[245,200,0], AMBER:[212,160,23],
-  DARK:[12,12,18],    GRAY:[107,114,128],
-  LGRAY:[148,163,184],LIGHT:[241,245,249],
-  BLACK:[10,10,10],   WHITE:[255,255,255],
-  RED:[220,38,38],    GREEN:[22,163,74],
-  BLUE:[59,130,246],  OK_BG:[240,253,244],  OK_BD:[187,247,208],
-  ERR_BG:[254,242,242],ERR_BD:[254,202,202],
-  SLATE:[241,245,249],SLATE_BD:[226,232,240],
-};
+// ── Paleta de colores ──────────────────────────────────────────────────
+const NAVY  = [26, 55, 90];
+const GOLD  = [212, 168, 28];
+const CREAM = [255, 248, 234];
+const DTXT  = [15, 23, 42];
+const LGRAY_P = [148, 163, 184];
+const SLATE_P = [241, 245, 249];
 
+// ── jsPDF — acceso robusto (compatible con html2pdf bundle) ───────────
 function _pdfNew(){
-  const {jsPDF}=window.jspdf;
-  return new jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
+  const JPDF = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+  if(!JPDF) throw new Error('jsPDF no disponible. Recarga la página.');
+  return new JPDF({unit:'mm', format:'a4', orientation:'portrait'});
 }
-function _pRect(d,x,y,w,h,fill,stroke,lw=0.2){
-  if(fill){d.setFillColor(...fill);}
-  if(stroke){d.setDrawColor(...stroke);d.setLineWidth(lw);}
-  else{d.setDrawColor(0,0,0,0);}
-  d.rect(x,y,w,h,fill&&stroke?'FD':fill?'F':'D');
-}
-function _pLine(d,x1,y1,x2,y2,color=PG.LGRAY,lw=0.3){
-  d.setDrawColor(...color);d.setLineWidth(lw);d.line(x1,y1,x2,y2);
-}
-function _pFont(d,size,style='normal',color=PG.BLACK){
-  d.setFont('helvetica',style);d.setFontSize(size);d.setTextColor(...color);
-}
-function _pTxt(d,text,x,y,opts={}){
-  d.text(String(text??''),x,y,opts);
-}
-function _pWrap(d,text,maxW){return d.splitTextToSize(String(text??''),maxW);}
 
-function _pSectionTitle(d,y,txt,ac=PG.YELLOW){
-  _pRect(d,PG.L,y,2.5,6,ac);
-  _pFont(d,7.5,'bold',[55,65,81]);
-  _pTxt(d,txt.toUpperCase(),PG.L+5,y+5);
-  return y+10;
+// ── Cargar logo como base64 (canvas bridge) ───────────────────────────
+async function _loadLogoBase64(){
+  return new Promise(resolve => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth; c.height = img.naturalHeight;
+        c.getContext('2d').drawImage(img, 0, 0);
+        resolve(c.toDataURL('image/jpeg', 0.92));
+      } catch(e) { resolve(null); }
+    };
+    img.onerror = () => resolve(null);
+    img.src = 'logo.jpg';
+  });
 }
-function _pPageFooter(d,txt){
-  const n=d.internal.getNumberOfPages();
+
+// ── Helpers básicos de dibujo ──────────────────────────────────────────
+function _pf(d, sz, st='normal', col=DTXT){ d.setFont('helvetica', st); d.setFontSize(sz); d.setTextColor(...col); }
+function _pt(d, txt, x, y, opts={}){ d.text(String(txt ?? ''), x, y, opts); }
+function _pw(d, txt, maxW){ return d.splitTextToSize(String(txt ?? ''), maxW); }
+function _pln(d, x1,y1,x2,y2, col=[200,210,220], lw=0.25){
+  d.setDrawColor(...col); d.setLineWidth(lw); d.line(x1,y1,x2,y2);
+}
+function _prect(d, x,y,w,h, fill, stroke, lw=0.2){
+  if(fill) d.setFillColor(...fill);
+  if(stroke){ d.setDrawColor(...stroke); d.setLineWidth(lw); }
+  else d.setDrawColor(0,0,0,0);
+  d.rect(x,y,w,h, fill&&stroke?'FD':fill?'F':'D');
+}
+
+// ── Decoraciones curvas SEST (esquinas navy + acento de color) ────────
+function _drawSESTDecorations(d, ac){
+  const A = ac || GOLD;
+
+  // Esquina superior derecha — forma navy
+  d.setFillColor(...NAVY);
+  d.lines(
+    [[-62, 0], [10, 0, 62, 55, 62, 85], [0, -85]],
+    210, 0, [1,1], 'F', true
+  );
+  // Franja acento superior derecha
+  d.setDrawColor(...A); d.setLineWidth(6);
+  d.lines([[10, 5, 57, 45, 57, 65]], 153, 0, [1,1], 'S', false);
+
+  // Esquina inferior izquierda — forma navy
+  d.setFillColor(...NAVY);
+  d.lines(
+    [[0, -65], [0, 30, 55, 65, 82, 65], [-82, 0]],
+    0, 297, [1,1], 'F', true
+  );
+  // Franja acento inferior izquierda
+  d.setDrawColor(...A); d.setLineWidth(6);
+  d.lines([[0, 22, 45, 54, 66, 54]], 0, 243, [1,1], 'S', false);
+
+  // Pequeña forma navy esquina inferior derecha
+  d.setFillColor(...NAVY);
+  d.lines(
+    [[0, -38], [0, 22, -18, 38, -40, 38], [40, 0]],
+    210, 297, [1,1], 'F', true
+  );
+
+  d.setLineWidth(0.25); // reset
+}
+
+// ── Logo círculo fallback (si logo.jpg no carga) ──────────────────────
+function _drawLogoCircle(d, cx, cy, r){
+  d.setFillColor(...NAVY);
+  d.circle(cx, cy, r, 'F');
+  d.setFillColor(255,255,255);
+  d.circle(cx, cy, r - 1.8, 'F');
+  _pf(d, 5.5, 'bold', NAVY); _pt(d, 'SEST', cx, cy + 2.8, {align:'center'});
+  // Rayo (lightning bolt simplificado)
+  d.setFillColor(...GOLD);
+  d.lines([[1,-3.5],[-2,2],[1.5,0],[-1,3.5],[2,-2],[-1.5,0]], cx-0.5, cy-2, [1,1], 'F', true);
+}
+
+// ── Pie de página con número ──────────────────────────────────────────
+function _pdfFooterPages(d){
+  const n = d.internal.getNumberOfPages();
   for(let p=1;p<=n;p++){
     d.setPage(p);
-    _pLine(d,PG.L,PG.H-14,PG.R,PG.H-14,[226,232,240],0.25);
-    _pFont(d,6.5,'normal',PG.LGRAY);
-    _pTxt(d,txt,PG.W/2,PG.H-9,{align:'center'});
-    if(n>1) _pTxt(d,`Página ${p} de ${n}`,PG.W/2,PG.H-5.5,{align:'center'});
+    if(n>1){
+      _pf(d,6,'normal',[140,150,160]);
+      _pt(d,`Página ${p} de ${n}`, 105, 292, {align:'center'});
+    }
   }
 }
 
-// ── COTIZACIÓN ──────────────────────────────────────────────────
-function generarCotizacionPDF(m,filename){
-  _mostrarLoadingPdf('Generando cotización…');
-  try{
-    const d=_pdfNew();
-    let y=PG.MT;
-    const L=PG.L,R=PG.R,CW=PG.CW;
-
-    // Header empresa / número
-    _pFont(d,22,'bold',PG.DARK); _pTxt(d,'SEST',L,y+8);
-    _pFont(d,7.5,'normal',PG.GRAY);
-    _pTxt(d,'Servicios Eléctricos y Seguridad Tapia',L,y+13);
-    if(m.elaborador) _pTxt(d,`Elaborado por: ${m.elaborador}`,L,y+18);
-    _pFont(d,8,'bold',PG.GRAY);  _pTxt(d,'COTIZACIÓN',R,y+4,{align:'right'});
-    _pFont(d,17,'bold',PG.DARK); _pTxt(d,`N° ${m.numero||'—'}`,R,y+12,{align:'right'});
-    _pFont(d,8,'normal',PG.GRAY);
-    _pTxt(d,`Fecha: ${m.fechaFmt||'—'}`,R,y+17,{align:'right'});
-    _pTxt(d,`Validez: ${m.validez||30} días`,R,y+22,{align:'right'});
-    y+=26; _pLine(d,L,y,R,y,PG.YELLOW,1.2); y+=5;
-
-    // Empresa / Cliente
-    const hW=(CW-6)/2;
-    const drawInfoBox=(bx,by,bw,bh,title,lines,ac)=>{
-      _pRect(d,bx,by,bw,bh,PG.LIGHT,PG.SLATE_BD,0.2);
-      _pRect(d,bx,by,bw,1.2,ac);
-      _pFont(d,6,'bold',PG.LGRAY); _pTxt(d,title,bx+3,by+5.5);
-      let iy=by+11;
-      lines.forEach((ln,idx)=>{
-        if(!ln||iy>by+bh-2)return;
-        _pFont(d,idx===0?9.5:7.5,idx===0?'bold':'normal',PG.DARK);
-        _pTxt(d,_pWrap(d,ln,bw-6)[0],bx+3,iy);
-        iy+=idx===0?5:4.5;
-      });
-    };
-    drawInfoBox(L,y,hW,30,'EMPRESA',
-      ['SEST','Servicios Eléctricos y Seguridad Tapia','Ecuador'],PG.AMBER);
-    const cliLines=[m.cliente.nombre||'Sin cliente',
-      m.cliente.empresa,m.cliente.ruc?`RUC/CI: ${m.cliente.ruc}`:'',
-      m.cliente.tel?`Tel: ${m.cliente.tel}`:'',m.cliente.email,m.cliente.dir]
-      .filter(Boolean);
-    drawInfoBox(L+hW+6,y,hW,30,'CLIENTE',cliLines,PG.AMBER);
-    y+=34;
-
-    // Descripción del trabajo
-    if(m.descripcionTrabajo){
-      _pRect(d,L,y,2.5,14,PG.AMBER);
-      _pRect(d,L+2.5,y,CW-2.5,14,[241,245,249]);
-      _pFont(d,6.5,'bold',[51,65,85]); _pTxt(d,'DESCRIPCIÓN DEL TRABAJO',L+6,y+5);
-      _pFont(d,8,'normal',PG.DARK);
-      _pTxt(d,_pWrap(d,m.descripcionTrabajo,CW-10)[0]||'',L+6,y+11);
-      y+=18;
-    }
-
-    // Tabla de ítems
-    const cols=[8,68,14,22,24,14,32];
-    const aligns=['center','left','center','left','right','center','right'];
-    const colX=[L];
-    for(let i=0;i<cols.length-1;i++) colX.push(colX[i]+cols[i]);
-    const heads=['#','DESCRIPCIÓN','CANT.','UNIDAD','P. UNIT.','IVA','SUBTOTAL'];
-    const drawTableHead=(yy)=>{
-      _pRect(d,L,yy,CW,7.5,PG.DARK);
-      _pFont(d,6.5,'bold',PG.WHITE);
-      heads.forEach((h,c)=>{
-        const a=aligns[c];
-        const cx=a==='center'?colX[c]+cols[c]/2:a==='right'?colX[c]+cols[c]-2:colX[c]+2;
-        _pTxt(d,h,cx,yy+5,{align:a});
-      });
-      return yy+7.5;
-    };
-    y=drawTableHead(y);
-    const ivaTxtFn=it=>{
-      if(it.ivaPct!=null&&it.ivaPct!==''){const p=Number(it.ivaPct);return!isFinite(p)?'—':p<=0?'No':p+'%';}
-      return it.ivaSi===true?'15%':it.ivaSi===false?'No':'—';
-    };
-    const maxY=PG.H-PG.MB-52;
-    m.items.forEach((it,i)=>{
-      if(y+7>maxY){d.addPage();y=PG.MT;y=drawTableHead(y);}
-      _pRect(d,L,y,CW,7,i%2===0?PG.WHITE:[248,250,252],PG.SLATE_BD,0.1);
-      d.setDrawColor(226,232,240);d.setLineWidth(0.1);
-      colX.forEach(cx=>d.line(cx,y,cx,y+7));
-      d.line(L+CW,y,L+CW,y+7); d.line(L,y+7,L+CW,y+7);
-      const vals=[String(i+1),it.desc||'—',String(it.cant),it.unidad||'—',
-        `$${Number(it.pUnit).toFixed(2)}`,ivaTxtFn(it),`$${Number(it.sub).toFixed(2)}`];
-      vals.forEach((v,c)=>{
-        const a=aligns[c];
-        const cx=a==='center'?colX[c]+cols[c]/2:a==='right'?colX[c]+cols[c]-2:colX[c]+2;
-        _pFont(d,c===1?7.5:8,c===1?'bold':'normal',PG.DARK);
-        _pTxt(d,c===1?(_pWrap(d,v,cols[c]-4)[0]||''):v,cx,y+4.8,{align:a});
-      });
-      y+=7;
-    });
-    _pLine(d,L,y,L+CW,y,PG.LGRAY,0.4); y+=5;
-
-    // Totales
-    if(y+36>PG.H-PG.MB){d.addPage();y=PG.MT;}
-    const tX=R-64;
-    const totRow=(lbl,val,bold=false,vc=PG.DARK)=>{
-      _pFont(d,8.5,bold?'bold':'normal',bold?PG.DARK:PG.GRAY); _pTxt(d,lbl,tX,y+4);
-      _pFont(d,8.5,bold?'bold':'normal',vc); _pTxt(d,val,R,y+4,{align:'right'}); y+=6;
-    };
-    totRow('Subtotal',`$${m.subtotal.toFixed(2)}`);
-    if(m.descuentoValor>0.009)
-      totRow(`Descuento (${Number(m.descuentoPct).toFixed(0)}%)`,`-$${m.descuentoValor.toFixed(2)}`,false,PG.GREEN);
-    if(m.ivaValor>0.009)
-      totRow(m.ivaSumarioText||'IVA',`$${m.ivaValor.toFixed(2)}`);
-    y+=1; _pLine(d,tX-2,y,R,y,PG.YELLOW,0.9); y+=3;
-    _pFont(d,12,'bold',PG.DARK);
-    _pTxt(d,'TOTAL',tX,y+6); _pTxt(d,`$${m.total.toFixed(2)}`,R,y+6,{align:'right'}); y+=12;
-
-    if(m.formaPago){_pFont(d,8.5,'normal',PG.DARK);_pTxt(d,`Forma de pago: ${m.formaPago}`,L,y);y+=6;}
-    if(m.notas){
-      _pFont(d,8.5,'bold',PG.DARK);_pTxt(d,'Notas y condiciones:',L,y);y+=5;
-      _pFont(d,7.5,'normal',PG.DARK);
-      d.text(_pWrap(d,m.notas,CW),L,y);
-    }
-    _pPageFooter(d,`SEST · Servicios Eléctricos y Seguridad Tapia · Generado el ${new Date().toLocaleDateString('es-EC')}`);
-    d.save(filename);
-    _ocultarLoadingPdf(); toast('PDF descargado ✓','ok');
-  }catch(err){console.error(err);_ocultarLoadingPdf();toast('Error al generar PDF','err');}
-}
-
-// ── REPORTE TÉCNICO (Cable, Protección, Tubería) ────────────────
-function generarReporteTecnicoPDF(cfg){
-  _mostrarLoadingPdf('Generando informe técnico…');
-  try{
-    const d=_pdfNew();
-    const{titulo,subtitulo,ac=PG.YELLOW,nombre,cliente,elaborador,fecha,filename,secciones=[]}=cfg;
-    let y=PG.MT;
-    const L=PG.L,R=PG.R,CW=PG.CW;
-
-    // Header
-    _pFont(d,20,'bold',PG.DARK); _pTxt(d,'SEST',L,y+7);
-    _pFont(d,7,'normal',PG.GRAY);
-    _pTxt(d,'Servicios Eléctricos y Seguridad Tapia',L,y+12);
-    if(elaborador) _pTxt(d,`Elaborado por: ${elaborador}`,L,y+17);
-    _pFont(d,10,'bold',PG.DARK); _pTxt(d,titulo||'Informe Técnico',R,y+6,{align:'right'});
-    _pFont(d,7,'normal',PG.GRAY);
-    if(subtitulo) _pTxt(d,subtitulo,R,y+11,{align:'right'});
-    _pTxt(d,fecha||'',R,y+16,{align:'right'});
-    y+=22; _pLine(d,L,y,R,y,ac,1.2); y+=5;
-
-    // Info boxes: nombre + cliente
-    const hW=(CW-6)/2;
-    [[nombre||'—','NOMBRE DEL CÁLCULO',L],[cliente||'—','CLIENTE / PROYECTO',L+hW+6]].forEach(([val,lbl,bx])=>{
-      _pRect(d,bx,y,hW,12,PG.LIGHT,PG.SLATE_BD,0.15);
-      _pRect(d,bx,y,hW,1.2,ac);
-      _pFont(d,6,'normal',PG.GRAY); _pTxt(d,lbl,bx+3,y+5.5);
-      _pFont(d,9,'bold',PG.DARK); _pTxt(d,String(val).substring(0,44),bx+3,y+10.5);
-    });
-    y+=16;
-
-    // Secciones
-    for(const sec of secciones){
-      if(y+28>PG.H-PG.MB-15){d.addPage();y=PG.MT;}
-      y=_pSectionTitle(d,y,sec.titulo,ac);
-
-      if(sec.params){
-        const rows=[];
-        for(let i=0;i<sec.params.length;i+=3) rows.push(sec.params.slice(i,i+3));
-        for(const row of rows){
-          if(y+15>PG.H-PG.MB-15){d.addPage();y=PG.MT;}
-          const n=row.length, bW=(CW-(n-1)*3)/n;
-          let x=L;
-          row.forEach(({label,valor})=>{
-            _pRect(d,x,y,bW,13,PG.LIGHT,PG.SLATE_BD,0.15);
-            _pRect(d,x,y,bW,1.2,ac);
-            _pFont(d,6,'normal',PG.GRAY); _pTxt(d,String(label||'').toUpperCase(),x+2.5,y+5.5);
-            _pFont(d,9,'bold',PG.DARK);
-            _pTxt(d,_pWrap(d,valor||'—',bW-5)[0],x+2.5,y+11);
-            x+=bW+3;
-          });
-          y+=16;
-        }
-      }
-
-      if(sec.resultados){
-        if(y+24>PG.H-PG.MB-15){d.addPage();y=PG.MT;}
-        const n=sec.resultados.length, bW=(CW-(n-1)*4)/n;
-        let x=L;
-        sec.resultados.forEach(({label,valor,unit='',ok=null,color=PG.DARK})=>{
-          const bg=ok===true?PG.OK_BG:ok===false?PG.ERR_BG:PG.SLATE;
-          const bc=ok===true?PG.OK_BD:ok===false?PG.ERR_BD:PG.SLATE_BD;
-          _pRect(d,x,y,bW,20,bg,bc,0.4);
-          _pFont(d,6,'normal',PG.GRAY); _pTxt(d,String(label||'').toUpperCase(),x+bW/2,y+5,{align:'center'});
-          _pFont(d,12,'bold',color); _pTxt(d,String(valor||'—'),x+bW/2,y+13,{align:'center'});
-          if(unit){_pFont(d,7,'normal',PG.GRAY);_pTxt(d,unit,x+bW/2,y+18,{align:'center'});}
-          x+=bW+4;
-        });
-        y+=24;
-      }
-
-      if(sec.texto){
-        _pFont(d,8,'normal',PG.DARK);
-        for(const line of sec.texto){
-          if(y>PG.H-PG.MB-15){d.addPage();y=PG.MT;}
-          const wrapped=_pWrap(d,line,CW);
-          d.text(wrapped,L,y); y+=wrapped.length*4.5+1;
-        }
-        y+=2;
-      }
-
-      if(sec.nota){
-        if(y+14>PG.H-PG.MB-15){d.addPage();y=PG.MT;}
-        _pRect(d,L,y,CW,14,[235,253,240],PG.OK_BD,0.35);
-        _pFont(d,7.5,'normal',[21,128,61]);
-        const nl=_pWrap(d,sec.nota,CW-6);
-        d.text(nl,L+3,y+5); y+=nl.length*4.5+5;
-      }
-      y+=3;
-    }
-    _pPageFooter(d,`SEST · Servicios Eléctricos y Seguridad Tapia · Generado el ${new Date().toLocaleDateString('es-EC')}`);
-    d.save(cfg.filename);
-    _ocultarLoadingPdf(); toast('PDF descargado ✓','ok');
-  }catch(err){console.error(err);_ocultarLoadingPdf();toast('Error al generar PDF','err');}
-}
-
-// ── BALANCE DE CARGAS ───────────────────────────────────────────
-function generarBalancePDF(data){
-  _mostrarLoadingPdf('Generando informe de balance…');
-  try{
-    const d=_pdfNew();
-    const{nombre,cliente,ubicacion,fecha,elaborador,stats=[],filas=[],filasFase=[],filename}=data;
-    let y=PG.MT;
-    const L=PG.L,R=PG.R,CW=PG.CW;
-
-    // Header
-    _pFont(d,15,'bold',PG.DARK); _pTxt(d,'INFORME TÉCNICO ELÉCTRICO',L,y+6);
-    _pFont(d,8,'bold',PG.GRAY);  _pTxt(d,'Balance de Cargas · Dimensionamiento de Tablero',L,y+11);
-    _pFont(d,7,'normal',PG.GRAY);_pTxt(d,'NEC / NTE INEN 2345 / ARCONEL Ecuador',L,y+16);
-    _pFont(d,8,'bold',PG.DARK);  _pTxt(d,fecha||'',R,y+6,{align:'right'});
-    _pFont(d,7,'normal',PG.GRAY);_pTxt(d,'SEST · Ingeniería Eléctrica',R,y+11,{align:'right'});
-    if(elaborador) _pTxt(d,`Por: ${elaborador}`,R,y+16,{align:'right'});
-    y+=21; _pLine(d,L,y,R,y,PG.YELLOW,1.2); y+=5;
-
-    // Datos del proyecto
-    y=_pSectionTitle(d,y,'1. DATOS DEL PROYECTO');
-    const c3W=(CW-6)/3;
-    [[nombre||'—','PROYECTO',PG.YELLOW],[cliente||'—','CLIENTE',PG.BLUE],[ubicacion||'—','UBICACIÓN',PG.GREEN]]
-      .forEach(([val,lbl,ac],i)=>{
-        const bx=L+i*(c3W+3);
-        _pRect(d,bx,y,c3W,12,PG.LIGHT,PG.SLATE_BD,0.15);
-        _pRect(d,bx,y,c3W,1.2,ac);
-        _pFont(d,6,'normal',PG.GRAY); _pTxt(d,lbl,bx+2.5,y+5.5);
-        _pFont(d,9,'bold',PG.DARK);   _pTxt(d,_pWrap(d,val,c3W-5)[0],bx+2.5,y+11);
-      });
-    y+=16;
-
-    // Resumen ejecutivo
-    y=_pSectionTitle(d,y,'2. RESUMEN EJECUTIVO');
-    const sW=(CW-(stats.length-1)*2)/stats.length;
-    let sx=L;
-    stats.forEach(({label,valor,unit,color=PG.YELLOW,bg=PG.DARK})=>{
-      _pRect(d,sx,y,sW,18,bg);
-      _pFont(d,6,'normal',[160,160,180]); _pTxt(d,String(label||'').toUpperCase(),sx+sW/2,y+5,{align:'center'});
-      _pFont(d,13,'bold',color);           _pTxt(d,String(valor||'—'),sx+sW/2,y+12,{align:'center'});
-      _pFont(d,6.5,'normal',[160,160,180]);_pTxt(d,String(unit||''),sx+sW/2,y+17,{align:'center'});
-      sx+=sW+2;
-    });
-    y+=22;
-
-    // Tabla de circuitos
-    if(y+20>PG.H-PG.MB-15){d.addPage();y=PG.MT;}
-    y=_pSectionTitle(d,y,'3. TABLA DE CIRCUITOS');
-
-    // 12 columnas, escaladas al ancho de página
-    const bRaw=[7,38,15,9,9,9,9,11,11,13,16,16];
-    const bSum=bRaw.reduce((a,b)=>a+b,0);
-    const bCols=bRaw.map(c=>Math.round(c*CW/bSum*10)/10);
-    const bHds=['#','Descripción','Tipo','Cant','V','Fase','FS%','kW','I(A)','AWG','Breaker','Conduit'];
-    const bAl= ['c','l','l','c','c','c','c','r','r','c','c','c'];
-    const bCX=[L]; for(let i=0;i<bCols.length-1;i++) bCX.push(bCX[i]+bCols[i]);
-    const bColCX=(c)=>bAl[c]==='c'?bCX[c]+bCols[c]/2:bAl[c]==='r'?bCX[c]+bCols[c]-1:bCX[c]+1;
-    const bColAlign=(c)=>bAl[c]==='c'?'center':bAl[c]==='r'?'right':'left';
-
-    const drawBalHead=(yy)=>{
-      _pRect(d,L,yy,CW,6.5,PG.DARK);
-      _pFont(d,5.5,'bold',PG.WHITE);
-      bHds.forEach((h,c)=>_pTxt(d,h,bColCX(c),yy+4.5,{align:bColAlign(c)}));
-      return yy+6.5;
-    };
-    y=drawBalHead(y);
-    const maxY2=PG.H-PG.MB-15;
-
-    filas.forEach((row,i)=>{
-      if(y+5.5>maxY2){d.addPage();y=PG.MT;y=drawBalHead(y);}
-      _pRect(d,L,y,CW,5.5,i%2===0?PG.WHITE:[248,250,252],PG.SLATE_BD,0.1);
-      d.setDrawColor(226,232,240);d.setLineWidth(0.1);
-      bCX.forEach(cx=>d.line(cx,y,cx,y+5.5));
-      d.line(L+CW,y,L+CW,y+5.5); d.line(L,y+5.5,L+CW,y+5.5);
-      row.forEach((v,c)=>{
-        if(c>=bHds.length)return;
-        const colors={9:[29,78,216],10:[180,83,9],11:[22,101,52]};
-        _pFont(d,5.5,c===1||c===9||c===10||c===11?'bold':'normal',colors[c]||PG.DARK);
-        const txt=c===1?(_pWrap(d,String(v||'—'),bCols[c]-2)[0]||''):String(v||'—');
-        _pTxt(d,txt,bColCX(c),y+3.9,{align:bColAlign(c)});
-      });
-      y+=5.5;
-    });
-    _pLine(d,L,y,L+CW,y,PG.LGRAY,0.4); y+=7;
-
-    // Balance por fases
-    if(filasFase&&filasFase.length>1){
-      if(y+25>PG.H-PG.MB-15){d.addPage();y=PG.MT;}
-      y=_pSectionTitle(d,y,'4. BALANCE POR FASE');
-      const fW=140, fCols=[25,38,38,39];
-      const fHds=['FASE','POTENCIA (kW)','CORRIENTE (A)','% DEL TOTAL'];
-      const fCX=[L]; for(let i=0;i<fCols.length-1;i++) fCX.push(fCX[i]+fCols[i]);
-      _pRect(d,L,y,fW,6,PG.DARK);
-      _pFont(d,6.5,'bold',PG.WHITE);
-      fHds.forEach((h,i)=>_pTxt(d,h,fCX[i]+fCols[i]/2,y+4.3,{align:'center'}));
-      y+=6;
-      filasFase.forEach((row,i)=>{
-        _pRect(d,L,y,fW,6,i%2===0?PG.WHITE:[248,250,252],PG.SLATE_BD,0.1);
-        _pFont(d,7,'bold',PG.DARK);
-        row.forEach((v,c)=>_pTxt(d,String(v||'—'),fCX[c]+fCols[c]/2,y+4.2,{align:'center'}));
-        y+=6;
-      });
-    }
-
-    _pPageFooter(d,`SEST · Balance de Cargas · Generado el ${new Date().toLocaleDateString('es-EC')}`);
-    d.save(filename);
-    _ocultarLoadingPdf(); toast('PDF descargado ✓','ok');
-  }catch(err){console.error(err);_ocultarLoadingPdf();toast('Error al generar PDF','err');}
-}
-
-// ── Overlay moderno de carga PDF ─────────────────────────────────
 function _mostrarLoadingPdf(msg){
   const existing = document.getElementById('pdf-loading-overlay');
   if(existing) existing.remove();
@@ -5477,7 +5200,7 @@ async function exportarPDFCable(){
   generarReporteTecnicoPDF({
     titulo:'Calculo de Conductor AWG',
     subtitulo:'NEC 310.15(B)(16) / NTE INEN 2345',
-    ac:PG.YELLOW,nombre:'Calibrador de Cables',cliente:usuario?.nombre||'SEST',
+    ac:GOLD,nombre:'Calibrador de Cables',cliente:usuario?.nombre||'SEST',
     elaborador:usuario?.nombre||'',fecha,
     filename:'Calculo_Cable_AWG_'+new Date().toISOString().slice(0,10)+'.pdf',
     secciones:[
@@ -5495,15 +5218,15 @@ async function exportarPDFCable(){
       ]},
       {titulo:'2. RESULTADO DEL CALCULO',resultados:[
         {label:'Calibre Final',valor:awgFinal?'AWG '+awgFinal[0]:'-',
-         unit:awgFinal?awgFinal[1].toFixed(2)+' mm2':'',color:PG.YELLOW},
-        {label:'Corriente diseno',valor:IdCorr.toFixed(2),unit:'A (con factores)',color:PG.BLUE},
+         unit:awgFinal?awgFinal[1].toFixed(2)+' mm2':'',color:GOLD},
+        {label:'Corriente diseno',valor:IdCorr.toFixed(2),unit:'A (con factores)',color:[59,130,246]},
         {label:'Caida de tension',valor:caidaReal.toFixed(2)+'%',
          unit:caidaOk?'OK - dentro del limite':'Excede '+caidaMax+'%',ok:caidaOk,
-         color:caidaOk?PG.GREEN:PG.RED},
+         color:caidaOk?[22,163,74]:[220,38,38]},
         {label:'Corriente de carga',valor:Ic.toFixed(2),
-         unit:tension+'V - '+(nFases===3?'Trifasico':'Monofasico'),color:PG.DARK},
-        {label:'Breaker recomendado',valor:brkRec+' A',unit:polos+' - IEC/NTE INEN',color:PG.DARK},
-        {label:'Ampacidad del cable',valor:awgFinal?awgFinal[colIdx]+' A':'-',unit:tempColInfo.label,color:PG.DARK},
+         unit:tension+'V - '+(nFases===3?'Trifasico':'Monofasico'),color:DTXT},
+        {label:'Breaker recomendado',valor:brkRec+' A',unit:polos+' - IEC/NTE INEN',color:DTXT},
+        {label:'Ampacidad del cable',valor:awgFinal?awgFinal[colIdx]+' A':'-',unit:tempColInfo.label,color:DTXT},
       ]},
       {titulo:'3. NORMATIVA APLICADA',texto:[
         '- NEC 310.15(B)(16) / NTE INEN 2345 - Col: '+tempColInfo.label,
@@ -5556,7 +5279,7 @@ async function _exportarPDFProteccion(snap,nombre,cliente,notas){
   let prKA=6;if(IccKA>6)prKA=10;if(IccKA>10)prKA=25;if(IccKA>25)prKA=50;
   generarReporteTecnicoPDF({
     titulo:'Dimensionamiento de Protecciones',subtitulo:'NEC Art. 240/430 - NTE INEN',
-    ac:PG.RED,nombre,cliente,elaborador:usuario?.nombre||'',fecha,
+    ac:[220,38,38],nombre,cliente,elaborador:usuario?.nombre||'',fecha,
     filename:'Proteccion_'+nombre.replace(/[^a-zA-Z0-9]/g,'_')+'.pdf',
     secciones:[
       {titulo:'1. PARAMETROS DE ENTRADA',params:[
@@ -5568,10 +5291,10 @@ async function _exportarPDFProteccion(snap,nombre,cliente,notas){
         {label:'Nombre calculo',valor:nombre},
       ]},
       {titulo:'2. RESULTADOS',resultados:[
-        {label:'Breaker recomendado',valor:cbRec+' A',unit:'Min. '+IbCB.toFixed(1)+' A - '+(fases===3?'3 polos':'2 polos'),color:PG.RED},
-        {label:'Fusible recomendado',valor:fusRec+' A',unit:'Min. '+IbFus.toFixed(1)+' A dual element',color:PG.BLUE},
-        {label:'Icc calculada',valor:Icc.toFixed(0)+' A',unit:IccKA.toFixed(2)+' kA',color:PG.DARK},
-        {label:'Poder de corte min.',valor:prKA+' kA',unit:'Segun NEC 110.9',ok:prKA>=IccKA,color:PG.DARK},
+        {label:'Breaker recomendado',valor:cbRec+' A',unit:'Min. '+IbCB.toFixed(1)+' A - '+(fases===3?'3 polos':'2 polos'),color:[220,38,38]},
+        {label:'Fusible recomendado',valor:fusRec+' A',unit:'Min. '+IbFus.toFixed(1)+' A dual element',color:[59,130,246]},
+        {label:'Icc calculada',valor:Icc.toFixed(0)+' A',unit:IccKA.toFixed(2)+' kA',color:DTXT},
+        {label:'Poder de corte min.',valor:prKA+' kA',unit:'Segun NEC 110.9',ok:prKA>=IccKA,color:DTXT},
       ]},
       {titulo:'3. NOTA TECNICA',nota:f.nota},
       {titulo:'4. NORMATIVA',texto:[
@@ -5614,7 +5337,7 @@ async function _exportarPDFTuberia(snap,nombre,cliente,notas){
   const pctOk=pctLlenado<=(factor*100);
   generarReporteTecnicoPDF({
     titulo:'Calculo de Tuberias / Conduit',subtitulo:'NEC Chapter 9 Table 1 & 4 - NTE INEN',
-    ac:PG.GREEN,nombre,cliente,elaborador:usuario?.nombre||'',fecha,
+    ac:[22,163,74],nombre,cliente,elaborador:usuario?.nombre||'',fecha,
     filename:'Tuberia_'+nombre.replace(/[^a-zA-Z0-9]/g,'_')+'.pdf',
     secciones:[
       {titulo:'1. PARAMETROS DE ENTRADA',params:[
@@ -5626,10 +5349,10 @@ async function _exportarPDFTuberia(snap,nombre,cliente,notas){
         {label:'Area total',valor:totalArea.toFixed(2)+' mm2'},
       ]},
       {titulo:'2. RESULTADOS',resultados:[
-        {label:'Conduit recomendado',valor:tipo+' '+nomSel,unit:'Area: '+areaSel.toFixed(1)+' mm2',color:PG.GREEN},
+        {label:'Conduit recomendado',valor:tipo+' '+nomSel,unit:'Area: '+areaSel.toFixed(1)+' mm2',color:[22,163,74]},
         {label:'Area conductores',valor:totalArea.toFixed(1),unit:'mm2 - '+areaCond+' mm2 c/u',color:[21,128,61]},
         {label:'Porcentaje llenado',valor:pctLlenado.toFixed(1)+'%',
-         unit:(pctOk?'Dentro del limite':'Excede limite')+' ('+(factor*100).toFixed(0)+'%)',ok:pctOk,color:pctOk?PG.GREEN:PG.RED},
+         unit:(pctOk?'Dentro del limite':'Excede limite')+' ('+(factor*100).toFixed(0)+'%)',ok:pctOk,color:pctOk?[22,163,74]:[220,38,38]},
       ]},
       {titulo:'3. NOTA NEC',nota:'Con '+nCond+' conductor'+(nCond>1?'es':'')+', llenado maximo: '+(factor*100).toFixed(0)+'%. Area minima requerida: '+areaConduitMin.toFixed(1)+' mm2'},
       {titulo:'4. NORMATIVA',texto:[
@@ -5688,12 +5411,12 @@ function _buildBalancePdfData(nombre,cliente,ubicacion,tipoTab,tempFactor,cargas
     return[f,(pf/1000).toFixed(3)+' kW',If.toFixed(2)+' A',pct.toFixed(1)+'%'];
   });
   const stats=[
-    {label:'Pot. Instalada',valor:(totalW/1000).toFixed(2),unit:'kW',color:PG.YELLOW},
+    {label:'Pot. Instalada',valor:(totalW/1000).toFixed(2),unit:'kW',color:GOLD},
     {label:'Demanda',valor:(totalWD/1000).toFixed(2),unit:'kW',color:[34,197,94]},
     {label:'I. Total',valor:ITotal.toFixed(2),unit:'A',color:[96,165,250]},
     {label:'Desbalance',valor:desbalance.toFixed(1)+'%',unit:desbalance>10?'Excede':'OK',
-     color:desbalance>10?PG.RED:[34,197,94]},
-    {label:'Breaker Ppal',valor:brkAco+'A',unit:esTri?'3P':'2P',color:PG.YELLOW},
+     color:desbalance>10?[220,38,38]:[34,197,94]},
+    {label:'Breaker Ppal',valor:brkAco+'A',unit:esTri?'3P':'2P',color:GOLD},
   ];
   return{nombre,cliente,ubicacion,fecha,elaborador,stats,filas,filasFase,
     filename:'Informe_'+nombre.replace(/[^a-zA-Z0-9]/g,'_')+'.pdf'};
@@ -5728,6 +5451,370 @@ async function generarInformePDF(){
     JSON.parse(JSON.stringify(cargas)),_bcSistema,usuario?.nombre||''
   );
   generarBalancePDF(data);
+}
+
+
+// ══════════════════════════════════════════════════════════════════════
+// COTIZACIÓN PDF — Diseño profesional con curvas y acento dorado
+// ══════════════════════════════════════════════════════════════════════
+async function generarCotizacionPDF(m, filename){
+  _mostrarLoadingPdf('Preparando cotización…');
+  try {
+    const d = _pdfNew();
+    const L=18, R=192, CW=174;
+    const logoB64 = await _loadLogoBase64();
+
+    _drawSESTDecorations(d, GOLD);
+
+    // Logo
+    if(logoB64){ d.addImage(logoB64,'JPEG',L,10,22,22); }
+    else { _drawLogoCircle(d, L+11, 21, 11); }
+
+    // Nombre empresa
+    _pf(d,12,'bold',NAVY);
+    const empLines = _pw(d,'SEST - Servicios Eléctricos y Seguridad Tapia', 100);
+    d.text(empLines, L+27, 16);
+
+    // Fecha (izquierda de la decoración navy)
+    _pf(d,9,'normal',[80,90,110]); _pt(d, m.fechaFmt||'', 148, 16);
+
+    // Número cotización
+    _pf(d,7.5,'bold',[80,90,110]); _pt(d,'COTIZACIÓN',148,22);
+    _pf(d,11,'bold',NAVY);         _pt(d,`N° ${m.numero||'—'}`,148,28);
+    _pf(d,8,'normal',[80,90,110]); _pt(d,`Validez: ${m.validez||30} días`,148,34);
+    if(m.elaborador) _pt(d,`Por: ${m.elaborador}`,148,39);
+
+    // Datos del cliente
+    let y = 39;
+    if(m.cliente.nombre&&m.cliente.nombre!=='Sin cliente'){
+      _pf(d,10.5,'bold',DTXT); _pt(d,m.cliente.nombre,L,y); y+=5.5;
+    }
+    const cliLines=[m.cliente.empresa,
+      m.cliente.ruc?`RUC/CI: ${m.cliente.ruc}`:'',
+      m.cliente.email,
+      m.cliente.tel?`Tel: ${m.cliente.tel}`:'',
+      m.cliente.dir].filter(Boolean);
+    _pf(d,8.5,'normal',[60,75,90]);
+    cliLines.forEach(l=>{_pt(d,l,L,y);y+=4.5;});
+
+    // Descripción del trabajo
+    if(m.descripcionTrabajo){
+      y=Math.max(y,56)+2;
+      _pf(d,8,'bold',NAVY); _pt(d,'Descripción del trabajo:',L,y); y+=4.5;
+      _pf(d,8,'normal',DTXT);
+      const dl=_pw(d,m.descripcionTrabajo,CW);
+      d.text(dl,L,y); y+=dl.length*4.5+4;
+    } else { y=Math.max(y,58)+5; }
+
+    // ── Tabla de ítems ──────────────────────────────────────────────
+    const colW=[8,72,14,22,22,14,22];
+    const colX=[L]; for(let i=0;i<colW.length-1;i++) colX.push(colX[i]+colW[i]);
+    const rowH=7.5;
+    const heads=['#','Descripción','Cant.','Unidad','P. Unit.','IVA','Subtotal'];
+    const aligns=['c','l','c','l','r','c','r'];
+    const drawHead=(yy)=>{
+      _prect(d,L,yy,CW,rowH,NAVY);
+      _pf(d,7.5,'bold',[255,255,255]);
+      heads.forEach((h,c)=>{
+        const a=aligns[c]==='c'?'center':aligns[c]==='r'?'right':'left';
+        const px=a==='center'?colX[c]+colW[c]/2:a==='right'?colX[c]+colW[c]-2:colX[c]+2;
+        _pt(d,h,px,yy+5.2,{align:a});
+      });
+      return yy+rowH;
+    };
+    const ivaTxt=it=>{
+      if(it.ivaPct!=null&&it.ivaPct!==''){const p=Number(it.ivaPct);return!isFinite(p)?'—':p<=0?'No':p+'%';}
+      return it.ivaSi===true?'15%':it.ivaSi===false?'No':'—';
+    };
+    y=drawHead(y);
+    const maxY=252;
+    m.items.forEach((it,i)=>{
+      if(y+rowH>maxY){d.addPage();_drawSESTDecorations(d,GOLD);y=22;y=drawHead(y);}
+      _prect(d,L,y,CW,rowH,i%2===0?[255,255,255]:CREAM,[210,220,230],0.12);
+      d.setDrawColor(210,220,230);d.setLineWidth(0.12);
+      colX.forEach(cx=>d.line(cx,y,cx,y+rowH));
+      d.line(L+CW,y,L+CW,y+rowH);d.line(L,y+rowH,L+CW,y+rowH);
+      const vals=[String(i+1),it.desc||'—',String(it.cant),it.unidad||'—',
+        `$${Number(it.pUnit).toFixed(2)}`,ivaTxt(it),`$${Number(it.sub).toFixed(2)}`];
+      vals.forEach((v,c)=>{
+        const a=aligns[c]==='c'?'center':aligns[c]==='r'?'right':'left';
+        const px=a==='center'?colX[c]+colW[c]/2:a==='right'?colX[c]+colW[c]-2:colX[c]+2;
+        _pf(d,c===1?8:8,c===1?'bold':'normal',DTXT);
+        _pt(d,c===1?(_pw(d,v,colW[c]-4)[0]||''):v,px,y+5.2,{align:a});
+      });
+      y+=rowH;
+    });
+    _pln(d,L,y,L+CW,y,[180,195,210],0.5); y+=5;
+
+    // ── Totales ─────────────────────────────────────────────────────
+    if(y+38>maxY){d.addPage();_drawSESTDecorations(d,GOLD);y=22;}
+    const tX=R-72;
+    _pf(d,8.5,'bold',DTXT);  _pt(d,'SUBTOTAL:',tX,y+5);
+    _pf(d,8.5,'normal',DTXT);_pt(d,`$${m.subtotal.toFixed(2)}`,R,y+5,{align:'right'}); y+=7;
+    if(m.descuentoValor>0.009){
+      _pf(d,8.5,'bold',DTXT); _pt(d,`DESCUENTO ${Number(m.descuentoPct).toFixed(0)}%:`,tX,y+5);
+      _pf(d,8.5,'bold',[30,130,70]); _pt(d,`$${(m.subtotal-m.descuentoValor).toFixed(2)}`,R,y+5,{align:'right'}); y+=7;
+    }
+    if(m.ivaValor>0.009){
+      _pf(d,8.5,'bold',DTXT); _pt(d,m.ivaSumarioText||'IVA:',tX,y+5);
+      _pf(d,8.5,'normal',DTXT);_pt(d,`$${m.ivaValor.toFixed(2)}`,R,y+5,{align:'right'}); y+=7;
+    }
+    // Caja total con fondo dorado
+    _prect(d,tX-2,y,74,9.5,GOLD);
+    _pf(d,10,'bold',DTXT); _pt(d,'TOTAL:',tX+2,y+6.5);
+    _pt(d,`$${m.total.toFixed(2)}`,R-1,y+6.5,{align:'right'}); y+=16;
+
+    // ── Nota + Firma ────────────────────────────────────────────────
+    if(y+30>maxY){d.addPage();_drawSESTDecorations(d,GOLD);y=22;}
+    if(m.formaPago){
+      _pf(d,8.5,'bold',DTXT); _pt(d,'Forma de pago: ',L,y);
+      _pf(d,8.5,'normal',DTXT); _pt(d,m.formaPago,L+33,y); y+=6;
+    }
+    if(m.notas){
+      _pf(d,9,'bold',DTXT);   _pt(d,'Nota:',L,y); y+=5;
+      _pf(d,8,'normal',[60,75,90]);
+      const nl=_pw(d,m.notas,100); d.text(nl,L,y); y+=nl.length*4.5+4;
+    }
+    // Línea de firma
+    const sigStart=R-58, sigEnd=R;
+    _pln(d,sigStart,y+18,sigEnd,y+18,[100,115,130],0.5);
+    _pf(d,7,'normal',[90,100,115]);
+    const sigName=m.elaborador||'Firma autorizada';
+    _pt(d,sigName,(sigStart+sigEnd)/2,y+23,{align:'center'});
+    _pt(d,'C.C ________________',(sigStart+sigEnd)/2,y+27,{align:'center'});
+
+    // ── Footer ──────────────────────────────────────────────────────
+    const footY=276;
+    _pln(d,L,footY,R,footY,[180,195,210],0.3);
+    _pf(d,7.5,'normal',[90,100,115]);
+    _pt(d,'SEST · Servicios Eléctricos y Seguridad Tapia',105,footY+4,{align:'center'});
+    _pt(d,`Generado el ${new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})}`,105,footY+9,{align:'center'});
+
+    _pdfFooterPages(d);
+    d.save(filename);
+    _ocultarLoadingPdf(); toast('PDF descargado ✓','ok');
+  } catch(err){
+    console.error(err); _ocultarLoadingPdf();
+    toast('Error al generar PDF: '+err.message,'err');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// REPORTE TÉCNICO PDF — mismo diseño, color de acento variable
+// ══════════════════════════════════════════════════════════════════════
+function generarReporteTecnicoPDF(cfg){
+  _mostrarLoadingPdf('Generando informe técnico…');
+  try{
+    const d=_pdfNew();
+    const{titulo,subtitulo,ac=GOLD,nombre,cliente,elaborador,fecha,filename,secciones=[]}=cfg;
+    const L=18,R=192,CW=174;
+
+    _drawSESTDecorations(d,ac);
+
+    // Header
+    _drawLogoCircle(d,L+11,21,11);
+    _pf(d,12,'bold',NAVY); _pt(d,'SEST',L+26,17);
+    _pf(d,7,'normal',[80,90,110]); _pt(d,'Servicios Eléctricos y Seguridad Tapia',L+26,22);
+    if(elaborador){ _pf(d,7,'normal',[80,90,110]); _pt(d,`Por: ${elaborador}`,L+26,27); }
+    _pf(d,10,'bold',NAVY); _pt(d,titulo||'Informe Técnico',148,16,{align:'right'});
+    _pf(d,7,'normal',[80,90,110]);
+    if(subtitulo) _pt(d,subtitulo,148,21,{align:'right'});
+    _pt(d,fecha||'',148,26,{align:'right'});
+
+    let y=40;
+    // Cajas info
+    const hW=(CW-5)/2;
+    [[nombre||'—','CÁLCULO',L],[cliente||'—','CLIENTE',L+hW+5]].forEach(([val,lbl,bx])=>{
+      _prect(d,bx,y,hW,11,SLATE_P,[210,220,230],0.2);
+      _prect(d,bx,y,hW,1.5,ac);
+      _pf(d,6,'normal',[100,115,130]); _pt(d,lbl,bx+3,y+5.5);
+      _pf(d,9,'bold',DTXT); _pt(d,String(val).substring(0,42),bx+3,y+10);
+    });
+    y+=15;
+
+    for(const sec of secciones){
+      if(y+22>268){d.addPage();_drawSESTDecorations(d,ac);y=22;}
+      // Título de sección
+      _prect(d,L,y,2.5,6,ac);
+      _pf(d,7.5,'bold',[55,65,81]); _pt(d,sec.titulo.toUpperCase(),L+5,y+4.5);
+      y+=11;
+
+      if(sec.params){
+        const rows=[];
+        for(let i=0;i<sec.params.length;i+=3) rows.push(sec.params.slice(i,i+3));
+        for(const row of rows){
+          if(y+14>268){d.addPage();_drawSESTDecorations(d,ac);y=22;}
+          const n=row.length,bW=(CW-(n-1)*3)/n;
+          let x=L;
+          row.forEach(({label,valor})=>{
+            _prect(d,x,y,bW,12,SLATE_P,[210,220,230],0.15);
+            _prect(d,x,y,bW,1.5,ac);
+            _pf(d,5.5,'normal',[100,115,130]); _pt(d,String(label||'').toUpperCase(),x+2.5,y+5.5);
+            _pf(d,8.5,'bold',DTXT); _pt(d,_pw(d,valor||'—',bW-5)[0],x+2.5,y+10.5);
+            x+=bW+3;
+          });
+          y+=15;
+        }
+      }
+
+      if(sec.resultados){
+        if(y+22>268){d.addPage();_drawSESTDecorations(d,ac);y=22;}
+        const n=sec.resultados.length,bW=(CW-(n-1)*3)/n;
+        let x=L;
+        sec.resultados.forEach(({label,valor,unit='',ok=null,color=DTXT})=>{
+          const bg=ok===true?[240,253,244]:ok===false?[254,242,242]:SLATE_P;
+          const bc=ok===true?[187,247,208]:ok===false?[254,202,202]:[210,220,230];
+          _prect(d,x,y,bW,20,bg,bc,0.4);
+          _pf(d,6,'normal',[100,115,130]); _pt(d,String(label||'').toUpperCase(),x+bW/2,y+5.5,{align:'center'});
+          _pf(d,11,'bold',color); _pt(d,String(valor||'—'),x+bW/2,y+13,{align:'center'});
+          if(unit){_pf(d,6,'normal',[100,115,130]);_pt(d,unit,x+bW/2,y+17.5,{align:'center'});}
+          x+=bW+3;
+        });
+        y+=24;
+      }
+
+      if(sec.texto){
+        _pf(d,8,'normal',DTXT);
+        for(const line of sec.texto){
+          if(y>268){d.addPage();_drawSESTDecorations(d,ac);y=22;}
+          const wl=_pw(d,line,CW); d.text(wl,L,y); y+=wl.length*4.5+1.5;
+        }
+        y+=2;
+      }
+
+      if(sec.nota){
+        if(y+14>268){d.addPage();_drawSESTDecorations(d,ac);y=22;}
+        _prect(d,L,y,CW,14,[235,253,240],[187,247,208],0.35);
+        _pf(d,7.5,'normal',[21,128,61]);
+        const nl=_pw(d,sec.nota,CW-6); d.text(nl,L+3,y+5.5); y+=nl.length*4.5+6;
+      }
+      y+=3;
+    }
+
+    const footY=276;
+    _pln(d,L,footY,R,footY,[180,195,210],0.3);
+    _pf(d,7,'normal',[100,115,130]);
+    _pt(d,'SEST · Servicios Eléctricos y Seguridad Tapia',105,footY+4,{align:'center'});
+    _pt(d,`Generado el ${new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})}`,105,footY+9,{align:'center'});
+
+    _pdfFooterPages(d);
+    d.save(filename);
+    _ocultarLoadingPdf(); toast('PDF descargado ✓','ok');
+  }catch(err){ console.error(err); _ocultarLoadingPdf(); toast('Error al generar PDF','err'); }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// BALANCE DE CARGAS PDF — acento azul
+// ══════════════════════════════════════════════════════════════════════
+function generarBalancePDF(data){
+  _mostrarLoadingPdf('Generando informe de balance…');
+  try{
+    const d=_pdfNew();
+    const{nombre,cliente,ubicacion,fecha,elaborador,stats=[],filas=[],filasFase=[],filename}=data;
+    const L=18,R=192,CW=174;
+    const BLUE=[37,99,235];
+
+    _drawSESTDecorations(d,BLUE);
+
+    // Header
+    _drawLogoCircle(d,L+11,21,11);
+    _pf(d,10.5,'bold',NAVY); _pt(d,'INFORME TÉCNICO ELÉCTRICO',L+26,17);
+    _pf(d,7,'normal',[80,90,110]); _pt(d,'Balance de Cargas · Dimensionamiento de Tablero',L+26,22);
+    _pf(d,7,'normal',[80,90,110]); _pt(d,'NEC / NTE INEN 2345 / ARCONEL Ecuador',L+26,27);
+    _pf(d,8.5,'bold',DTXT); _pt(d,fecha||'',R,17,{align:'right'});
+    if(elaborador){_pf(d,7,'normal',[80,90,110]);_pt(d,`Por: ${elaborador}`,R,22,{align:'right'});}
+
+    let y=40;
+    // Datos proyecto
+    const c3W=(CW-6)/3;
+    [[nombre||'—','PROYECTO',BLUE],[cliente||'—','CLIENTE',[22,163,74]],[ubicacion||'—','UBICACIÓN',[234,88,12]]]
+      .forEach(([val,lbl,ac],i)=>{
+        const bx=L+i*(c3W+3);
+        _prect(d,bx,y,c3W,12,SLATE_P,[210,220,230],0.15);
+        _prect(d,bx,y,c3W,1.5,ac);
+        _pf(d,6,'normal',[100,115,130]); _pt(d,lbl,bx+2.5,y+5.5);
+        _pf(d,8.5,'bold',DTXT); _pt(d,_pw(d,val,c3W-5)[0],bx+2.5,y+10.5);
+      });
+    y+=16;
+
+    // Stats
+    const sW=(CW-(stats.length-1)*2)/stats.length;
+    let sx=L;
+    stats.forEach(({label,valor,unit,color=GOLD})=>{
+      _prect(d,sx,y,sW,18,NAVY);
+      _pf(d,5.5,'normal',[160,170,190]); _pt(d,String(label||'').toUpperCase(),sx+sW/2,y+5,{align:'center'});
+      _pf(d,12,'bold',color||GOLD); _pt(d,String(valor||'—'),sx+sW/2,y+12,{align:'center'});
+      _pf(d,6,'normal',[160,170,190]); _pt(d,String(unit||''),sx+sW/2,y+17,{align:'center'});
+      sx+=sW+2;
+    });
+    y+=23;
+
+    // Tabla circuitos
+    if(y+22>268){d.addPage();_drawSESTDecorations(d,BLUE);y=22;}
+    _prect(d,L,y,2.5,6,BLUE);
+    _pf(d,7.5,'bold',[55,65,81]); _pt(d,'TABLA DE CIRCUITOS',L+5,y+4.5); y+=11;
+
+    const bRaw=[7,38,15,9,9,9,9,11,11,13,16,16];
+    const bSum=bRaw.reduce((a,b)=>a+b,0);
+    const bCols=bRaw.map(c=>Math.round(c*CW/bSum*10)/10);
+    const bHds=['#','Descripción','Tipo','Cant','V','Fase','FS%','kW','I(A)','AWG','Breaker','Conduit'];
+    const bAl=['c','l','l','c','c','c','c','r','r','c','c','c'];
+    const bCX=[L]; for(let i=0;i<bCols.length-1;i++) bCX.push(bCX[i]+bCols[i]);
+    const bCXc=(c)=>bAl[c]==='c'?bCX[c]+bCols[c]/2:bAl[c]==='r'?bCX[c]+bCols[c]-1:bCX[c]+1;
+    const bAln=(c)=>bAl[c]==='c'?'center':bAl[c]==='r'?'right':'left';
+    const drawBH=(yy)=>{
+      _prect(d,L,yy,CW,6.5,NAVY);
+      _pf(d,5.5,'bold',[255,255,255]);
+      bHds.forEach((h,c)=>_pt(d,h,bCXc(c),yy+4.5,{align:bAln(c)}));
+      return yy+6.5;
+    };
+    y=drawBH(y);
+    filas.forEach((row,i)=>{
+      if(y+5.5>265){d.addPage();_drawSESTDecorations(d,BLUE);y=22;y=drawBH(y);}
+      _prect(d,L,y,CW,5.5,i%2===0?[255,255,255]:CREAM,[210,220,230],0.1);
+      d.setDrawColor(210,220,230);d.setLineWidth(0.1);
+      bCX.forEach(cx=>d.line(cx,y,cx,y+5.5));
+      d.line(L+CW,y,L+CW,y+5.5);d.line(L,y+5.5,L+CW,y+5.5);
+      row.forEach((v,c)=>{
+        if(c>=bHds.length)return;
+        const cols={9:[29,78,216],10:[180,83,9],11:[22,101,52]};
+        _pf(d,5.5,c===1||c>=9?'bold':'normal',cols[c]||DTXT);
+        _pt(d,c===1?(_pw(d,String(v||'—'),bCols[c]-2)[0]||''):String(v||'—'),bCXc(c),y+3.9,{align:bAln(c)});
+      });
+      y+=5.5;
+    });
+    _pln(d,L,y,L+CW,y,[180,195,210],0.4); y+=7;
+
+    // Balance por fases
+    if(filasFase&&filasFase.length>1){
+      if(y+25>265){d.addPage();_drawSESTDecorations(d,BLUE);y=22;}
+      _prect(d,L,y,2.5,6,BLUE);
+      _pf(d,7.5,'bold',[55,65,81]); _pt(d,'BALANCE POR FASE',L+5,y+4.5); y+=11;
+      const fW=140,fCols=[25,38,38,39];
+      const fHds=['FASE','POTENCIA (kW)','CORRIENTE (A)','% DEL TOTAL'];
+      const fCX=[L]; for(let i=0;i<fCols.length-1;i++) fCX.push(fCX[i]+fCols[i]);
+      _prect(d,L,y,fW,6.5,NAVY);
+      _pf(d,6.5,'bold',[255,255,255]);
+      fHds.forEach((h,i)=>_pt(d,h,fCX[i]+fCols[i]/2,y+4.5,{align:'center'}));
+      y+=6.5;
+      filasFase.forEach((row,i)=>{
+        _prect(d,L,y,fW,6,i%2===0?[255,255,255]:CREAM,[210,220,230],0.1);
+        _pf(d,7,'bold',DTXT);
+        row.forEach((v,c)=>_pt(d,String(v||'—'),fCX[c]+fCols[c]/2,y+4.2,{align:'center'}));
+        y+=6;
+      });
+    }
+
+    const footY=276;
+    _pln(d,L,footY,R,footY,[180,195,210],0.3);
+    _pf(d,7,'normal',[100,115,130]);
+    _pt(d,'SEST · Balance de Cargas · NEC / NTE INEN 2345 / ARCONEL Ecuador',105,footY+4,{align:'center'});
+    _pt(d,`Generado el ${new Date().toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'})}`,105,footY+9,{align:'center'});
+
+    _pdfFooterPages(d);
+    d.save(filename);
+    _ocultarLoadingPdf(); toast('PDF descargado ✓','ok');
+  }catch(err){ console.error(err); _ocultarLoadingPdf(); toast('Error al generar PDF','err'); }
 }
 
 
