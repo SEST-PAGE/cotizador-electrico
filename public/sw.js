@@ -1,5 +1,5 @@
 // ============================================================
-// SEST - Service Worker v1.0
+// SEST - Service Worker v1.
 // Estrategia: Cache-first para assets estáticos,
 //             Network-first para llamadas API,
 //             Offline fallback para navegación.
